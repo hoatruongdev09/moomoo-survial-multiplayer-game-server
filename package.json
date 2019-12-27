@@ -1,0 +1,18 @@
+{
+  "name": "moomoo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "mathf": "0.0.3",
+    "sat": "^0.8.0",
+    "socket.io": "^2.3.0",
+    "victor": "^1.1.0",
+    "ws": "^7.2.0"
+  }
+}
