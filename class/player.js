@@ -40,13 +40,14 @@ class Player {
 
         // VIEWS
         this.resourcesView
-
+        this.playersView
 
         // WEAPONS
         this.mainWeapon = new Melee(0, WeaponInfo[0])
         this.subWeapon = null
         this.onwedItems = []
-        this.currentWeapon = this.mainWeapon
+
+        this.currentItems = this.mainWeapon
 
     }
     enterGame(data) {
@@ -102,11 +103,22 @@ class Player {
             this.resourcesView = this.game.getResourceFromView(this.position)
         }
         for (const r of this.resourcesView) {
-            this.game.testCollisionPoligon2Cirle(this.currentWeapon, r, (response, objectCollide) => this.onHitResource(response, objectCollide, r))
+            this.game.testCollisionPoligon2Cirle(this.currentItems, r, (response, objectCollide) => this.onHitResource(response, objectCollide, r))
         }
     }
     onHitResource(response, object, objectInfo) {
-        console.log("hit object: ", objectInfo)
+        console.log("hit resource: ", objectInfo)
+    }
+    checkAttackToPlayer() {
+        this.playersView = this.game.getPlayersFromView(this.position)
+        for (const p of this.playersView) {
+            this.game.testCollisionPoligon2Cirle(this.currentItems, p, (response, objectCollide) => this.onHitPlayer(response, objectCollide, p))
+        }
+    }
+    onHitPlayer(response, object, objectInfo) {
+        if (objectInfo.id != this.idGame) {
+            console.log("hit player: ", objectInfo)
+        }
     }
     onCollisionWithResource(response, object) {
         let overlapPos = response.overlapV
@@ -137,7 +149,7 @@ class Player {
             this.syncMoveDirect(data);
         })
         this.socket.on(GameCode.triggerAttack, () => {
-            this.triggerAttack()
+            this.useItem()
         })
     }
 
@@ -161,15 +173,24 @@ class Player {
     syncMoveDirect(data) {
         this.lastMovement = data;
     }
+    useItem() {
+        if (this.currentItems.toString() == "Melee") {
+            this.triggerAttack()
+        }
+    }
     triggerAttack() {
+        if (!this.currentItems.canUse) {
+            return
+        }
         let direct = new Vector(
             -Math.cos(this.lookDirect),
             -Math.sin(this.lookDirect))
-        this.currentWeapon.attack(this.position, direct, this.lookDirect)
+        this.currentItems.use(this.position, direct)
         this.checkAttackToResource()
+        this.checkAttackToPlayer()
         this.game.broadcast(GameCode.triggerAttack, {
             idGame: this.idGame,
-            type: this.currentWeapon.idType
+            type: this.currentItems.idType
         })
     }
 

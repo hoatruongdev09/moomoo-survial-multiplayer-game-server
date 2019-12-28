@@ -20,6 +20,7 @@ class Game {
         this.currentPlayerCount = 0
 
         this.resources
+        this.userResources = []
 
         this.map = new Map(this.gameConfig.mapsize, {
             x: 2,
@@ -87,7 +88,6 @@ class Game {
             maxPlayer: this.gameConfig.maxPlayer,
             resource: this.getResourceInfo(),
             players: this.getPlayersInfo(),
-            bodyRadius: this.gameConfig.playColliderRadius
         }
 
         return gameData
@@ -125,7 +125,8 @@ class Game {
         player.enterGame({
             moveSpeed: this.gameConfig.playerSpeed,
             position: new Vector(tempPosition.x, tempPosition.y),
-            lookDirect: this.map.rangdomAngle()
+            lookDirect: this.map.rangdomAngle(),
+            bodyRadius: this.gameConfig.playColliderRadius
         })
         this.broadcast(gamecode.spawnPlayer, {
             clientId: player.idServer,
@@ -198,15 +199,13 @@ class Game {
 
     getPlayersFromView(position) {
         let viewObjects = []
-        let condition
+        let temp = new Vector(0, 0)
 
         this.players.forEach(p => {
             if (p != null && p.isJoinedGame) {
-                condition = (p.position.y + this.gameConfig.viewSize.y > position.y &&
-                    p.position.y - this.gameConfig.viewSize.y < position.y &&
-                    p.position.x + this.gameConfig.viewSize.x > position.x &&
-                    p.pos.x - this.gameConfig.viewSize.x < position.x)
-                if (condition) {
+                temp.x = position.x - p.position.x
+                temp.y = position.y - p.position.y
+                if (temp.sqrMagnitude() < Math.pow(this.gameConfig.viewPlayerRadius, 2)) {
                     viewObjects.push({
                         id: p.idGame,
                         bodyCollider: p.bodyCollider
@@ -214,6 +213,7 @@ class Game {
                 }
             }
         })
+        return viewObjects
     }
     getResourceFromView(position) {
         let viewObjects = []

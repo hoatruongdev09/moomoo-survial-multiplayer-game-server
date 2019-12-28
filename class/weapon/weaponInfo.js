@@ -10,8 +10,11 @@ const weaponInfo = [{
         gold: 0
     },
     description: "",
-    size: 5,
-    range: 5,
+    size: {
+        x: 3,
+        y: 5
+    },
+    range: 2,
     damage: 25,
     attackSpeed: 500, // milisecond
     movement: 1, // float percent
