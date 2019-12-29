@@ -236,6 +236,27 @@ class Game {
     testCollisionPoligon2Cirle(poliObj, circleObj, response) {
         return this.physic.testPoligon2Cirle(poliObj.bodyCollider, circleObj.bodyCollider, response)
     }
+
+    playerHitPlayer(idFrom, idTarget, weapon) {
+        this.players[idTarget].healthPoint -= weapon.info.damage
+        if (this.players[idTarget].healthPoint <= 0) {
+            this.players[idTarget].isJoinedGame = false
+            this.players[idFrom].kills++
+            this.players[idFrom].scores += 25 // example bonus
+            this.broadcast(gamecode.playerDie, {
+                id: idTarget
+            })
+            this.players[idFrom].send(gamecode.playerStatus, {
+                score: this.players[idFrom].scores,
+                kills: this.players[idFrom].kills
+            })
+        } else {
+            this.broadcast(gamecode.playerHit, {
+                id: idTarget,
+                hp: this.players[idTarget].healthPoint
+            })
+        }
+    }
     broadcast(event, args) {
         this.players.forEach(p => {
             if (p != null) {

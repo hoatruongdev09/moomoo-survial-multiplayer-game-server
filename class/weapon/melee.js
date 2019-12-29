@@ -27,7 +27,6 @@ class Melee {
         // console.log("box: ", this.bodyCollider)
         this.canUse = false
         setTimeout(() => {
-            console.log("wtf")
             this.canUse = true
         }, this.info.attackSpeed)
     }

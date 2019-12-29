@@ -49,12 +49,20 @@ class Player {
 
         this.currentItems = this.mainWeapon
 
+        // HEALTH
+        this.healthPoint = 100
+        this.kills = 0
+        this.scores = 0
+
     }
     enterGame(data) {
         this.isJoinedGame = true
         this.moveSpeed = data.moveSpeed
         this.position = data.position
         this.lookDirect = data.lookDirect
+        this.healthPoint = 100
+        this.kills = 0
+        this.scores = 0
 
         this.bodyCollider = new SAT.Circle(new SAT.Vector(this.position.x, this.position.syncLookDirect), data.bodyRadius)
     }
@@ -117,7 +125,7 @@ class Player {
     }
     onHitPlayer(response, object, objectInfo) {
         if (objectInfo.id != this.idGame) {
-            console.log("hit player: ", objectInfo)
+            this.game.playerHitPlayer(this.idGame, objectInfo.id, this.currentItems)
         }
     }
     onCollisionWithResource(response, object) {

@@ -15,7 +15,11 @@ const gamecode = {
     syncMoveDirect: "syncMove",
     triggerAttack: "attk",
 
-    syncTransform: "syncTrsform"
+    syncTransform: "syncTrsform",
+
+    playerHit: "phit",
+    playerDie: "pdie",
+    playerStatus: "pstt"
 }
 
 module.exports = {
