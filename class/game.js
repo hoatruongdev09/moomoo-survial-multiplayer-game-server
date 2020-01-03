@@ -9,6 +9,9 @@ const PhysicEngine = require('./physicEngine')
 const Mathf = require('mathf')
 const Vector = require('../GameUtils/vector')
 
+const WeaponInfo = require('./weapon/weaponInfo')
+const ItemInfo = require('./Items/itemInfo')
+
 class Game {
     constructor(id, server, gameConfig, name) {
         this.name = name
@@ -21,6 +24,8 @@ class Game {
 
         this.resources
         this.userResources = []
+        this.structures = []
+        this.structuresCount = 0
 
         this.map = new Map(this.gameConfig.mapsize, {
             x: 2,
@@ -120,13 +125,23 @@ class Game {
         })
         return data
     }
+    getStarterPack() {
+        let mainWeapon = WeaponInfo.getInfoByStringId("w0")
+        let items = ItemInfo.getInfoByAge(1)
+
+        return {
+            weapons: [mainWeapon, null],
+            items: items
+        }
+    }
     playerJoin(player) {
         let tempPosition = this.map.randomPosition()
         player.enterGame({
             moveSpeed: this.gameConfig.playerSpeed,
             position: new Vector(tempPosition.x, tempPosition.y),
             lookDirect: this.map.rangdomAngle(),
-            bodyRadius: this.gameConfig.playColliderRadius
+            bodyRadius: this.gameConfig.playColliderRadius,
+            items: this.getStarterPack()
         })
         this.broadcast(gamecode.spawnPlayer, {
             clientId: player.idServer,
@@ -230,6 +245,21 @@ class Game {
         })
         return viewObjects
     }
+    getStructureFromView(position) {
+        let viewObjects = []
+        let temp = new Vector(0, 0)
+        this.structures.forEach(s => {
+            temp.x = position.x - s.position.x
+            temp.y = position.y - s.position.y
+            if (temp.sqrMagnitude() < Math.pow(this.gameConfig.viewResourceRadius, 2)) {
+                viewObjects.push({
+                    id: s.id,
+                    bodyCollider: s.bodyCollider
+                })
+            }
+        })
+        return viewObjects
+    }
     testCollisionCircle2Cirle(object1, object2, response) {
         return this.physic.testCircle2Cirle(object1.bodyCollider, object2.bodyCollider, response)
     }
@@ -241,15 +271,17 @@ class Game {
         this.players[idTarget].healthPoint -= weapon.info.damage
         if (this.players[idTarget].healthPoint <= 0) {
             this.players[idTarget].isJoinedGame = false
-            this.players[idFrom].kills++
-            this.players[idFrom].scores += 25 // example bonus
             this.broadcast(gamecode.playerDie, {
                 id: idTarget
             })
-            this.players[idFrom].send(gamecode.playerStatus, {
-                score: this.players[idFrom].scores,
-                kills: this.players[idFrom].kills
-            })
+            if (this.player[idFrom] != null && this.player[idFrom]) {
+                this.player[idFrom].kills++
+                this.player[idFrom].scores += 25
+                this.players[idFrom].send(gamecode.playerStatus, {
+                    score: this.players[idFrom].scores,
+                    kills: this.player[idFrom].kills
+                })
+            }
         } else {
             this.broadcast(gamecode.playerHit, {
                 id: idTarget,
@@ -257,6 +289,105 @@ class Game {
             })
         }
     }
+    playerStructureHitPlayer(idFrom, idTarget, damage) {
+        console.log("damge: ", damage)
+        this.players[idTarget].healthPoint -= damage
+        if (this.players[idTarget].healthPoint <= 0) {
+            this.players[idTarget].isJoinedGame = false
+            this.broadcast(gamecode.playerDie, {
+                id: idTarget
+            })
+            if (this.player[idFrom] != null && this.player[idFrom]) {
+                this.player[idFrom].kills++
+                this.player[idFrom].scores += 25
+                this.players[idFrom].send(gamecode.playerStatus, {
+                    score: this.players[idFrom].scores,
+                    kills: this.player[idFrom].kills
+                })
+            }
+        } else {
+            this.broadcast(gamecode.playerHit, {
+                id: idTarget,
+                hp: this.players[idTarget].healthPoint
+            })
+        }
+    }
+    playerHitStructures(idFrom, idStructure) {
+        let structure = this.findStructureWithId(idStructure)
+        // if (structure.userId == idFrom) {
+        //     return
+        // }
+
+        if (structure.toString() == "spike") {
+
+            this.playerStructureHitPlayer(idStructure.userId, idFrom, structure.damage)
+            this.pushPlayerBack(this.players[idFrom], this.players[idFrom].position.clone().sub(structure.position), 5)
+        }
+
+    }
+    pushPlayerBack(player, direct, range) {
+        player.position.add(direct.unitVector.scale(range))
+        var positionData = []
+        var lookData = []
+        positionData.push({
+            id: player.idGame,
+            pos: {
+                x: player.position.x,
+                y: player.position.y
+            }
+        })
+        lookData.push({
+            id: player.idGame,
+            angle: player.lookDirect
+        })
+        this.broadcast(gamecode.syncTransform, {
+            pos: positionData,
+            rot: lookData
+        })
+    }
+    findStructureWithId(id) {
+        let structure = null
+        for (let s of this.structures) {
+            if (s.id == id) {
+                structure = s
+                break
+            }
+        }
+        return structure
+    }
+    generateStructeId() {
+        return this.structuresCount++
+    }
+    addStructure(user, item) {
+        this.structures.push(item)
+        user.structures[item.toString()] += 1
+        // console.log("user ", user.idGame, ", structs: ", user.structures)
+        this.broadcast(gamecode.spawnnStructures, {
+            id: item.id,
+            itemId: item.itemId,
+            position: {
+                x: item.position.x,
+                y: item.position.y
+            }
+        })
+    }
+
+    // meleeAttack(player, direct, item) {
+    //     if (!item.canUse) {
+    //         return
+    //     }
+    //     let position = player.position.clone().add(direct.clone().scale(item.info.range))
+    //     let boxCollider = new SAT.Box(new SAT.Vector(position.x, position.y), item.info.size.x, item.info.size.y).toPolygon()
+    //     boxCollider.setOffset(new SAT.Vector(-item.info.size.x / 2, -item.info.size.y / 2))
+    //     let angle = Math.atan2(direct.y, direct.x)
+    //     boxCollider.setAngle(angle)
+    //     item.canUse = false
+    //     setTimeout(() => {
+    //         item.canUse = true
+    //     }, item.info.attackSpeed)
+
+    // }
+
     broadcast(event, args) {
         this.players.forEach(p => {
             if (p != null) {

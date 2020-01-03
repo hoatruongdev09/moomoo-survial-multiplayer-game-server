@@ -6,6 +6,8 @@ const Vector = require('../GameUtils/vector')
 const SAT = require('sat')
 
 const Melee = require('./weapon/melee')
+const Item = require('./Items/item')
+
 const WeaponInfo = require('./weapon/weaponInfo')
 const WeaponType = require('./weapon/weaponType')
 class Player {
@@ -41,18 +43,29 @@ class Player {
         // VIEWS
         this.resourcesView
         this.playersView
+        this.structuresView
 
         // WEAPONS
-        this.mainWeapon = new Melee(0, WeaponInfo[0])
-        this.subWeapon = null
+        this.weapons = []
         this.onwedItems = []
 
-        this.currentItems = this.mainWeapon
+        this.currentItem = null
 
         // HEALTH
         this.healthPoint = 100
         this.kills = 0
         this.scores = 0
+        this.wood = 0
+        this.food = 0
+        this.stone = 0
+        this.gold = 0
+
+        // STRUCTURES
+        this.structures = {
+            wall: 0,
+            windmill: 0,
+            spike: 0,
+        }
 
     }
     enterGame(data) {
@@ -60,17 +73,32 @@ class Player {
         this.moveSpeed = data.moveSpeed
         this.position = data.position
         this.lookDirect = data.lookDirect
+
         this.healthPoint = 100
         this.kills = 0
         this.scores = 0
+        this.wood = 0
+        this.food = 0
+        this.stone = 0
+        this.gold = 0
 
+        this.onwedItems = data.items.items
+        this.weapons = data.items.weapons
+        this.currentItem = this.createWeapon(this.weapons[0])
+        // console.log("items: ", data.items)
         this.bodyCollider = new SAT.Circle(new SAT.Vector(this.position.x, this.position.syncLookDirect), data.bodyRadius)
+    }
+    createWeapon(info) {
+        if (info.type == "Melee") {
+            return new Melee(info)
+        }
+    }
+    createItem(info) {
+        return new Item(info)
     }
     update(deltaTime) {
         this.updatePosition(deltaTime)
         this.updateRotation()
-
-
     }
     updatePosition(deltaTime) {
         if (this.lastMovement == null) {
@@ -98,6 +126,7 @@ class Player {
     }
     checkCollider() {
         this.checkColliderWithResources()
+        this.checkColliderWithStructures()
     }
     checkColliderWithResources() {
         this.resourcesView = this.game.getResourceFromView(this.position)
@@ -106,12 +135,16 @@ class Player {
         }
         // console.log("resource: ", this.resourcesView)
     }
-    checkAttackToResource() {
-        if (this.resourcesView == null) {
-            this.resourcesView = this.game.getResourceFromView(this.position)
+    checkColliderWithStructures() {
+        this.structuresView = this.game.getStructureFromView(this.position)
+        for (const s of this.structuresView) {
+            this.game.testCollisionCircle2Cirle(this, s, (response, objectCollide) => this.onCollisionWithStructures(response, objectCollide, s))
         }
+    }
+    checkAttackToResource() {
+        this.resourcesView = this.game.getResourceFromView(this.position)
         for (const r of this.resourcesView) {
-            this.game.testCollisionPoligon2Cirle(this.currentItems, r, (response, objectCollide) => this.onHitResource(response, objectCollide, r))
+            this.game.testCollisionPoligon2Cirle(this.currentItem, r, (response, objectCollide) => this.onHitResource(response, objectCollide, r))
         }
     }
     onHitResource(response, object, objectInfo) {
@@ -120,13 +153,19 @@ class Player {
     checkAttackToPlayer() {
         this.playersView = this.game.getPlayersFromView(this.position)
         for (const p of this.playersView) {
-            this.game.testCollisionPoligon2Cirle(this.currentItems, p, (response, objectCollide) => this.onHitPlayer(response, objectCollide, p))
+            this.game.testCollisionPoligon2Cirle(this.currentItem, p, (response, objectCollide) => this.onHitPlayer(response, objectCollide, p))
         }
     }
     onHitPlayer(response, object, objectInfo) {
         if (objectInfo.id != this.idGame) {
-            this.game.playerHitPlayer(this.idGame, objectInfo.id, this.currentItems)
+            this.game.playerHitPlayer(this.idGame, objectInfo.id, this.currentItem)
         }
+    }
+    onCollisionWithStructures(response, object, objectInfo) {
+        let overlapPos = response.overlapV
+        this.position.x -= overlapPos.x
+        this.position.y -= overlapPos.y
+        this.game.playerHitStructures(this.idGame, objectInfo.id)
     }
     onCollisionWithResource(response, object) {
         let overlapPos = response.overlapV
@@ -141,24 +180,13 @@ class Player {
         this.registerListenter()
     }
     registerListenter() {
-        this.socket.on('disconnect', () => {
-            this.onDisconnect()
-        });
-        this.socket.on(ServerCode.OnRequestJoin, (data) => {
-            this.OnJoin(data)
-        });
-        this.socket.on(GameCode.receivedData, (data) => {
-            this.OnRecievedGameData(data)
-        })
-        this.socket.on(GameCode.syncLookDirect, (data) => {
-            this.syncLookDirect(data)
-        })
-        this.socket.on(GameCode.syncMoveDirect, (data) => {
-            this.syncMoveDirect(data);
-        })
-        this.socket.on(GameCode.triggerAttack, () => {
-            this.useItem()
-        })
+        this.socket.on('disconnect', () => this.onDisconnect())
+        this.socket.on(ServerCode.OnRequestJoin, (data) => this.OnJoin(data))
+        this.socket.on(GameCode.receivedData, (data) => this.OnRecievedGameData(data))
+        this.socket.on(GameCode.syncLookDirect, (data) => this.syncLookDirect(data))
+        this.socket.on(GameCode.syncMoveDirect, (data) => this.syncMoveDirect(data))
+        this.socket.on(GameCode.triggerAttack, () => this.useItem())
+        this.socket.on(GameCode.switchItem, (data) => this.switchItem(data))
     }
 
     OnJoin(data) {
@@ -182,26 +210,76 @@ class Player {
         this.lastMovement = data;
     }
     useItem() {
-        if (this.currentItems.toString() == "Melee") {
+        if (this.currentItem.toString() == "Melee") {
             this.triggerAttack()
+            return
+        } else {
+            this.triggerUseItem()
         }
+
+    }
+    switchItem(data) {
+        // console.log("swithc item: ", data)
+        // console.log("last item: ", this.currentItem)
+        if (this.currentItem.info.id == data.code) {
+            return;
+        }
+        if (data.type == "w") {
+            let weapon = this.findWeapon(data.code)
+            if (weapon != null) {
+                this.currentItem = this.createWeapon(weapon)
+            }
+        } else if (data.type == "i") {
+            let item = this.findItem(data.code)
+            if (item != null) {
+                this.currentItem = this.createItem(item)
+            }
+        }
+        // console.log("current Item: ", this.currentItem)
+        this.game.broadcast(GameCode.switchItem, {
+            id: this.idGame,
+            item: this.currentItem.info.id
+        })
+    }
+    findWeapon(id) {
+        let weapon = null
+        this.weapons.forEach(w => {
+            if (w != null && w.id == id) {
+                weapon = w
+            }
+        })
+        return weapon
+    }
+    findItem(id) {
+        let item = null
+        this.onwedItems.forEach(i => {
+            if (i.id == id) {
+                item = i
+            }
+        })
+        return item
     }
     triggerAttack() {
-        if (!this.currentItems.canUse) {
+        if (!this.currentItem.canUse) {
             return
         }
         let direct = new Vector(
             -Math.cos(this.lookDirect),
             -Math.sin(this.lookDirect))
-        this.currentItems.use(this.position, direct)
+        this.currentItem.use(this, direct)
         this.checkAttackToResource()
         this.checkAttackToPlayer()
         this.game.broadcast(GameCode.triggerAttack, {
             idGame: this.idGame,
-            type: this.currentItems.idType
+            type: this.currentItem.idType
         })
     }
-
+    triggerUseItem() {
+        let direct = new Vector(
+            -Math.cos(this.lookDirect),
+            -Math.sin(this.lookDirect))
+        this.currentItem.use(this, direct)
+    }
     // Transmit
     send(event, args) {
         this.socket.emit(event, args)

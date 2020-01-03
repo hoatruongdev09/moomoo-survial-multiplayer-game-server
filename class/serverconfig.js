@@ -1,7 +1,7 @@
 const Victor = require('victor')
 
 const config = {
-    updateRate: 60,
+    updateRate: 50,
     sendRate: 9,
     maxPlayerSupport: 50,
     maxGamesSupport: 3,

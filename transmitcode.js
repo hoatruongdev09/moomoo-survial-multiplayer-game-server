@@ -19,7 +19,10 @@ const gamecode = {
 
     playerHit: "phit",
     playerDie: "pdie",
-    playerStatus: "pstt"
+    playerStatus: "pstt",
+
+    switchItem: "swtItm",
+    spawnnStructures: "spwnStrc",
 }
 
 module.exports = {

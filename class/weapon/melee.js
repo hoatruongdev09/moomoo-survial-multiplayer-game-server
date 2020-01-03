@@ -3,20 +3,18 @@ const SAT = require('sat')
 
 
 class Melee {
-    constructor(id, info) {
-        this.id = id
+    constructor(info) {
         this.info = info
-        this.idType = WeaponType.Melee
 
         this.bodyCollider
         this.canUse = true
     }
 
-    use(fromPosition, direct) {
+    use(player, direct) {
         if (!this.canUse) {
             return
         }
-        let position = fromPosition.clone().add(direct.clone().scale(this.info.range))
+        let position = player.position.clone().add(direct.clone().scale(this.info.range))
         if (this.bodyCollider == null) {
             this.bodyCollider = new SAT.Box(new SAT.Vector(position.x, position.y), this.info.size.x, this.info.size.y).toPolygon()
         }
