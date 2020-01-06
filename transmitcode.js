@@ -14,6 +14,7 @@ const gamecode = {
     syncLookDirect: "syncLook",
     syncMoveDirect: "syncMove",
     triggerAttack: "attk",
+    triggerAutoAttack: "autoAttk",
 
     syncTransform: "syncTrsform",
 
@@ -23,6 +24,7 @@ const gamecode = {
 
     switchItem: "swtItm",
     spawnnStructures: "spwnStrc",
+    removeStructures: "rmvStrc"
 }
 
 module.exports = {

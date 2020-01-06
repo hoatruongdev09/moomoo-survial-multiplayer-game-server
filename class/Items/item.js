@@ -3,6 +3,7 @@ const Pad = require('./pad')
 const Spike = require('./spike')
 const Wall = require('./wall')
 const Windmill = require('./windmill')
+const PitTrap = require('./pittrap')
 
 class Item {
     constructor(info) {
@@ -20,7 +21,9 @@ class Item {
         if (this.info.type == "Spike") {
             this.item = new Spike(this.info)
         }
-
+        if (this.info.type == "PitTrap") {
+            this.item = new PitTrap(this.info)
+        }
     }
 
     use(player, direct) {

@@ -28,8 +28,17 @@ class GameSpike {
     initCollider() {
         this.bodyCollider = new SAT.Circle(new SAT.Vector(this.position.x, this.position.y), this.size)
     }
+    destroy() {
+
+    }
     toString() {
         return "spike"
+    }
+    takeDamge(damage) {
+        this.hp -= damage
+        if (this.hp <= 0) {
+            this.destroy()
+        }
     }
 }
 

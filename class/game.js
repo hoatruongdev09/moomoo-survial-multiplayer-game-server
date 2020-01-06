@@ -160,6 +160,7 @@ class Game {
                 id: player.idGame
             })
         }
+        this.removePlayerStructures(player.idGame)
         this.players[player.idGame] = null
         this.currentPlayerCount--
     }
@@ -254,6 +255,7 @@ class Game {
             if (temp.sqrMagnitude() < Math.pow(this.gameConfig.viewResourceRadius, 2)) {
                 viewObjects.push({
                     id: s.id,
+                    type: s.toString(),
                     bodyCollider: s.bodyCollider
                 })
             }
@@ -274,12 +276,12 @@ class Game {
             this.broadcast(gamecode.playerDie, {
                 id: idTarget
             })
-            if (this.player[idFrom] != null && this.player[idFrom]) {
-                this.player[idFrom].kills++
-                this.player[idFrom].scores += 25
+            if (this.players[idFrom] != null && this.players[idFrom].isJoinedGame) {
+                this.players[idFrom].kills++
+                this.players[idFrom].scores += 25
                 this.players[idFrom].send(gamecode.playerStatus, {
                     score: this.players[idFrom].scores,
-                    kills: this.player[idFrom].kills
+                    kills: this.players[idFrom].kills
                 })
             }
         } else {
@@ -297,12 +299,12 @@ class Game {
             this.broadcast(gamecode.playerDie, {
                 id: idTarget
             })
-            if (this.player[idFrom] != null && this.player[idFrom]) {
-                this.player[idFrom].kills++
-                this.player[idFrom].scores += 25
+            if (this.players[idFrom] != null && this.player[idFrom].isJoinedGame) {
+                this.players[idFrom].kills++
+                this.players[idFrom].scores += 25
                 this.players[idFrom].send(gamecode.playerStatus, {
                     score: this.players[idFrom].scores,
-                    kills: this.player[idFrom].kills
+                    kills: this.players[idFrom].kills
                 })
             }
         } else {
@@ -314,16 +316,37 @@ class Game {
     }
     playerHitStructures(idFrom, idStructure) {
         let structure = this.findStructureWithId(idStructure)
-        // if (structure.userId == idFrom) {
-        //     return
-        // }
-
-        if (structure.toString() == "spike") {
-
-            this.playerStructureHitPlayer(idStructure.userId, idFrom, structure.damage)
-            this.pushPlayerBack(this.players[idFrom], this.players[idFrom].position.clone().sub(structure.position), 5)
+        if (structure == null) {
+            return
+        }
+        if (structure.userId == idFrom) {
+            return
         }
 
+        if (structure.toString() == "spike") {
+            this.playerStructureHitPlayer(idStructure.userId, idFrom, structure.damage)
+            this.pushPlayerBack(this.players[idFrom], this.players[idFrom].position.clone().sub(structure.position), 5)
+            return
+        }
+        if (structure.toString() == "pittrap") {
+            structure.trapPlayer(this.players[idFrom])
+            return
+        }
+
+    }
+    playerAttackStructure(idPlayer, idStructure, damage) {
+        let structure = this.findStructureWithId(idStructure)
+        if (structure == null) {
+            return
+        }
+        if (idPlayer == structure.userId) {
+            return
+        }
+        structure.takeDamge(damage)
+        if (structure.hp <= 0) {
+            console.log("remove structure")
+            this.removeStructure(structure.id)
+        }
     }
     pushPlayerBack(player, direct, range) {
         player.position.add(direct.unitVector.scale(range))
@@ -370,6 +393,29 @@ class Game {
                 y: item.position.y
             }
         })
+    }
+    removeStructure(id) {
+        console.log("remove structure: ", id)
+        for (let i = 0; i < this.structures.length; i++) {
+            if (this.structures[i].id == id) {
+                this.structures[i].destroy()
+                this.structures.splice(i, 1)
+                console.log("removed structure: ", id)
+                this.broadcast(gamecode.removeStructures, {
+                    id: id,
+                })
+                return;
+            }
+        }
+    }
+    removePlayerStructures(idPlayer) {
+        for (let i = 0; i < this.structures.length; i++) {
+            if (this.structures[i].userId == idPlayer) {
+                this.structures[i].destroy()
+                this.structures.slice(i)
+                i--
+            }
+        }
     }
 
     // meleeAttack(player, direct, item) {

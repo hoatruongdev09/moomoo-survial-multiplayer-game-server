@@ -2,13 +2,21 @@ const SAT = require('sat')
 
 
 class GameWindmill {
-    constructor(id, userId, itemId, position, size, hp) {
+    constructor(id, user, position, info) {
         this.id = id
-        this.userId = userId
+        this.userId = user.idGame
+        this.user = user
         this.position = position
-        this.size = size
-        this.hp = hp
-        this.itemId = itemId
+        this.hp = info.health
+        this.size = info.size
+        this.itemId = info.id
+        this.gold = info.gold
+        this.xp = info.xp
+
+        this.update = setInterval(() => {
+            this.user.addGold(this.gold)
+            this.user.addXP(this.xp)
+        }, 1000)
 
         this.bodyCollider
         this.initCollider()
@@ -16,8 +24,17 @@ class GameWindmill {
     initCollider() {
         this.bodyCollider = new SAT.Circle(new SAT.Vector(this.position.x, this.position.y), this.size)
     }
+    destroy() {
+        clearInterval(this.update)
+    }
     toString() {
         return "windmill"
+    }
+    takeDamge(damage) {
+        this.hp -= damage
+        if (this.hp <= 0) {
+            this.destroy()
+        }
     }
 }
 

@@ -41,9 +41,9 @@ class Player {
         this.bodyCollider
 
         // VIEWS
-        this.resourcesView
-        this.playersView
-        this.structuresView
+        this.resourcesView = []
+        this.playersView = []
+        this.structuresView = []
 
         // WEAPONS
         this.weapons = []
@@ -59,13 +59,20 @@ class Player {
         this.food = 0
         this.stone = 0
         this.gold = 0
-
+        this.xp = 0
+        this.level = 1
+        // EFFECT
+        this.speedModifier = 1;
         // STRUCTURES
         this.structures = {
             wall: 0,
             windmill: 0,
             spike: 0,
         }
+
+        // MISC
+        this.isAutoAttack = false
+        this.intervalAutoAttack
 
     }
     enterGame(data) {
@@ -109,7 +116,7 @@ class Player {
             Math.sin(this.lastMovement)
         )
 
-        this.position.add(this.moveDirect.clone().scale(this.moveSpeed * deltaTime))
+        this.position.add(this.moveDirect.clone().scale(this.moveSpeed * this.speedModifier * deltaTime))
         // console.log(this.position)
 
         this.bodyCollider.pos.x = this.position.x
@@ -137,6 +144,7 @@ class Player {
     }
     checkColliderWithStructures() {
         this.structuresView = this.game.getStructureFromView(this.position)
+
         for (const s of this.structuresView) {
             this.game.testCollisionCircle2Cirle(this, s, (response, objectCollide) => this.onCollisionWithStructures(response, objectCollide, s))
         }
@@ -146,6 +154,14 @@ class Player {
         for (const r of this.resourcesView) {
             this.game.testCollisionPoligon2Cirle(this.currentItem, r, (response, objectCollide) => this.onHitResource(response, objectCollide, r))
         }
+
+        for (const s of this.structuresView) {
+            this.game.testCollisionCircle2Cirle(this.currentItem, s, (response, objectCollide) => this.onHitStructure(response, objectCollide, s))
+        }
+    }
+    onHitStructure(response, object, objectInfo) {
+        console.log("hit structure: ", objectInfo)
+        this.game.playerAttackStructure(this.idGame, objectInfo.id, this.currentItem.info.structureDamge)
     }
     onHitResource(response, object, objectInfo) {
         console.log("hit resource: ", objectInfo)
@@ -162,9 +178,11 @@ class Player {
         }
     }
     onCollisionWithStructures(response, object, objectInfo) {
-        let overlapPos = response.overlapV
-        this.position.x -= overlapPos.x
-        this.position.y -= overlapPos.y
+        if (objectInfo.type == "wall" || objectInfo.type == "spike" || objectInfo.type == "windmill" || objectInfo.type == "turret") {
+            let overlapPos = response.overlapV
+            this.position.x -= overlapPos.x
+            this.position.y -= overlapPos.y
+        }
         this.game.playerHitStructures(this.idGame, objectInfo.id)
     }
     onCollisionWithResource(response, object) {
@@ -185,7 +203,8 @@ class Player {
         this.socket.on(GameCode.receivedData, (data) => this.OnRecievedGameData(data))
         this.socket.on(GameCode.syncLookDirect, (data) => this.syncLookDirect(data))
         this.socket.on(GameCode.syncMoveDirect, (data) => this.syncMoveDirect(data))
-        this.socket.on(GameCode.triggerAttack, () => this.useItem())
+        this.socket.on(GameCode.triggerAttack, (data) => this.useItem(data))
+        this.socket.on(GameCode.triggerAutoAttack, (data) => this.autoAttack(data))
         this.socket.on(GameCode.switchItem, (data) => this.switchItem(data))
     }
 
@@ -209,15 +228,39 @@ class Player {
     syncMoveDirect(data) {
         this.lastMovement = data;
     }
-    useItem() {
+    useItem(data) {
         if (this.currentItem.toString() == "Melee") {
-            this.triggerAttack()
+            this.triggerMelleAttack()
             return
         } else {
-            this.triggerUseItem()
+            if (data.isbtn)
+                this.triggerUseItem()
         }
 
     }
+    autoAttack(data) {
+        console.log("auto attack: ", this.isAutoAttack)
+        if (this.currentItem.toString() == "Melee") {
+            this.isAutoAttack = data.action
+            if (!this.isAutoAttack) {
+                clearInterval(this.intervalAutoAttack)
+            } else {
+                this.startMeleeAutoAttack()
+            }
+            return
+        } else {
+
+        }
+    }
+    startMeleeAutoAttack() {
+        if (this.intervalAutoAttack != null) {
+            clearInterval(this.intervalAutoAttack)
+        }
+        this.intervalAutoAttack = setInterval(() => {
+            this.triggerMelleAttack();
+        }, this.currentItem.info.attackSpeed)
+    }
+
     switchItem(data) {
         // console.log("swithc item: ", data)
         // console.log("last item: ", this.currentItem)
@@ -259,7 +302,7 @@ class Player {
         })
         return item
     }
-    triggerAttack() {
+    triggerMelleAttack() {
         if (!this.currentItem.canUse) {
             return
         }
@@ -279,6 +322,15 @@ class Player {
             -Math.cos(this.lookDirect),
             -Math.sin(this.lookDirect))
         this.currentItem.use(this, direct)
+    }
+
+    addGold(value) {
+        this.gold += value
+        this.scores += value
+    }
+    addXP(value) {
+        this.xp += value
+        console.log("this xp: ", this.xp, "this.is joied: ", this.isJoinedGame)
     }
     // Transmit
     send(event, args) {

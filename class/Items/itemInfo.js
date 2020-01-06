@@ -81,6 +81,8 @@ const itemInfo = {
                 wood: 60,
                 stone: 35
             },
+            gold: 1.5,
+            xp: 1.5,
             health: 500,
             limit: 7,
             size: 3, // radius
@@ -135,8 +137,8 @@ const itemInfo = {
         },
         {
             id: "i7",
-            type: "Pad",
-            age: 4,
+            type: "PitTrap",
+            age: 1, //4
             name: "Pit Trap",
             description: "Pit that trap enemies if they walk over it",
             cost: {
@@ -145,7 +147,7 @@ const itemInfo = {
             },
             health: 500,
             limit: 6,
-            size: 3, // radius
+            size: 0.8, // radius
             range: 0,
         },
         {
@@ -189,6 +191,8 @@ const itemInfo = {
                 wood: 100,
                 stone: 50
             },
+            gold: 2,
+            xp: 2,
             health: 800,
             limit: 7,
             size: 3, // radius
@@ -309,6 +313,8 @@ const itemInfo = {
                 wood: 50,
                 stone: 10
             },
+            gold: 1,
+            xp: 1,
             health: 400,
             limit: 7,
             size: 2, // radius
