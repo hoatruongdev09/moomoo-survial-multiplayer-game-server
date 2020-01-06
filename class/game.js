@@ -93,6 +93,7 @@ class Game {
             maxPlayer: this.gameConfig.maxPlayer,
             resource: this.getResourceInfo(),
             players: this.getPlayersInfo(),
+            structures: this.getStructuresInfo()
         }
 
         return gameData
@@ -111,6 +112,20 @@ class Game {
                     }
                 })
             }
+        })
+        return data
+    }
+    getStructuresInfo() {
+        let data = []
+        this.structures.forEach(item => {
+            data.push({
+                id: item.id,
+                itemId: item.itemId,
+                position: {
+                    x: item.position.x,
+                    y: item.position.y
+                }
+            })
         })
         return data
     }
@@ -273,6 +288,7 @@ class Game {
         this.players[idTarget].healthPoint -= weapon.info.damage
         if (this.players[idTarget].healthPoint <= 0) {
             this.players[idTarget].isJoinedGame = false
+            this.removePlayerStructures(idTarget)
             this.broadcast(gamecode.playerDie, {
                 id: idTarget
             })
@@ -323,12 +339,12 @@ class Game {
             return
         }
 
-        if (structure.toString() == "spike") {
+        if (structure.toString() == "Spike") {
             this.playerStructureHitPlayer(idStructure.userId, idFrom, structure.damage)
             this.pushPlayerBack(this.players[idFrom], this.players[idFrom].position.clone().sub(structure.position), 5)
             return
         }
-        if (structure.toString() == "pittrap") {
+        if (structure.toString() == "PitTrap") {
             structure.trapPlayer(this.players[idFrom])
             return
         }
@@ -348,6 +364,16 @@ class Game {
             this.removeStructure(structure.id)
         }
     }
+    playerAttackResource(idPlayer, idResource, damage) {
+        let result = this.resources[idResource].reward(damage)
+        let key = this.getKeyByValue(ResourceType, result.idType)
+        this.players[idPlayer].receiveResource(result.amount, key)
+    }
+
+    getKeyByValue(object, value) {
+        return Object.keys(object).find(key => object[key] === value);
+    }
+
     pushPlayerBack(player, direct, range) {
         player.position.add(direct.unitVector.scale(range))
         var positionData = []
@@ -384,7 +410,6 @@ class Game {
     addStructure(user, item) {
         this.structures.push(item)
         user.structures[item.toString()] += 1
-        // console.log("user ", user.idGame, ", structs: ", user.structures)
         this.broadcast(gamecode.spawnnStructures, {
             id: item.id,
             itemId: item.itemId,
@@ -395,12 +420,10 @@ class Game {
         })
     }
     removeStructure(id) {
-        console.log("remove structure: ", id)
         for (let i = 0; i < this.structures.length; i++) {
             if (this.structures[i].id == id) {
                 this.structures[i].destroy()
                 this.structures.splice(i, 1)
-                console.log("removed structure: ", id)
                 this.broadcast(gamecode.removeStructures, {
                     id: id,
                 })
@@ -412,7 +435,7 @@ class Game {
         for (let i = 0; i < this.structures.length; i++) {
             if (this.structures[i].userId == idPlayer) {
                 this.structures[i].destroy()
-                this.structures.slice(i)
+                this.structures.splice(i, 1)
                 i--
             }
         }

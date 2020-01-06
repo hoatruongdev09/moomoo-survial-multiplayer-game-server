@@ -332,7 +332,7 @@ const itemInfo = {
             health: 380,
             limit: 30,
             size: 2, // radius
-            range: 0,
+            range: 3,
         },
         {
             id: "i20",

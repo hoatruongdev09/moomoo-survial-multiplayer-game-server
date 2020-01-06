@@ -32,7 +32,7 @@ class GameSpike {
 
     }
     toString() {
-        return "spike"
+        return "Spike"
     }
     takeDamge(damage) {
         this.hp -= damage

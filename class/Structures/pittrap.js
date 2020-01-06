@@ -45,7 +45,7 @@ class GamePitTrap {
         })
     }
     toString() {
-        return "pittrap"
+        return "PitTrap"
     }
     takeDamge(damage) {
         this.hp -= damage

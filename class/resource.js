@@ -13,10 +13,9 @@ class Resource {
     reward(damage) {
         return {
             amount: damage,
-            idType: idType
+            idType: this.idType
         }
     }
-
 }
 
 

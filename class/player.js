@@ -55,19 +55,34 @@ class Player {
         this.healthPoint = 100
         this.kills = 0
         this.scores = 0
-        this.wood = 0
-        this.food = 0
-        this.stone = 0
-        this.gold = 0
         this.xp = 0
         this.level = 1
+
+        this.basicResources = {
+            Wood: 0,
+            Food: 0,
+            Stone: 0,
+            Gold: 0,
+
+            reset() {
+                this.Wood = this.Food = this.Stone = this.Gold = 0
+            }
+        }
         // EFFECT
         this.speedModifier = 1;
         // STRUCTURES
         this.structures = {
-            wall: 0,
-            windmill: 0,
-            spike: 0,
+            Wall: 0,
+            Windmill: 0,
+            Spike: 0,
+            PitTrap: 0,
+
+            reset() {
+                this.Windmill = 0
+                this.Wall = 0
+                this.Spike = 0
+                this.PitTrap = 0
+            }
         }
 
         // MISC
@@ -84,15 +99,18 @@ class Player {
         this.healthPoint = 100
         this.kills = 0
         this.scores = 0
-        this.wood = 0
-        this.food = 0
-        this.stone = 0
-        this.gold = 0
+
+        this.basicResources.reset()
 
         this.onwedItems = data.items.items
         this.weapons = data.items.weapons
         this.currentItem = this.createWeapon(this.weapons[0])
-        // console.log("items: ", data.items)
+
+        this.isAutoAttack = false
+        clearInterval(this.intervalAutoAttack)
+
+        this.structures.reset()
+
         this.bodyCollider = new SAT.Circle(new SAT.Vector(this.position.x, this.position.syncLookDirect), data.bodyRadius)
     }
     createWeapon(info) {
@@ -165,6 +183,7 @@ class Player {
     }
     onHitResource(response, object, objectInfo) {
         console.log("hit resource: ", objectInfo)
+        this.game.playerAttackResource(this.idGame, objectInfo.id, this.currentItem.info.gatherRate)
     }
     checkAttackToPlayer() {
         this.playersView = this.game.getPlayersFromView(this.position)
@@ -178,7 +197,7 @@ class Player {
         }
     }
     onCollisionWithStructures(response, object, objectInfo) {
-        if (objectInfo.type == "wall" || objectInfo.type == "spike" || objectInfo.type == "windmill" || objectInfo.type == "turret") {
+        if (objectInfo.type == "Wall" || objectInfo.type == "Spike" || objectInfo.type == "Windmill" || objectInfo.type == "Turret") {
             let overlapPos = response.overlapV
             this.position.x -= overlapPos.x
             this.position.y -= overlapPos.y
@@ -323,7 +342,10 @@ class Player {
             -Math.sin(this.lookDirect))
         this.currentItem.use(this, direct)
     }
-
+    receiveResource(amount, type) {
+        this.basicResources[type] += amount
+        console.log("resource: ", this.basicResources)
+    }
     addGold(value) {
         this.gold += value
         this.scores += value

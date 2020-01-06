@@ -28,7 +28,7 @@ class GameWindmill {
         clearInterval(this.update)
     }
     toString() {
-        return "windmill"
+        return "Windmill"
     }
     takeDamge(damage) {
         this.hp -= damage

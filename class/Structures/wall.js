@@ -31,7 +31,7 @@ class GameWall {
 
     }
     toString() {
-        return "wall"
+        return "Wall"
     }
     takeDamge(damage) {
         console.log("took damage: ", damage, " remain hp: ", this.hp)

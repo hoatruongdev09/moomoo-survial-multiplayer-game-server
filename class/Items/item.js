@@ -28,7 +28,10 @@ class Item {
 
     use(player, direct) {
         if (this.item != null) {
-            this.item.use(player, direct)
+            // console.log("current count: ", player.structures[this.info.type], ", limit: ", this.info.limit)
+            if (player.structures[this.info.type] < this.info.limit) {
+                this.item.use(player, direct)
+            }
         }
     }
 }
