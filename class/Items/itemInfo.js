@@ -34,7 +34,7 @@ const itemInfo = {
             description: "Blocks building in radius",
             cost: {
                 wood: 30,
-                stone: 25
+                Stone: 25
             },
             health: 400,
             limit: 3,
@@ -48,8 +48,8 @@ const itemInfo = {
             name: "Boost Pad",
             description: "Provides boost when stepped on",
             cost: {
-                wood: 5,
-                stone: 20
+                Wood: 5,
+                Stone: 20
             },
             health: 150,
             limit: 12,
@@ -63,7 +63,7 @@ const itemInfo = {
             name: "Castle Wall",
             description: "Provides provides powerfull protection for your village",
             cost: {
-                stone: 35
+                Stone: 35
             },
             health: 1500,
             limit: 30,
@@ -78,8 +78,8 @@ const itemInfo = {
             name: "Faster Windmill",
             description: "Generates more gold over time",
             cost: {
-                wood: 60,
-                stone: 35
+                Wood: 60,
+                Stone: 35
             },
             gold: 1.5,
             xp: 1.5,
@@ -97,8 +97,8 @@ const itemInfo = {
             damage: 35,
             description: "Damages enemies when they touch them.",
             cost: {
-                wood: 30,
-                stone: 10
+                Wood: 30,
+                Stone: 10
             },
             health: 500,
             limit: 15,
@@ -112,8 +112,8 @@ const itemInfo = {
             name: "Healing Pad",
             description: "Standing on it will slowly heal you",
             cost: {
-                wood: 30,
-                food: 10
+                Wood: 30,
+                Stone: 10
             },
             health: 400,
             limit: 4,
@@ -125,10 +125,10 @@ const itemInfo = {
             type: "Resource",
             age: 4,
             name: "Stone Mine",
-            description: "Allow you mine stone",
+            description: "Allow you mine Stone",
             cost: {
-                wood: 20,
-                stone: 100
+                Wood: 20,
+                Stone: 100
             },
             health: -1,
             limit: 1,
@@ -138,12 +138,12 @@ const itemInfo = {
         {
             id: "i7",
             type: "PitTrap",
-            age: 1, //4
+            age: 4,
             name: "Pit Trap",
             description: "Pit that trap enemies if they walk over it",
             cost: {
-                wood: 30,
-                stone: 30
+                Wood: 30,
+                Stone: 30
             },
             health: 500,
             limit: 6,
@@ -157,7 +157,7 @@ const itemInfo = {
             name: "Platform",
             description: "Platform to shoot over walls and cross over water",
             cost: {
-                wood: 20
+                Wood: 20
             },
             health: 300,
             limit: 12,
@@ -172,8 +172,8 @@ const itemInfo = {
             damage: 35,
             description: "Poisons enemies when they touch them",
             cost: {
-                wood: 20,
-                stone: 15
+                Wood: 20,
+                Stone: 15
             },
             health: 600,
             limit: 15,
@@ -188,8 +188,8 @@ const itemInfo = {
             name: "Power Mill",
             description: "Generates more gold over time",
             cost: {
-                wood: 100,
-                stone: 50
+                Wood: 100,
+                Stone: 50
             },
             gold: 2,
             xp: 2,
@@ -204,9 +204,9 @@ const itemInfo = {
             type: "Resource",
             age: 4,
             name: "Sapling",
-            description: "Allows you to farm wood",
+            description: "Allows you to farm Wood",
             cost: {
-                wood: 150
+                Wood: 150
             },
             health: -1,
             limit: 7,
@@ -220,8 +220,8 @@ const itemInfo = {
             name: "Spawn Pad",
             description: "You will spawn here when you die but it will disappear",
             cost: {
-                wood: 100,
-                stone: 100
+                Wood: 100,
+                Stone: 100
             },
             health: 400,
             limit: 1,
@@ -236,7 +236,7 @@ const itemInfo = {
             damage: 20,
             description: "Damages enemies when they touch them",
             cost: {
-                wood: 20
+                Wood: 20
             },
             health: 375,
             limit: 15,
@@ -251,8 +251,8 @@ const itemInfo = {
             damage: 45,
             description: "Damages enemies when they touch them",
             cost: {
-                wood: 30,
-                stone: 20
+                Wood: 30,
+                Stone: 20
             },
             health: 500,
             limit: 15,
@@ -267,7 +267,7 @@ const itemInfo = {
             name: "Stone Wall",
             description: "Provies improved protection for your village",
             cost: {
-                stone: 25
+                Stone: 25
             },
             health: 900,
             limit: 30,
@@ -280,8 +280,8 @@ const itemInfo = {
             name: "Teleporter",
             description: "Teleports you to a random spot on the map",
             cost: {
-                wood: 60,
-                stone: 60
+                Wood: 60,
+                Stone: 60
             },
             health: 200,
             limit: 2,
@@ -295,8 +295,8 @@ const itemInfo = {
             name: "Turret",
             description: "Defensive structures that shoot at enemies",
             cost: {
-                wood: 200,
-                stone: 150
+                Wood: 200,
+                Stone: 150
             },
             health: 800,
             limit: 2,
@@ -310,8 +310,8 @@ const itemInfo = {
             name: "Windmill",
             description: "Generates gold overtime",
             cost: {
-                wood: 50,
-                stone: 10
+                Wood: 50,
+                Stone: 10
             },
             gold: 1,
             xp: 1,
@@ -327,7 +327,7 @@ const itemInfo = {
             name: "Wood Wall",
             description: "Provides protection for your village",
             cost: {
-                wood: 10
+                Wood: 10
             },
             health: 380,
             limit: 30,
@@ -342,7 +342,7 @@ const itemInfo = {
             description: "Restores 20 health when consumed",
             restore: 20,
             cost: {
-                food: 10
+                Food: 10
             }
         },
         {
@@ -353,7 +353,7 @@ const itemInfo = {
             description: "Restores 40 health when consumed",
             restore: 40,
             cost: {
-                food: 15
+                Food: 15
             }
         },
     ]

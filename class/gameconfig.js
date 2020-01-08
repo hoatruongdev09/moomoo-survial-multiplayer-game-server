@@ -4,7 +4,7 @@ const gameConfig = {
     maxPlayer: 50,
     mapsize: new Victor(150, 150),
     playerSpeed: 7,
-    defaultResourceRadius: 4,
+    defaultResourceRadius: 3.5,
     playColliderRadius: 1.5,
     maxNameLength: 15,
 

@@ -22,7 +22,7 @@ class Resource {
 
 const ResourceType = {
     Wood: 0,
-    Rock: 1,
+    Stone: 1,
     Gold: 2,
     Food: 3
 }

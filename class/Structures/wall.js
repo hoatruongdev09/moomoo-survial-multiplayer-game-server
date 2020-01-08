@@ -34,7 +34,6 @@ class GameWall {
         return "Wall"
     }
     takeDamge(damage) {
-        console.log("took damage: ", damage, " remain hp: ", this.hp)
         this.hp -= damage
         if (this.hp <= 0) {
             this.destroy()

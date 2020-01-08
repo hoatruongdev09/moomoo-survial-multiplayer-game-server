@@ -43,7 +43,7 @@ class Game {
         this.resources = new Array(this.gameConfig.resourceCount())
         this.initializeResource(0, this.gameConfig.woodCount, ResourceType.Wood)
         this.initializeResource(10, this.gameConfig.foodCount, ResourceType.Food)
-        this.initializeResource(20, this.gameConfig.rockCount, ResourceType.Rock)
+        this.initializeResource(20, this.gameConfig.rockCount, ResourceType.Stone)
         this.initializeResource(30, this.gameConfig.goldCount, ResourceType.Gold)
     }
     initializeResource(startId, count, type) {
@@ -148,6 +148,20 @@ class Game {
             weapons: [mainWeapon, null],
             items: items
         }
+    }
+    getItemsByLevel(level) {
+        let weapons = WeaponInfo.getInfoByAge(level)
+        let items = ItemInfo.getInfoByAge(level)
+        return {
+            weapons: weapons,
+            items: items
+        }
+    }
+    getWeaponByCode(code) {
+        return WeaponInfo.getInfoByStringId(code)
+    }
+    getItemByCode(code) {
+        return ItemInfo.getInfoByStringId(code)
     }
     playerJoin(player) {
         let tempPosition = this.map.randomPosition()
@@ -295,10 +309,7 @@ class Game {
             if (this.players[idFrom] != null && this.players[idFrom].isJoinedGame) {
                 this.players[idFrom].kills++
                 this.players[idFrom].scores += 25
-                this.players[idFrom].send(gamecode.playerStatus, {
-                    score: this.players[idFrom].scores,
-                    kills: this.players[idFrom].kills
-                })
+                this.players[idFrom].updateStatus()
             }
         } else {
             this.broadcast(gamecode.playerHit, {
@@ -318,10 +329,7 @@ class Game {
             if (this.players[idFrom] != null && this.player[idFrom].isJoinedGame) {
                 this.players[idFrom].kills++
                 this.players[idFrom].scores += 25
-                this.players[idFrom].send(gamecode.playerStatus, {
-                    score: this.players[idFrom].scores,
-                    kills: this.players[idFrom].kills
-                })
+                this.players[idFrom].updateStatus()
             }
         } else {
             this.broadcast(gamecode.playerHit, {
@@ -360,14 +368,17 @@ class Game {
         }
         structure.takeDamge(damage)
         if (structure.hp <= 0) {
-            console.log("remove structure")
             this.removeStructure(structure.id)
         }
     }
-    playerAttackResource(idPlayer, idResource, damage) {
-        let result = this.resources[idResource].reward(damage)
-        let key = this.getKeyByValue(ResourceType, result.idType)
-        this.players[idPlayer].receiveResource(result.amount, key)
+    playerAttackResource(idPlayer, idResource, weapon) {
+        let key = this.getKeyByValue(ResourceType, this.resources[idResource].idType)
+        if (key == "Gold") {
+            this.players[idPlayer].addGold(weapon.info.goldGatherRate)
+        } else {
+            this.players[idPlayer].receiveResource(weapon.info.gatherRate, key)
+        }
+        this.players[idPlayer].addXP(weapon.info.goldGatherRate)
     }
 
     getKeyByValue(object, value) {
@@ -425,20 +436,25 @@ class Game {
                 this.structures[i].destroy()
                 this.structures.splice(i, 1)
                 this.broadcast(gamecode.removeStructures, {
-                    id: id,
+                    id: [id],
                 })
                 return;
             }
         }
     }
     removePlayerStructures(idPlayer) {
+        let data = []
         for (let i = 0; i < this.structures.length; i++) {
             if (this.structures[i].userId == idPlayer) {
                 this.structures[i].destroy()
                 this.structures.splice(i, 1)
+                data.push(i)
                 i--
             }
         }
+        this.broadcast(gamecode.removeStructures, {
+            id: data
+        })
     }
 
     // meleeAttack(player, direct, item) {

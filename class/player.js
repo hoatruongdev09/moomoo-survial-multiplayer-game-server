@@ -1,15 +1,14 @@
 const ServerCode = require('../transmitcode').ServerCode
 const GameCode = require('../transmitcode').GameCode
 
-const Mathf = require('mathf')
+
 const Vector = require('../GameUtils/vector')
 const SAT = require('sat')
 
 const Melee = require('./weapon/melee')
 const Item = require('./Items/item')
 
-const WeaponInfo = require('./weapon/weaponInfo')
-const WeaponType = require('./weapon/weaponType')
+const levelDescription = require('./levelInfo')
 class Player {
     constructor(idServer, server, socket) {
         // SERVER IDENTITIES 
@@ -55,8 +54,15 @@ class Player {
         this.healthPoint = 100
         this.kills = 0
         this.scores = 0
-        this.xp = 0
-        this.level = 1
+
+        this.levelInfo = {
+            xp: 0,
+            level: 1,
+            reset() {
+                this.xp = 0
+                this.level = 1
+            }
+        }
 
         this.basicResources = {
             Wood: 0,
@@ -99,7 +105,7 @@ class Player {
         this.healthPoint = 100
         this.kills = 0
         this.scores = 0
-
+        this.levelInfo.reset()
         this.basicResources.reset()
 
         this.onwedItems = data.items.items
@@ -110,8 +116,15 @@ class Player {
         clearInterval(this.intervalAutoAttack)
 
         this.structures.reset()
+        if (this.bodyCollider == null) {
+            this.bodyCollider = new SAT.Circle(new SAT.Vector(this.position.x, this.position.syncLookDirect), data.bodyRadius)
 
-        this.bodyCollider = new SAT.Circle(new SAT.Vector(this.position.x, this.position.syncLookDirect), data.bodyRadius)
+        } else {
+            this.bodyCollider.pos.x = this.position.x
+            this.bodyCollider.pos.y = this.position.y
+            // this.bodyCollider = new SAT.Circle(new SAT.Vector(this.position.x, this.position.syncLookDirect), data.bodyRadius)
+        }
+        this.updateStatus();
     }
     createWeapon(info) {
         if (info.type == "Melee") {
@@ -178,12 +191,10 @@ class Player {
         }
     }
     onHitStructure(response, object, objectInfo) {
-        console.log("hit structure: ", objectInfo)
         this.game.playerAttackStructure(this.idGame, objectInfo.id, this.currentItem.info.structureDamge)
     }
     onHitResource(response, object, objectInfo) {
-        console.log("hit resource: ", objectInfo)
-        this.game.playerAttackResource(this.idGame, objectInfo.id, this.currentItem.info.gatherRate)
+        this.game.playerAttackResource(this.idGame, objectInfo.id, this.currentItem)
     }
     checkAttackToPlayer() {
         this.playersView = this.game.getPlayersFromView(this.position)
@@ -225,6 +236,7 @@ class Player {
         this.socket.on(GameCode.triggerAttack, (data) => this.useItem(data))
         this.socket.on(GameCode.triggerAutoAttack, (data) => this.autoAttack(data))
         this.socket.on(GameCode.switchItem, (data) => this.switchItem(data))
+        this.socket.on(GameCode.upgradeItem, (data) => this.upgradeItem(data))
     }
 
     OnJoin(data) {
@@ -258,7 +270,6 @@ class Player {
 
     }
     autoAttack(data) {
-        console.log("auto attack: ", this.isAutoAttack)
         if (this.currentItem.toString() == "Melee") {
             this.isAutoAttack = data.action
             if (!this.isAutoAttack) {
@@ -286,12 +297,13 @@ class Player {
         if (this.currentItem.info.id == data.code) {
             return;
         }
-        if (data.type == "w") {
+        let type = data.code.charAt(0)
+        if (type == "w") {
             let weapon = this.findWeapon(data.code)
             if (weapon != null) {
                 this.currentItem = this.createWeapon(weapon)
             }
-        } else if (data.type == "i") {
+        } else if (type == "i") {
             let item = this.findItem(data.code)
             if (item != null) {
                 this.currentItem = this.createItem(item)
@@ -302,6 +314,44 @@ class Player {
             id: this.idGame,
             item: this.currentItem.info.id
         })
+    }
+    upgradeItem(data) {
+        // console.log("weapon: ", this.weapons)
+        let type = data.code.charAt(0)
+        if (type == "w") {
+            let info = this.game.getWeaponByCode(data.code)
+            if (info.main) {
+                this.weapons[0] = info
+            } else {
+                this.weapons[1] = info
+            }
+            this.currentItem = this.createWeapon(info)
+        } else if (type == "i") {
+            let info = this.game.getItemByCode(data.code)
+            this.onwedItems.push(info)
+            this.currentItem = this.createItem(info)
+        }
+        this.game.broadcast(GameCode.switchItem, {
+            id: this.idGame,
+            item: this.currentItem.info.id
+        })
+        this.send(GameCode.syncItem, {
+            items: this.getCurrentItems()
+        })
+    }
+
+    getCurrentItems() {
+        let data = []
+        console.log("this weapons: ", this.weapons)
+        console.log("this item: ", this.onwedItems)
+        this.weapons.forEach(w => {
+            if (w != null)
+                data.push(w.id)
+        })
+        this.onwedItems.forEach(i => {
+            data.push(i.id)
+        })
+        return data
     }
     findWeapon(id) {
         let weapon = null
@@ -344,15 +394,48 @@ class Player {
     }
     receiveResource(amount, type) {
         this.basicResources[type] += amount
-        console.log("resource: ", this.basicResources)
     }
     addGold(value) {
-        this.gold += value
+        this.basicResources.Gold += value
         this.scores += value
     }
     addXP(value) {
-        this.xp += value
-        console.log("this xp: ", this.xp, "this.is joied: ", this.isJoinedGame)
+        this.levelInfo.xp += value
+        if (this.levelInfo.xp >= levelDescription[this.levelInfo.level].nextLevelUpXp) {
+            this.levelInfo.level++
+            this.levelInfo.xp = 0
+            this.onLevelUp()
+        }
+        this.updateStatus()
+    }
+    onLevelUp() {
+        let lvUpItem = []
+        let itemByLevel = this.game.getItemsByLevel(this.levelInfo.level)
+        itemByLevel.weapons.forEach(w => {
+            if (w != null) {
+                lvUpItem.push(w.id)
+            }
+        })
+        itemByLevel.items.forEach(i => {
+            if (i != null) {
+                lvUpItem.push(i.id)
+            }
+        })
+        this.send(GameCode.upgradeItem, {
+            items: lvUpItem
+        })
+    }
+    updateStatus() {
+        this.send(GameCode.playerStatus, {
+            scores: this.scores,
+            kills: this.kills,
+            level: this.levelInfo.level,
+            xp: this.levelInfo.xp / levelDescription[this.levelInfo.level].nextLevelUpXp,
+            wood: this.basicResources.Wood,
+            food: this.basicResources.Food,
+            stone: this.basicResources.Stone,
+            gold: this.basicResources.Gold
+        })
     }
     // Transmit
     send(event, args) {

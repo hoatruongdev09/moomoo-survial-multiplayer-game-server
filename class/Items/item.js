@@ -28,11 +28,31 @@ class Item {
 
     use(player, direct) {
         if (this.item != null) {
-            // console.log("current count: ", player.structures[this.info.type], ", limit: ", this.info.limit)
-            if (player.structures[this.info.type] < this.info.limit) {
-                this.item.use(player, direct)
+            if (this.checkPlayerCanUseItem(player)) {
+                this.useItem(player, direct)
             }
         }
+    }
+    useItem(player, direct) {
+        let keys = Object.keys(this.info.cost)
+        keys.forEach(k => {
+            player.basicResources[k] -= this.info.cost[k]
+        })
+        player.updateStatus()
+        this.item.use(player, direct)
+    }
+    checkPlayerCanUseItem(player) {
+        let keys = Object.keys(this.info.cost)
+        let result = true
+        keys.forEach(k => {
+            if (player.basicResources[k] < this.info.cost[k]) {
+                result = false
+            }
+        })
+        if (player.structures[this.info.type] >= this.info.limit) {
+            result = false
+        }
+        return result
     }
 }
 module.exports = Item

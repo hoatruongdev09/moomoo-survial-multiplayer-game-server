@@ -24,7 +24,10 @@ const gamecode = {
 
     switchItem: "swtItm",
     spawnnStructures: "spwnStrc",
-    removeStructures: "rmvStrc"
+    removeStructures: "rmvStrc",
+
+    upgradeItem: "ugdItem",
+    syncItem: "syncItem"
 }
 
 module.exports = {
