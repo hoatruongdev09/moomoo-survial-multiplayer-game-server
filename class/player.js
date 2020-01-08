@@ -317,18 +317,13 @@ class Player {
     }
     upgradeItem(data) {
         // console.log("weapon: ", this.weapons)
-        let type = data.code.charAt(0)
-        if (type == "w") {
+        let itemType = data.code.charAt(0)
+        if (itemType == "w") {
             let info = this.game.getWeaponByCode(data.code)
-            if (info.main) {
-                this.weapons[0] = info
-            } else {
-                this.weapons[1] = info
-            }
-            this.currentItem = this.createWeapon(info)
-        } else if (type == "i") {
+            this.upgradeWeapon(info)
+        } else if (itemType == "i") {
             let info = this.game.getItemByCode(data.code)
-            this.onwedItems.push(info)
+            this.upgradeOwnedItem(info)
             this.currentItem = this.createItem(info)
         }
         this.game.broadcast(GameCode.switchItem, {
@@ -339,11 +334,27 @@ class Player {
             items: this.getCurrentItems()
         })
     }
-
+    upgradeWeapon(info) {
+        if (info.main) {
+            this.weapons[0] = info
+        } else {
+            this.weapons[1] = info
+        }
+        this.currentItem = this.createWeapon(info)
+    }
+    upgradeOwnedItem(info) {
+        if (info.type == "Windmill" || info.type == "Wall" || info.type == "Spike" || info.type == "Consume") {
+            for (let i = 0; i < this.onwedItems.length; i++) {
+                if (this.onwedItems[i].type == info.type) {
+                    this.onwedItems.splice(i, 1)
+                    break
+                }
+            }
+        }
+        this.onwedItems.push(info)
+    }
     getCurrentItems() {
         let data = []
-        console.log("this weapons: ", this.weapons)
-        console.log("this item: ", this.onwedItems)
         this.weapons.forEach(w => {
             if (w != null)
                 data.push(w.id)
