@@ -4,6 +4,8 @@ const Spike = require('./spike')
 const Wall = require('./wall')
 const Windmill = require('./windmill')
 const PitTrap = require('./pittrap')
+const BoostPad = require('./boostpad')
+const HealingPad = require('./healingpad')
 
 class Item {
     constructor(info) {
@@ -23,6 +25,16 @@ class Item {
         }
         if (this.info.type == "PitTrap") {
             this.item = new PitTrap(this.info)
+        }
+        if (this.info.type == "Pad") {
+            if (this.info.name == "Boost Pad") {
+                this.item = new BoostPad(this.info)
+                return
+            }
+            if (this.info.name == "Healing Pad") {
+                this.item = new HealingPad(this.info)
+                return
+            }
         }
     }
 

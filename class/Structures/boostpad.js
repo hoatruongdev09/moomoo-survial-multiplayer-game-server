@@ -1,30 +1,24 @@
 const SAT = require('sat')
 
-
-class GameSpike {
-    constructor(id, userId, position, info) {
+class GameBoostPad {
+    constructor(id, userId, position, info, direct) {
         this.id = id
         this.userId = userId
         this.position = position
         this.hp = info.health
         this.size = info.size
         this.itemId = info.id
-        this.damage = info.damage
-
-
+        this.direct = direct
+        this.force = info.force
         this.bodyCollider
         this.initCollider()
     }
-    // constructor(id, userId, itemId, position, size, hp) {
-    //     this.id = id
-    //     this.userId = userId
-    //     this.position = position
-    //     this.size = size
-    //     this.hp = hp
-    //     this.itemId = itemId
-
-    //     this.bodyCollider
-    //     this.initCollider()
+    // effect(player) {
+    //     this.pushPlayer(player)
+    // }
+    // pushPlayer(player) {
+    //     let destinatePosition = this.position.clone().add(this.direct.scale(this.force))
+    //     player.position.add(destinatePosition)
     // }
     initCollider() {
         this.bodyCollider = new SAT.Circle(new SAT.Vector(this.position.x, this.position.y), this.size)
@@ -33,7 +27,7 @@ class GameSpike {
 
     }
     toString() {
-        return "Spike"
+        return "BoostPad"
     }
     takeDamge(damage) {
         this.hp -= damage
@@ -42,8 +36,7 @@ class GameSpike {
         }
     }
     get rotation() {
-        return 0
+        return Math.atan2(this.direct.y, this.direct.x)
     }
 }
-
-module.exports = GameSpike
+module.exports = GameBoostPad

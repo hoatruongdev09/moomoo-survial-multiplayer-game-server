@@ -82,12 +82,16 @@ class Player {
             Windmill: 0,
             Spike: 0,
             PitTrap: 0,
+            BoostPad: 0,
+            HealingPad: 0,
 
             reset() {
                 this.Windmill = 0
                 this.Wall = 0
                 this.Spike = 0
                 this.PitTrap = 0
+                this.BoostPad = 0
+                this.HealingPad = 0
             }
         }
 
@@ -124,7 +128,8 @@ class Player {
             this.bodyCollider.pos.y = this.position.y
             // this.bodyCollider = new SAT.Circle(new SAT.Vector(this.position.x, this.position.syncLookDirect), data.bodyRadius)
         }
-        this.updateStatus();
+        this.updateStatus()
+        this.syncItem()
     }
     createWeapon(info) {
         if (info.type == "Melee") {
@@ -175,7 +180,6 @@ class Player {
     }
     checkColliderWithStructures() {
         this.structuresView = this.game.getStructureFromView(this.position)
-
         for (const s of this.structuresView) {
             this.game.testCollisionCircle2Cirle(this, s, (response, objectCollide) => this.onCollisionWithStructures(response, objectCollide, s))
         }
@@ -194,6 +198,7 @@ class Player {
         this.game.playerAttackStructure(this.idGame, objectInfo.id, this.currentItem.info.structureDamge)
     }
     onHitResource(response, object, objectInfo) {
+        console.log("respone: ", objectInfo)
         this.game.playerAttackResource(this.idGame, objectInfo.id, this.currentItem)
     }
     checkAttackToPlayer() {
@@ -203,6 +208,7 @@ class Player {
         }
     }
     onHitPlayer(response, object, objectInfo) {
+        // console.log("hit player: ", objectInfo.id)
         if (objectInfo.id != this.idGame) {
             this.game.playerHitPlayer(this.idGame, objectInfo.id, this.currentItem)
         }
@@ -240,6 +246,8 @@ class Player {
     }
 
     OnJoin(data) {
+        // console.log("on join: ", data)
+        this.skinId = data.skinId
         this.server.playerJoinGame(this, data)
     }
     OnRecievedGameData(data) {
@@ -330,6 +338,9 @@ class Player {
             id: this.idGame,
             item: this.currentItem.info.id
         })
+        this.syncItem()
+    }
+    syncItem() {
         this.send(GameCode.syncItem, {
             items: this.getCurrentItems()
         })

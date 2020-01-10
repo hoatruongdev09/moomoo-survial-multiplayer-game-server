@@ -53,5 +53,8 @@ class GamePitTrap {
             this.destroy()
         }
     }
+    get rotation() {
+        return 0
+    }
 }
 module.exports = GamePitTrap

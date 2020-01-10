@@ -2,6 +2,7 @@ const Mathf = require('mathf')
 
 class Map {
     constructor(size, offset) {
+        console.log("init size: ", size);
         this.size = size
         this.offset = offset
     }
@@ -22,17 +23,29 @@ class Map {
         let newPosition = position
         if (position.x < 0) {
             newPosition.x = 0 + this.offset.x
-        } else if (position.x > this.mapSize.x) {
-            newPosition.x = this.mapSize.x - this.offset.x
+        } else if (position.x > this.size.x) {
+            newPosition.x = this.size.x - this.offset.x
         }
         if (position.y < 0) {
             newPosition.y = 0 + this.offset.y
-        } else if (position.y > this.mapSize.y) {
-            newPosition.y = this.mapSize.y - this.offset.y
+        } else if (position.y > this.size.y) {
+            newPosition.y = this.size.y - this.offset.y
         }
         return newPosition
     }
-
+    clampPositionToMap(position) {
+        if (position.x < this.offset.x) {
+            position.x = this.offset.x
+        } else if (position.x > this.size.x - this.offset.x) {
+            position.x = this.size.x - this.offset.x
+        }
+        if (position.y < this.offset.y) {
+            position.y = this.offset.y
+        } else if (position.y > this.size.y - this.offset.y) {
+            position.y = this.size.y - this.offset.y
+        }
+        return position
+    }
 }
 
 module.exports = Map

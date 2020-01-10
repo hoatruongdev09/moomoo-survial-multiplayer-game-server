@@ -36,6 +36,9 @@ class GameWindmill {
             this.destroy()
         }
     }
+    get rotation() {
+        return 0
+    }
 }
 
 module.exports = GameWindmill

@@ -10,6 +10,7 @@ class GameWall {
         this.hp = info.health
         this.itemId = info.id
 
+
         this.bodyCollider
         this.initCollider()
     }
@@ -38,6 +39,9 @@ class GameWall {
         if (this.hp <= 0) {
             this.destroy()
         }
+    }
+    get rotation() {
+        return 0
     }
 }
 

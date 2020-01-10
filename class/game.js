@@ -35,6 +35,8 @@ class Game {
         this.physic = new PhysicEngine()
         this.init()
     }
+    /* #region  INITIALIZE  */
+
     init() {
         this.players = new Array(this.gameConfig.maxPlayer)
         this.initializeResources()
@@ -52,7 +54,9 @@ class Game {
             this.resources[i] = rs
         }
     }
+    /* #endregion */
 
+    /* #region  PLAYER MANAGER */
     isFull() {
         return this.currentPlayerCount >= this.gameConfig.maxPlayer
     }
@@ -82,86 +86,10 @@ class Game {
             player.name = data.name
             player.game = this
             player.idGame = slot
-            player.skinId = data.skinId
             player.send(gamecode.gameData, this.getCurrentGameData())
         } else {
             console.log("game slot is null")
         }
-    }
-    getCurrentGameData() {
-        let gameData = {
-            maxPlayer: this.gameConfig.maxPlayer,
-            resource: this.getResourceInfo(),
-            players: this.getPlayersInfo(),
-            structures: this.getStructuresInfo()
-        }
-
-        return gameData
-    }
-    getPlayersInfo() {
-        let data = []
-        this.players.forEach(p => {
-            if (p != null && p.isJoinedGame) {
-                data.push({
-                    id: p.idGame,
-                    name: p.name,
-                    skinId: p.skinId,
-                    pos: {
-                        x: p.position.x,
-                        y: p.position.y
-                    }
-                })
-            }
-        })
-        return data
-    }
-    getStructuresInfo() {
-        let data = []
-        this.structures.forEach(item => {
-            data.push({
-                id: item.id,
-                itemId: item.itemId,
-                position: {
-                    x: item.position.x,
-                    y: item.position.y
-                }
-            })
-        })
-        return data
-    }
-    getResourceInfo() {
-        let data = []
-        this.resources.forEach(r => {
-            data.push({
-                id: r.id,
-                type: r.idType,
-                pos: r.position
-            })
-        })
-        return data
-    }
-    getStarterPack() {
-        let mainWeapon = WeaponInfo.getInfoByStringId("w0")
-        let items = ItemInfo.getInfoByAge(1)
-
-        return {
-            weapons: [mainWeapon, null],
-            items: items
-        }
-    }
-    getItemsByLevel(level) {
-        let weapons = WeaponInfo.getInfoByAge(level)
-        let items = ItemInfo.getInfoByAge(level)
-        return {
-            weapons: weapons,
-            items: items
-        }
-    }
-    getWeaponByCode(code) {
-        return WeaponInfo.getInfoByStringId(code)
-    }
-    getItemByCode(code) {
-        return ItemInfo.getInfoByStringId(code)
     }
     playerJoin(player) {
         let tempPosition = this.map.randomPosition()
@@ -201,11 +129,6 @@ class Game {
         }
         return null
     }
-
-    update(deltaTime) {
-        this.updatePlayers(deltaTime)
-        this.syncPlayerPosition()
-    }
     updatePlayers(deltaTime) {
         this.players.forEach(p => {
             if (p != null && p.isJoinedGame) {
@@ -220,6 +143,7 @@ class Game {
         this.players.forEach(p => {
             if (p != null && p.isJoinedGame) {
                 if (p.lastMovement != null) {
+                    p.position = this.map.clampPositionToMap(p.position)
                     positionData.push({
                         id: p.idGame,
                         pos: {
@@ -241,7 +165,6 @@ class Game {
             rot: lookData
         })
     }
-
     getPlayersFromView(position) {
         let viewObjects = []
         let temp = new Vector(0, 0)
@@ -260,6 +183,99 @@ class Game {
         })
         return viewObjects
     }
+
+    /* #endregion */
+
+    /* #region  GAME DATA */
+    getCurrentGameData() {
+        let gameData = {
+            maxPlayer: this.gameConfig.maxPlayer,
+            mapSize: {
+                x: this.gameConfig.mapsize.x,
+                y: this.gameConfig.mapsize.y
+            },
+            resource: this.getResourceInfo(),
+            players: this.getPlayersInfo(),
+            structures: this.getStructuresInfo()
+        }
+
+        return gameData
+    }
+    getPlayersInfo() {
+        let data = []
+        this.players.forEach(p => {
+            if (p != null && p.isJoinedGame) {
+                data.push({
+                    id: p.idGame,
+                    name: p.name,
+                    skinId: p.skinId,
+                    pos: {
+                        x: p.position.x,
+                        y: p.position.y
+                    }
+                })
+            }
+        })
+        return data
+    }
+    getStructuresInfo() {
+        let data = []
+        this.structures.forEach(item => {
+            data.push({
+                id: item.id,
+                itemId: item.itemId,
+                pos: {
+                    x: item.position.x,
+                    y: item.position.y
+                },
+                rot: item.rotation
+            })
+        })
+        return data
+    }
+    getResourceInfo() {
+        let data = []
+        this.resources.forEach(r => {
+            data.push({
+                id: r.id,
+                type: r.idType,
+                pos: r.position
+            })
+        })
+        return data
+    }
+    /* #endregion */
+    /* #region  GAME WEAPON AND STRUCTURE */
+
+    getStarterPack() {
+        let mainWeapon = WeaponInfo.getInfoByStringId("w0")
+        let items = ItemInfo.getInfoByAge(1)
+
+        return {
+            weapons: [mainWeapon, null],
+            items: items
+        }
+    }
+    getItemsByLevel(level) {
+        let weapons = WeaponInfo.getInfoByAge(level)
+        let items = ItemInfo.getInfoByAge(level)
+        return {
+            weapons: weapons,
+            items: items
+        }
+    }
+    getWeaponByCode(code) {
+        return WeaponInfo.getInfoByStringId(code)
+    }
+    getItemByCode(code) {
+        return ItemInfo.getInfoByStringId(code)
+    }
+    /* #endregion */
+    update(deltaTime) {
+        this.updatePlayers(deltaTime)
+        this.syncPlayerPosition()
+    }
+    /* #region  GAME EVIROMENT VIEW */
     getResourceFromView(position) {
         let viewObjects = []
         let temp = new Vector(0, 0)
@@ -291,13 +307,17 @@ class Game {
         })
         return viewObjects
     }
+    /* #endregion */
+
+    /* #region  COLLIDER TESTER */
     testCollisionCircle2Cirle(object1, object2, response) {
         return this.physic.testCircle2Cirle(object1.bodyCollider, object2.bodyCollider, response)
     }
     testCollisionPoligon2Cirle(poliObj, circleObj, response) {
         return this.physic.testPoligon2Cirle(poliObj.bodyCollider, circleObj.bodyCollider, response)
     }
-
+    /* #endregion */
+    /* #region   COLLISION CHECK*/
     playerHitPlayer(idFrom, idTarget, weapon) {
         this.players[idTarget].healthPoint -= weapon.info.damage
         if (this.players[idTarget].healthPoint <= 0) {
@@ -312,10 +332,10 @@ class Game {
                 this.players[idFrom].updateStatus()
             }
         } else {
-            this.broadcast(gamecode.playerHit, {
+            this.syncPlayerHealthpoint([{
                 id: idTarget,
                 hp: this.players[idTarget].healthPoint
-            })
+            }])
         }
     }
     playerStructureHitPlayer(idFrom, idTarget, damage) {
@@ -332,21 +352,39 @@ class Game {
                 this.players[idFrom].updateStatus()
             }
         } else {
-            this.broadcast(gamecode.playerHit, {
+            this.syncPlayerHealthpoint([{
                 id: idTarget,
                 hp: this.players[idTarget].healthPoint
-            })
+            }])
+            // this.broadcast(gamecode.playerHit, {
+            //     data: [{
+            //         id: idTarget,
+            //         hp: this.players[idTarget].healthPoint
+            //     }]
+            // })
         }
+    }
+    syncPlayerHealthpoint(data) {
+        this.broadcast(gamecode.playerHit, {
+            data: data
+        })
     }
     playerHitStructures(idFrom, idStructure) {
         let structure = this.findStructureWithId(idStructure)
         if (structure == null) {
             return
         }
+        if (structure.toString() == "BoostPad") {
+            this.pushPlayerBack(this.players[idFrom], structure.direct, structure.force)
+            return
+        }
+        if (structure.toString() == "HealingPad") {
+            structure.healPlayer(this.players[idFrom])
+            return
+        }
         if (structure.userId == idFrom) {
             return
         }
-
         if (structure.toString() == "Spike") {
             this.playerStructureHitPlayer(idStructure.userId, idFrom, structure.damage)
             this.pushPlayerBack(this.players[idFrom], this.players[idFrom].position.clone().sub(structure.position), 5)
@@ -356,6 +394,7 @@ class Game {
             structure.trapPlayer(this.players[idFrom])
             return
         }
+
 
     }
     playerAttackStructure(idPlayer, idStructure, damage) {
@@ -380,31 +419,9 @@ class Game {
         }
         this.players[idPlayer].addXP(weapon.info.goldGatherRate)
     }
+    /* #endregion */
 
-    getKeyByValue(object, value) {
-        return Object.keys(object).find(key => object[key] === value);
-    }
-
-    pushPlayerBack(player, direct, range) {
-        player.position.add(direct.unitVector.scale(range))
-        var positionData = []
-        var lookData = []
-        positionData.push({
-            id: player.idGame,
-            pos: {
-                x: player.position.x,
-                y: player.position.y
-            }
-        })
-        lookData.push({
-            id: player.idGame,
-            angle: player.lookDirect
-        })
-        this.broadcast(gamecode.syncTransform, {
-            pos: positionData,
-            rot: lookData
-        })
-    }
+    /* #region  STRUCTURE MANAGER */
     findStructureWithId(id) {
         let structure = null
         for (let s of this.structures) {
@@ -424,10 +441,11 @@ class Game {
         this.broadcast(gamecode.spawnnStructures, {
             id: item.id,
             itemId: item.itemId,
-            position: {
+            pos: {
                 x: item.position.x,
                 y: item.position.y
-            }
+            },
+            rot: item.rotation
         })
     }
     removeStructure(id) {
@@ -456,23 +474,31 @@ class Game {
             id: data
         })
     }
+    /* #endregion */
 
-    // meleeAttack(player, direct, item) {
-    //     if (!item.canUse) {
-    //         return
-    //     }
-    //     let position = player.position.clone().add(direct.clone().scale(item.info.range))
-    //     let boxCollider = new SAT.Box(new SAT.Vector(position.x, position.y), item.info.size.x, item.info.size.y).toPolygon()
-    //     boxCollider.setOffset(new SAT.Vector(-item.info.size.x / 2, -item.info.size.y / 2))
-    //     let angle = Math.atan2(direct.y, direct.x)
-    //     boxCollider.setAngle(angle)
-    //     item.canUse = false
-    //     setTimeout(() => {
-    //         item.canUse = true
-    //     }, item.info.attackSpeed)
-
-    // }
-
+    getKeyByValue(object, value) {
+        return Object.keys(object).find(key => object[key] === value);
+    }
+    pushPlayerBack(player, direct, range) {
+        player.position.add(direct.unitVector.scale(range))
+        var positionData = []
+        var lookData = []
+        positionData.push({
+            id: player.idGame,
+            pos: {
+                x: player.position.x,
+                y: player.position.y
+            }
+        })
+        lookData.push({
+            id: player.idGame,
+            angle: player.lookDirect
+        })
+        this.broadcast(gamecode.syncTransform, {
+            pos: positionData,
+            rot: lookData
+        })
+    }
     broadcast(event, args) {
         this.players.forEach(p => {
             if (p != null) {

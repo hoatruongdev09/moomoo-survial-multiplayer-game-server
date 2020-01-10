@@ -2,7 +2,6 @@ const GamePittrap = require('../Structures/pittrap')
 
 class PitTrap {
     constructor(info) {
-
         this.info = info
     }
     use(player, direct) {

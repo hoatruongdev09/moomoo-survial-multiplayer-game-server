@@ -54,7 +54,8 @@ const itemInfo = {
             health: 150,
             limit: 12,
             size: 1, // radius
-            range: 0
+            range: 4,
+            force: 15
         },
         {
             id: "i2",
@@ -67,8 +68,8 @@ const itemInfo = {
             },
             health: 1500,
             limit: 30,
-            size: 3, // radius
-            range: 0,
+            size: 3.2, // radius
+            range: 3,
             previous: "i15"
         },
         {
@@ -86,7 +87,7 @@ const itemInfo = {
             health: 500,
             limit: 7,
             size: 3, // radius
-            range: 0,
+            range: 3,
             previous: "i18"
         },
         {
@@ -103,7 +104,7 @@ const itemInfo = {
             health: 500,
             limit: 15,
             size: 3, // radius
-            range: 0,
+            range: 3,
         },
         {
             id: "i5",
@@ -117,8 +118,9 @@ const itemInfo = {
             },
             health: 400,
             limit: 4,
-            size: 3, // radius
-            range: 0
+            size: 0.7, // radius
+            range: 3,
+            rate: 15
         },
         {
             id: "i6",
@@ -133,7 +135,7 @@ const itemInfo = {
             health: -1,
             limit: 1,
             size: 3, // radius
-            range: 0,
+            range: 3,
         },
         {
             id: "i7",
@@ -148,7 +150,7 @@ const itemInfo = {
             health: 500,
             limit: 6,
             size: 0.8, // radius
-            range: 0,
+            range: 3,
         },
         {
             id: "i8",
@@ -162,7 +164,7 @@ const itemInfo = {
             health: 300,
             limit: 12,
             size: 3, // radius
-            range: 0,
+            range: 3,
         },
         {
             id: "i9",
@@ -178,7 +180,7 @@ const itemInfo = {
             health: 600,
             limit: 15,
             size: 3, // radius
-            range: 0,
+            range: 3,
             previous: "i4"
         },
         {
@@ -196,7 +198,7 @@ const itemInfo = {
             health: 800,
             limit: 7,
             size: 3, // radius
-            range: 0,
+            range: 3,
             previous: "i3"
         },
         {
@@ -209,9 +211,9 @@ const itemInfo = {
                 Wood: 150
             },
             health: -1,
-            limit: 7,
+            limit: 1,
             size: 2, // radius
-            range: 0,
+            range: 3,
         },
         {
             id: "i12",
@@ -226,7 +228,7 @@ const itemInfo = {
             health: 400,
             limit: 1,
             size: 2, // radius
-            range: 0,
+            range: 3,
         },
         {
             id: "i13",
@@ -241,7 +243,7 @@ const itemInfo = {
             health: 375,
             limit: 15,
             size: 2, // radius
-            range: 0,
+            range: 3,
         },
         {
             id: "i14",
@@ -257,7 +259,7 @@ const itemInfo = {
             health: 500,
             limit: 15,
             size: 2, // radius
-            range: 0,
+            range: 3,
             previous: "i4"
         },
         {
@@ -271,8 +273,8 @@ const itemInfo = {
             },
             health: 900,
             limit: 30,
-            size: 2, // radius
-            range: 0,
+            size: 2.3, // radius
+            range: 3,
         }, {
             id: "i16",
             type: "Pad",
@@ -286,7 +288,7 @@ const itemInfo = {
             health: 200,
             limit: 2,
             size: 2, // radius
-            range: 0,
+            range: 3,
         },
         {
             id: "i17",
@@ -301,7 +303,7 @@ const itemInfo = {
             health: 800,
             limit: 2,
             size: 2, // radius
-            range: 0,
+            range: 3,
         },
         {
             id: "i18",
@@ -318,7 +320,7 @@ const itemInfo = {
             health: 400,
             limit: 7,
             size: 2, // radius
-            range: 0,
+            range: 3,
         },
         {
             id: "i19",
