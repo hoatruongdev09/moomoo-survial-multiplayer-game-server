@@ -8,9 +8,12 @@ class Consume {
         if (player.healthPoint > 100) {
             player.healthPoint = 100
         }
+
         player.game.broadcast(gamecode.playerHit, {
-            id: player.idGame,
-            hp: player.healthPoint
+            data: [{
+                id: player.idGame,
+                hp: player.healthPoint
+            }]
         })
     }
 }

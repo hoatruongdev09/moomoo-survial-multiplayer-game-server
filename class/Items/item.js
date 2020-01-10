@@ -62,6 +62,7 @@ class Item {
             }
         })
         if (player.structures[this.info.type] >= this.info.limit) {
+            console.log("WTF");
             result = false
         }
         return result

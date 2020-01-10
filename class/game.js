@@ -332,10 +332,12 @@ class Game {
                 this.players[idFrom].updateStatus()
             }
         } else {
-            this.syncPlayerHealthpoint([{
+            let data = []
+            data.push({
                 id: idTarget,
                 hp: this.players[idTarget].healthPoint
-            }])
+            })
+            this.syncPlayerHealthpoint(data)
         }
     }
     playerStructureHitPlayer(idFrom, idTarget, damage) {
@@ -352,10 +354,12 @@ class Game {
                 this.players[idFrom].updateStatus()
             }
         } else {
-            this.syncPlayerHealthpoint([{
+            let data = []
+            data.push({
                 id: idTarget,
                 hp: this.players[idTarget].healthPoint
-            }])
+            })
+            this.syncPlayerHealthpoint(data)
             // this.broadcast(gamecode.playerHit, {
             //     data: [{
             //         id: idTarget,

@@ -198,7 +198,6 @@ class Player {
         this.game.playerAttackStructure(this.idGame, objectInfo.id, this.currentItem.info.structureDamge)
     }
     onHitResource(response, object, objectInfo) {
-        console.log("respone: ", objectInfo)
         this.game.playerAttackResource(this.idGame, objectInfo.id, this.currentItem)
     }
     checkAttackToPlayer() {
