@@ -27,7 +27,11 @@ const gamecode = {
     removeStructures: "rmvStrc",
 
     upgradeItem: "ugdItem",
-    syncItem: "syncItem"
+    syncItem: "syncItem",
+
+    createProjectile: "prjti0",
+    removeProjectile: "prjti1",
+    syncPositionProjectile: "prjtiUp"
 }
 
 module.exports = {

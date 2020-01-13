@@ -6,6 +6,7 @@ const Vector = require('../GameUtils/vector')
 const SAT = require('sat')
 
 const Melee = require('./weapon/melee')
+const Ranged = require('./weapon/ranged')
 const Item = require('./Items/item')
 
 const levelDescription = require('./levelInfo')
@@ -75,7 +76,8 @@ class Player {
             }
         }
         // EFFECT
-        this.speedModifier = 1;
+        this.speedModifier = 1
+        this.inviromentSpeedModifier = 1
         // STRUCTURES
         this.structures = {
             Wall: 0,
@@ -84,6 +86,8 @@ class Player {
             PitTrap: 0,
             BoostPad: 0,
             HealingPad: 0,
+            MineStone: 0,
+            Sapling: 0,
 
             reset() {
                 this.Windmill = 0
@@ -92,6 +96,8 @@ class Player {
                 this.PitTrap = 0
                 this.BoostPad = 0
                 this.HealingPad = 0
+                this.MineStone = 0
+                this.Sapling = 0
             }
         }
 
@@ -135,6 +141,9 @@ class Player {
         if (info.type == "Melee") {
             return new Melee(info)
         }
+        if (info.type == "Ranged") {
+            return new Ranged(info)
+        }
     }
     createItem(info) {
         return new Item(info)
@@ -152,9 +161,21 @@ class Player {
             Math.sin(this.lastMovement)
         )
 
-        this.position.add(this.moveDirect.clone().scale(this.moveSpeed * this.speedModifier * deltaTime))
+        this.position.add(this.moveDirect.clone().scale(this.moveSpeed * this.speedModifier * this.inviromentSpeedModifier * deltaTime))
         // console.log(this.position)
 
+        this.bodyCollider.pos.x = this.position.x
+        this.bodyCollider.pos.y = this.position.y
+
+        this.checkCollider()
+    }
+    movePlayer(direct, deltaTime) {
+        this.lastMovement = direct
+        this.moveDirect = new Vector(
+            Math.cos(this.lastMovement),
+            Math.sin(this.lastMovement)
+        )
+        this.position.add(this.moveDirect.clone().scale(this.moveSpeed * deltaTime))
         this.bodyCollider.pos.x = this.position.x
         this.bodyCollider.pos.y = this.position.y
 
@@ -195,7 +216,7 @@ class Player {
         }
     }
     onHitStructure(response, object, objectInfo) {
-        this.game.playerAttackStructure(this.idGame, objectInfo.id, this.currentItem.info.structureDamge)
+        this.game.playerAttackStructure(this.idGame, objectInfo.id, this.currentItem)
     }
     onHitResource(response, object, objectInfo) {
         this.game.playerAttackResource(this.idGame, objectInfo.id, this.currentItem)
@@ -209,11 +230,12 @@ class Player {
     onHitPlayer(response, object, objectInfo) {
         // console.log("hit player: ", objectInfo.id)
         if (objectInfo.id != this.idGame) {
-            this.game.playerHitPlayer(this.idGame, objectInfo.id, this.currentItem)
+            this.game.playerHitPlayer(this.idGame, objectInfo.id, this.currentItem.info.damage)
         }
     }
     onCollisionWithStructures(response, object, objectInfo) {
-        if (objectInfo.type == "Wall" || objectInfo.type == "Spike" || objectInfo.type == "Windmill" || objectInfo.type == "Turret") {
+        if (["Wall", "Spike", "Windmill", "Turret", "MineStone", "Sapling"].includes(objectInfo.type)) {
+            // if (objectInfo.type == "Wall" || objectInfo.type == "Spike" || objectInfo.type == "Windmill" || objectInfo.type == "Turret" || ) {
             let overlapPos = response.overlapV
             this.position.x -= overlapPos.x
             this.position.y -= overlapPos.y
@@ -264,12 +286,15 @@ class Player {
         this.lastLook = data
     }
     syncMoveDirect(data) {
-        this.lastMovement = data;
+        this.lastMovement = data
     }
     useItem(data) {
+        // console.log("current item: ", this.currentItem)
         if (this.currentItem.toString() == "Melee") {
-            this.triggerMelleAttack()
+            this.triggerMeleeAttack()
             return
+        } else if (this.currentItem.toString() == "Ranged") {
+            this.triggerRangedAttack()
         } else {
             if (data.isbtn)
                 this.triggerUseItem()
@@ -285,8 +310,13 @@ class Player {
                 this.startMeleeAutoAttack()
             }
             return
-        } else {
-
+        } else if (this.currentItem.toString() == "Ranged") {
+            this.isAutoAttack = data.action
+            if (!this.isAutoAttack) {
+                clearInterval(this.intervalAutoAttack)
+            } else {
+                this.startRangeAutoAttack()
+            }
         }
     }
     startMeleeAutoAttack() {
@@ -294,15 +324,22 @@ class Player {
             clearInterval(this.intervalAutoAttack)
         }
         this.intervalAutoAttack = setInterval(() => {
-            this.triggerMelleAttack();
+            this.triggerMeleeAttack()
         }, this.currentItem.info.attackSpeed)
     }
-
+    startRangeAutoAttack() {
+        if (this.intervalAutoAttack != null) {
+            clearInterval(this.intervalAutoAttack)
+        }
+        this.intervalAutoAttack = setInterval(() => {
+            this.triggerRangedAttack()
+        }, this.currentItem.info.attackSpeed)
+    }
     switchItem(data) {
         // console.log("swithc item: ", data)
         // console.log("last item: ", this.currentItem)
         if (this.currentItem.info.id == data.code) {
-            return;
+            return
         }
         let type = data.code.charAt(0)
         if (type == "w") {
@@ -392,7 +429,7 @@ class Player {
         })
         return item
     }
-    triggerMelleAttack() {
+    triggerMeleeAttack() {
         if (!this.currentItem.canUse) {
             return
         }
@@ -406,6 +443,15 @@ class Player {
             idGame: this.idGame,
             type: this.currentItem.idType
         })
+    }
+    triggerRangedAttack() {
+        if (!this.currentItem.canUse) {
+            return
+        }
+        let direct = new Vector(
+            -Math.cos(this.lookDirect),
+            -Math.sin(this.lookDirect))
+        this.currentItem.use(this, direct)
     }
     triggerUseItem() {
         let direct = new Vector(

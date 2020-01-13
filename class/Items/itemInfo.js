@@ -33,7 +33,7 @@ const itemInfo = {
             name: "Blocker",
             description: "Blocks building in radius",
             cost: {
-                wood: 30,
+                Wood: 30,
                 Stone: 25
             },
             health: 400,
@@ -43,7 +43,7 @@ const itemInfo = {
         },
         {
             id: "i1",
-            type: "Pad",
+            type: "BoostPad",
             age: 4,
             name: "Boost Pad",
             description: "Provides boost when stepped on",
@@ -108,7 +108,7 @@ const itemInfo = {
         },
         {
             id: "i5",
-            type: "Pad",
+            type: "HealingPad",
             age: 7,
             name: "Healing Pad",
             description: "Standing on it will slowly heal you",
@@ -124,7 +124,7 @@ const itemInfo = {
         },
         {
             id: "i6",
-            type: "Resource",
+            type: "MineStone",
             age: 4,
             name: "Stone Mine",
             description: "Allow you mine Stone",
@@ -203,7 +203,7 @@ const itemInfo = {
         },
         {
             id: "i11",
-            type: "Resource",
+            type: "Sapling",
             age: 4,
             name: "Sapling",
             description: "Allows you to farm Wood",

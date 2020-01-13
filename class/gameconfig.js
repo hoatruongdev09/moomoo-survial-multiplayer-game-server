@@ -2,10 +2,14 @@ const Victor = require('victor')
 
 const gameConfig = {
     maxPlayer: 50,
-    mapsize: new Victor(150, 150),
+    mapsize: new Victor(350, 350),
+    snowSize: 0.2, // percent
+    riverSize: 0.05, // percent
+    snowSpeedModifier: 0.6,
+    riverSpeedModifier: 0.6,
     playerSpeed: 7,
     defaultResourceRadius: 3,
-    playColliderRadius: 1.5,
+    playColliderRadius: 1,
     maxNameLength: 15,
 
     viewSize: new Victor(15, 15),

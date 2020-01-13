@@ -6,6 +6,8 @@ const Windmill = require('./windmill')
 const PitTrap = require('./pittrap')
 const BoostPad = require('./boostpad')
 const HealingPad = require('./healingpad')
+const MineStone = require('./minestone')
+const Sapling = require('./sapling')
 
 class Item {
     constructor(info) {
@@ -13,30 +15,42 @@ class Item {
         this.item = null
         if (this.info.type == "Consume") {
             this.item = new Consume(this.info)
+            return
         }
         if (this.info.type == "Wall") {
             this.item = new Wall(this.info)
+            return
         }
         if (this.info.type == "Windmill") {
             this.item = new Windmill(this.info)
+            return
         }
         if (this.info.type == "Spike") {
             this.item = new Spike(this.info)
+            return
         }
         if (this.info.type == "PitTrap") {
             this.item = new PitTrap(this.info)
+            return
         }
-        if (this.info.type == "Pad") {
-            if (this.info.name == "Boost Pad") {
-                this.item = new BoostPad(this.info)
-                return
-            }
-            if (this.info.name == "Healing Pad") {
-                this.item = new HealingPad(this.info)
-                return
-            }
+        if (this.info.type == "BoostPad") {
+            this.item = new BoostPad(this.info)
+            return
+        }
+        if (this.info.type == "HealingPad") {
+            this.item = new HealingPad(this.info)
+            return
+        }
+        if (this.info.type == "MineStone") {
+            this.item = new MineStone(this.info)
+            return
+        }
+        if (this.info.type == "Sapling") {
+            this.item = new Sapling(this.info)
+            return
         }
     }
+
 
     use(player, direct) {
         if (this.item != null) {

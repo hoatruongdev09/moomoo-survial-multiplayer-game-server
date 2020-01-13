@@ -25,12 +25,14 @@ class Game {
         this.resources
         this.userResources = []
         this.structures = []
+        this.projectile = []
+        this.projectileCount = 0
         this.structuresCount = 0
 
         this.map = new Map(this.gameConfig.mapsize, {
             x: 2,
             y: 2
-        })
+        }, this.gameConfig.snowSize, this.gameConfig.riverSize)
 
         this.physic = new PhysicEngine()
         this.init()
@@ -136,13 +138,22 @@ class Game {
             }
         })
     }
-    syncPlayerPosition() {
+    syncPlayerPosition(deltaTime) {
         var positionData = []
         var lookData = []
 
         this.players.forEach(p => {
             if (p != null && p.isJoinedGame) {
+                if (this.map.checkIfPlayerIsInRiver(p.position)) {
+                    p.inviromentSpeedModifier = this.gameConfig.riverSpeedModifier
+                    p.movePlayer(0, deltaTime)
+                } else if (this.map.checkIfPlayerIsInSnow(p.position)) {
+                    p.inviromentSpeedModifier = this.gameConfig.snowSpeedModifier
+                } else {
+                    p.inviromentSpeedModifier = 1
+                }
                 if (p.lastMovement != null) {
+
                     p.position = this.map.clampPositionToMap(p.position)
                     positionData.push({
                         id: p.idGame,
@@ -160,10 +171,12 @@ class Game {
                 }
             }
         })
-        this.broadcast(gamecode.syncTransform, {
-            pos: positionData,
-            rot: lookData
-        })
+        if (positionData.length != 0 || lookData.length != 0) {
+            this.broadcast(gamecode.syncTransform, {
+                pos: positionData,
+                rot: lookData
+            })
+        }
     }
     getPlayersFromView(position) {
         let viewObjects = []
@@ -194,6 +207,8 @@ class Game {
                 x: this.gameConfig.mapsize.x,
                 y: this.gameConfig.mapsize.y
             },
+            snowSize: this.gameConfig.snowSize,
+            riverSize: this.gameConfig.riverSize,
             resource: this.getResourceInfo(),
             players: this.getPlayersInfo(),
             structures: this.getStructuresInfo()
@@ -248,11 +263,11 @@ class Game {
     /* #region  GAME WEAPON AND STRUCTURE */
 
     getStarterPack() {
-        let mainWeapon = WeaponInfo.getInfoByStringId("w0")
+        let mainWeapon = WeaponInfo.getInfoByAge(1) //WeaponInfo.getInfoByStringId("w0")
         let items = ItemInfo.getInfoByAge(1)
 
         return {
-            weapons: [mainWeapon, null],
+            weapons: mainWeapon,
             items: items
         }
     }
@@ -273,7 +288,8 @@ class Game {
     /* #endregion */
     update(deltaTime) {
         this.updatePlayers(deltaTime)
-        this.syncPlayerPosition()
+        this.syncPlayerPosition(deltaTime)
+        this.updatePositionProjectile(deltaTime)
     }
     /* #region  GAME EVIROMENT VIEW */
     getResourceFromView(position) {
@@ -318,8 +334,9 @@ class Game {
     }
     /* #endregion */
     /* #region   COLLISION CHECK*/
-    playerHitPlayer(idFrom, idTarget, weapon) {
-        this.players[idTarget].healthPoint -= weapon.info.damage
+    playerHitPlayer(idFrom, idTarget, damage) {
+        console.log("player hit damage: ", damage)
+        this.players[idTarget].healthPoint -= damage
         if (this.players[idTarget].healthPoint <= 0) {
             this.players[idTarget].isJoinedGame = false
             this.removePlayerStructures(idTarget)
@@ -360,12 +377,6 @@ class Game {
                 hp: this.players[idTarget].healthPoint
             })
             this.syncPlayerHealthpoint(data)
-            // this.broadcast(gamecode.playerHit, {
-            //     data: [{
-            //         id: idTarget,
-            //         hp: this.players[idTarget].healthPoint
-            //     }]
-            // })
         }
     }
     syncPlayerHealthpoint(data) {
@@ -401,10 +412,17 @@ class Game {
 
 
     }
-    playerAttackStructure(idPlayer, idStructure, damage) {
+    playerAttackStructure(idPlayer, idStructure, weapon) {
+        let damage = weapon.info.structureDamge
         let structure = this.findStructureWithId(idStructure)
+        console.log("structure: ", structure)
         if (structure == null) {
             return
+        }
+        if (structure.toString() == "MineStone" || structure.toString() == "Sapling") {
+            let key = this.getKeyByValue(ResourceType, structure.idType)
+            this.players[idPlayer].receiveResource(weapon.info.gatherRate, key)
+            this.players[idPlayer].addXP(weapon.info.goldGatherRate)
         }
         if (idPlayer == structure.userId) {
             return
@@ -426,6 +444,7 @@ class Game {
     /* #endregion */
 
     /* #region  STRUCTURE MANAGER */
+
     findStructureWithId(id) {
         let structure = null
         for (let s of this.structures) {
@@ -479,7 +498,57 @@ class Game {
         })
     }
     /* #endregion */
+    /* #region  PROJECTILE */
 
+    getProjectileId() {
+        return this.projectileCount++;
+    }
+    addProjectTile(item, direct) {
+        this.projectile.push(item)
+        this.broadcast(gamecode.createProjectile, {
+            id: item.id,
+            pos: {
+                x: item.position.x,
+                y: item.position.y
+            },
+            angle: direct
+        })
+    }
+    removeProjectile(id) {
+        for (let i = 0; i < i < this.projectile.length; i++) {
+            if (this.projectile[i].id == id) {
+                this.projectile[i].destroy()
+                this.projectile.splice(i, 1)
+                this.broadcast(gamecode.removeProjectile, {
+                    id: [id]
+                })
+                return
+            }
+        }
+    }
+    updatePositionProjectile(deltaTime) {
+        let data = []
+        this.projectile.forEach(p => {
+            if (p.isDestroy) {
+                this.removeProjectile(p.id)
+            } else {
+                p.updatePosition(deltaTime)
+                data.push({
+                    id: p.id,
+                    pos: {
+                        x: p.position.x,
+                        y: p.position.y
+                    }
+                })
+            }
+        })
+        if (data.length != 0) {
+            this.broadcast(gamecode.syncPositionProjectile, {
+                pos: data
+            })
+        }
+    }
+    /* #endregion */
     getKeyByValue(object, value) {
         return Object.keys(object).find(key => object[key] === value);
     }

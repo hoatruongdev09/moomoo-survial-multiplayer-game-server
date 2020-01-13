@@ -186,12 +186,12 @@ const weaponInfo = {
             type: "Ranged",
             name: "Crossbow",
             description: "Deals more damage and has greater range",
-            size: {
-                x: 3.2,
-                y: 5
+            cost: {
+                Wood: 5
             },
-            range: 7,
+            range: 35,
             damage: 35,
+            bulletSpeed: 35,
             structureDamge: 0,
             attackSpeed: 700, // milisecond
             movement: 0.7, // float percent
@@ -204,12 +204,12 @@ const weaponInfo = {
             type: "Ranged",
             name: "Repeater Crossbow",
             description: "High Firerate crossbow with reduced damage",
-            size: {
-                x: 3.2,
-                y: 5
+            cost: {
+                Wood: 10
             },
-            range: 7,
+            range: 35,
             damage: 30,
+            bulletSpeed: 35,
             attackSpeed: 230, // milisecond
             movement: 0.7, // float percent
             previous: "w8",
@@ -240,12 +240,12 @@ const weaponInfo = {
             type: "Ranged",
             name: "Hunting Bow",
             description: "Bow used for ranged combat and hunting",
-            size: {
-                x: 3,
-                y: 5
+            cost: {
+                Wood: 4
             },
-            range: 5.7,
+            range: 25,
             damage: 25,
+            bulletSpeed: 30,
             attackSpeed: 600, // milisecond
             movement: 0.75, // float percent
         }, {

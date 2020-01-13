@@ -1,10 +1,18 @@
 const Mathf = require('mathf')
 
 class Map {
-    constructor(size, offset) {
-        console.log("init size: ", size);
+    constructor(size, offset, snowSize, riverSize) {
         this.size = size
         this.offset = offset
+
+        this.snowSize = {
+            hi: this.size.y,
+            lo: this.size.y - this.size.y * snowSize
+        }
+        this.riverSize = {
+            hi: this.size.y / 2 + this.size.y * riverSize,
+            lo: this.size.y / 2 - this.size.y * riverSize
+        }
     }
 
     randomPosition() {
@@ -14,6 +22,12 @@ class Map {
             x: X,
             y: Y
         }
+    }
+    checkIfPlayerIsInSnow(position) {
+        return position.y > this.snowSize.lo
+    }
+    checkIfPlayerIsInRiver(position) {
+        return position.y < this.riverSize.hi && position.y > this.riverSize.lo
     }
 
     rangdomAngle() {
