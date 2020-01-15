@@ -12,6 +12,7 @@ const Vector = require('../GameUtils/vector')
 const WeaponInfo = require('./weapon/weaponInfo')
 const ItemInfo = require('./Items/itemInfo')
 
+const NPC = require('./NPCs/hostitleNpc')
 class Game {
     constructor(id, server, gameConfig, name) {
         this.name = name
@@ -20,12 +21,15 @@ class Game {
         this.gameConfig = gameConfig
 
         this.players
+        this.npc
         this.currentPlayerCount = 0
 
         this.resources
         this.userResources = []
         this.structures = []
         this.projectile = []
+
+
         this.projectileCount = 0
         this.structuresCount = 0
 
@@ -41,7 +45,9 @@ class Game {
 
     init() {
         this.players = new Array(this.gameConfig.maxPlayer)
+        this.npc = new Array(this.gameConfig.npcCount())
         this.initializeResources()
+        this.initializeNPC()
     }
     initializeResources() {
         this.resources = new Array(this.gameConfig.resourceCount())
@@ -54,6 +60,33 @@ class Game {
         for (let i = startId; i < startId + count; i++) {
             let rs = new Resource(i, type, this.map.randomPosition(), -1, this.gameConfig.defaultResourceRadius)
             this.resources[i] = rs
+        }
+    }
+    initializeNPC() {
+        let j = 0;
+        for (let i = 0; i < this.gameConfig.npcDuckCount; i++, j++) { // DUCK
+            this.npc[j] = new NPC(j, 4, false, this.getRandomPosition(), this, 2)
+        }
+        for (let i = 0; i < this.gameConfig.npcChickenCount; i++, j++) { // CHICKEN
+            this.npc[j] = new NPC(j, 3, false, this.getRandomPosition(), this, 2)
+        }
+        for (let i = 0; i < this.gameConfig.npcCowCount; i++, j++) { // COW
+            this.npc[j] = new NPC(j, 0, false, this.getRandomPosition(), this, 2.4)
+        }
+        for (let i = 0; i < this.gameConfig.npcBullCount; i++, j++) { // BULL
+            this.npc[j] = new NPC(j, 5, false, this.getRandomPosition(), this, 2.4)
+        }
+        for (let i = 0; i < this.gameConfig.npcSheepCount; i++, j++) { // SHEEP
+            this.npc[j] = new NPC(j, 2, false, this.getRandomPosition(), this, 2.4)
+        }
+        for (let i = 0; i < this.gameConfig.npcPigCount; i++, j++) { // PIG
+            this.npc[j] = new NPC(j, 1, false, this.getRandomPosition(), this, 2.4)
+        }
+        for (let i = 0; i < this.gameConfig.npcBullyCount; i++, j++) { // BULLY
+            this.npc[j] = new NPC(j, 6, false, this.getRandomPosition(), this, 2.4)
+        }
+        for (let i = 0; i < this.gameConfig.npcWolfCount; i++, j++) { // COW
+            this.npc[j] = new NPC(j, 7, false, this.getRandomPosition(), this, 2.4)
         }
     }
     /* #endregion */
@@ -132,42 +165,19 @@ class Game {
         return null
     }
     updatePlayers(deltaTime) {
-        this.players.forEach(p => {
-            if (p != null && p.isJoinedGame) {
-                p.update(deltaTime)
-            }
-        })
-    }
-    syncPlayerPosition(deltaTime) {
         var positionData = []
         var lookData = []
 
+        let temp = null
         this.players.forEach(p => {
             if (p != null && p.isJoinedGame) {
-                if (this.map.checkIfPlayerIsInRiver(p.position)) {
-                    p.inviromentSpeedModifier = this.gameConfig.riverSpeedModifier
-                    p.movePlayer(0, deltaTime)
-                } else if (this.map.checkIfPlayerIsInSnow(p.position)) {
-                    p.inviromentSpeedModifier = this.gameConfig.snowSpeedModifier
-                } else {
-                    p.inviromentSpeedModifier = 1
+                p.update(deltaTime)
+                temp = this.syncSinglePlayerPosition(p, deltaTime)
+                if (temp.pos != null) {
+                    positionData.push(temp.pos)
                 }
-                if (p.lastMovement != null) {
-
-                    p.position = this.map.clampPositionToMap(p.position)
-                    positionData.push({
-                        id: p.idGame,
-                        pos: {
-                            x: p.position.x,
-                            y: p.position.y
-                        }
-                    })
-                }
-                if (p.lastLook != null) {
-                    lookData.push({
-                        id: p.idGame,
-                        angle: p.lookDirect
-                    })
+                if (temp.rot != null) {
+                    lookData.push(temp.rot)
                 }
             }
         })
@@ -177,6 +187,153 @@ class Game {
                 rot: lookData
             })
         }
+    }
+    updateNPC(deltaTime) {
+        let positionData = []
+        let temp = null
+        this.npc.forEach(n => {
+            if (n != null && n.isJoined) {
+                n.update(deltaTime)
+                temp = this.syncSingleNpcPosition(n, deltaTime)
+                if (temp != null) {
+                    positionData.push(temp)
+                }
+            }
+        })
+        if (positionData.length != 0) {
+            this.broadcast(gamecode.syncNpcTransform, {
+                pos: positionData
+            })
+        }
+    }
+    syncSingleNpcPosition(n, deltaTime) {
+        let data = null
+        if (n != null && n.isJoined) {
+            if (n.lastMoveDirect != null) {
+                n.position = this.map.clampPositionToMap(n.position)
+                data = {
+                    id: n.id,
+                    pos: {
+                        x: n.position.x,
+                        y: n.position.y
+                    },
+                    rot: n.lookAngle
+                }
+            }
+        }
+        return data
+    }
+    // syncNpcPosition(deltaTime) {
+    //     var positionData = []
+
+    //     this.npc.forEach(n => {
+    //         if (n != null && n.isJoined) {
+    //             if (n.lastMoveDirect != null) {
+    //                 n.position = this.map.clampPositionToMap(n.position)
+    //                 positionData.push({
+    //                     id: n.id,
+    //                     pos: {
+    //                         x: n.position.x,
+    //                         y: n.position.y
+    //                     },
+    //                     rot: n.lookAngle
+    //                 })
+    //             }
+    //         }
+    //     })
+    //     if (positionData.length != 0) {
+    //         this.broadcast(gamecode.syncNpcTransform, {
+    //             pos: positionData
+    //         })
+    //     }
+    // }
+    syncSinglePlayerPosition(p, deltaTime) {
+        let syncTransform = {
+            pos: null,
+            rot: null
+        }
+        if (this.map.checkIfPlayerIsInRiver(p.position)) {
+            p.inviromentSpeedModifier = this.gameConfig.riverSpeedModifier
+            p.movePlayer(0, deltaTime)
+        } else if (this.map.checkIfPlayerIsInSnow(p.position)) {
+            p.inviromentSpeedModifier = this.gameConfig.snowSpeedModifier
+        } else {
+            p.inviromentSpeedModifier = 1
+        }
+        if (p.lastMovement != null) {
+            p.position = this.map.clampPositionToMap(p.position)
+            syncTransform.pos = {
+                id: p.idGame,
+                pos: {
+                    x: p.position.x,
+                    y: p.position.y
+                }
+            }
+        }
+        if (p.lastLook != null) {
+            syncTransform.rot = {
+                id: p.idGame,
+                angle: p.lookDirect
+            }
+        }
+        return syncTransform
+    }
+    // syncPlayerPosition(deltaTime) {
+    //     var positionData = []
+    //     var lookData = []
+
+    //     this.players.forEach(p => {
+    //         if (p != null && p.isJoinedGame) {
+    //             if (this.map.checkIfPlayerIsInRiver(p.position)) {
+    //                 p.inviromentSpeedModifier = this.gameConfig.riverSpeedModifier
+    //                 p.movePlayer(0, deltaTime)
+    //             } else if (this.map.checkIfPlayerIsInSnow(p.position)) {
+    //                 p.inviromentSpeedModifier = this.gameConfig.snowSpeedModifier
+    //             } else {
+    //                 p.inviromentSpeedModifier = 1
+    //             }
+    //             if (p.lastMovement != null) {
+
+    //                 p.position = this.map.clampPositionToMap(p.position)
+    //                 positionData.push({
+    //                     id: p.idGame,
+    //                     pos: {
+    //                         x: p.position.x,
+    //                         y: p.position.y
+    //                     }
+    //                 })
+    //             }
+    //             if (p.lastLook != null) {
+    //                 lookData.push({
+    //                     id: p.idGame,
+    //                     angle: p.lookDirect
+    //                 })
+    //             }
+    //         }
+    //     })
+    //     if (positionData.length != 0 || lookData.length != 0) {
+    //         this.broadcast(gamecode.syncTransform, {
+    //             pos: positionData,
+    //             rot: lookData
+    //         })
+    //     }
+    // }
+    getNpcFromView(position) {
+        let viewObjects = []
+        let temp = new Vector(0, 0)
+        this.npc.forEach(n => {
+            if (n != null && n.isJoined) {
+                temp.x = position.x - n.position.x
+                temp.y = position.y - n.position.y
+                if (temp.sqrMagnitude() < Math.pow(this.gameConfig.viewPlayerRadius, 2)) {
+                    viewObjects.push({
+                        id: n.id,
+                        bodyCollider: n.bodyCollider
+                    })
+                }
+            }
+        })
+        return viewObjects
     }
     getPlayersFromView(position) {
         let viewObjects = []
@@ -203,6 +360,7 @@ class Game {
     getCurrentGameData() {
         let gameData = {
             maxPlayer: this.gameConfig.maxPlayer,
+            maxNpcCount: this.gameConfig.npcCount(),
             mapSize: {
                 x: this.gameConfig.mapsize.x,
                 y: this.gameConfig.mapsize.y
@@ -211,7 +369,8 @@ class Game {
             riverSize: this.gameConfig.riverSize,
             resource: this.getResourceInfo(),
             players: this.getPlayersInfo(),
-            structures: this.getStructuresInfo()
+            structures: this.getStructuresInfo(),
+            npc: this.getNpcInfo()
         }
 
         return gameData
@@ -230,6 +389,21 @@ class Game {
                     }
                 })
             }
+        })
+        return data
+    }
+    getNpcInfo() {
+        let data = []
+        this.npc.forEach(n => {
+            data.push({
+                id: n.id,
+                skinId: n.skinId,
+                pos: {
+                    x: n.position.x,
+                    y: n.position.y
+                },
+                rot: n.lookAngle
+            })
         })
         return data
     }
@@ -288,7 +462,9 @@ class Game {
     /* #endregion */
     update(deltaTime) {
         this.updatePlayers(deltaTime)
-        this.syncPlayerPosition(deltaTime)
+        this.updateNPC(deltaTime)
+        // this.syncPlayerPosition(deltaTime)
+        // this.syncNpcPosition(deltaTime)
         this.updatePositionProjectile(deltaTime)
     }
     /* #region  GAME EVIROMENT VIEW */
@@ -357,15 +533,45 @@ class Game {
             this.syncPlayerHealthpoint(data)
         }
     }
+    playerHitNpc(idFrom, idTarget, damage) {
+        this.playerStructureHitNpc(idFrom, idTarget, damage)
+    }
+    playerStructureHitNpc(idFrom, idTarget, damage) {
+        this.npc[idTarget].healthPoint -= damage
+        this.npc[idTarget].onHit()
+        if (this.npc[idTarget].healthPoint <= 0) {
+            this.npc[idTarget].isJoined = false
+            // BROAD CAST EVENT NPC DIE
+            this.broadcast(gamecode.syncNpcDie, {
+                id: idTarget
+            })
+            if (this.players[idFrom] != null && this.players[idFrom].isJoinedGame) {
+                this.players[idFrom].scores += 25
+                this.players[idFrom].updateStatus()
+            }
+        } else {
+            let data = []
+            data.push({
+                id: idTarget,
+                hp: this.npc[idTarget].healthPoint
+            })
+            // BROAD CAST EVENT HP
+            this.syncNpcHealthpoint(data)
+        }
+    }
+    syncNpcHealthpoint(data) {
+        this.broadcast(gamecode.syncNpcHP, {
+            data: data
+        })
+    }
     playerStructureHitPlayer(idFrom, idTarget, damage) {
-        console.log("damge: ", damage)
         this.players[idTarget].healthPoint -= damage
         if (this.players[idTarget].healthPoint <= 0) {
             this.players[idTarget].isJoinedGame = false
             this.broadcast(gamecode.playerDie, {
                 id: idTarget
             })
-            if (this.players[idFrom] != null && this.player[idFrom].isJoinedGame) {
+            if (this.players[idFrom] != null && this.players[idFrom].isJoinedGame) {
                 this.players[idFrom].kills++
                 this.players[idFrom].scores += 25
                 this.players[idFrom].updateStatus()
@@ -383,6 +589,20 @@ class Game {
         this.broadcast(gamecode.playerHit, {
             data: data
         })
+    }
+    npcHitStructures(id, idStructure) {
+        let structure = this.findStructureWithId(idStructure)
+        if (structure == null) {
+            return
+        }
+        if (structure.toString() == "PitTrap") {
+            structure.trapNpc(this.npc[id])
+            return
+        }
+        if (structure.toString() == "Spike") {
+            this.playerStructureHitNpc(structure.userId, id, structure.damage)
+            this.pushNpcBack(this.npc[id], this.npc[id].position.clone().sub(structure.position), 5)
+        }
     }
     playerHitStructures(idFrom, idStructure) {
         let structure = this.findStructureWithId(idStructure)
@@ -415,7 +635,7 @@ class Game {
     playerAttackStructure(idPlayer, idStructure, weapon) {
         let damage = weapon.info.structureDamge
         let structure = this.findStructureWithId(idStructure)
-        console.log("structure: ", structure)
+        // console.log("structure: ", structure)
         if (structure == null) {
             return
         }
@@ -549,8 +769,30 @@ class Game {
         }
     }
     /* #endregion */
+    getRandomPosition() {
+        let pos = this.map.randomPosition()
+        return new Vector(pos.x, pos.y)
+    }
+    sendChat(data) {
+        this.broadcast(gamecode.playerChat, data)
+    }
     getKeyByValue(object, value) {
         return Object.keys(object).find(key => object[key] === value);
+    }
+    pushNpcBack(npc, direct, range) {
+        npc.position.add(direct.unitVector.scale(range))
+        var positionData = []
+        positionData.push({
+            id: npc.id,
+            pos: {
+                x: npc.position.x,
+                y: npc.position.y
+            },
+            rot: npc.lookAngle
+        })
+        this.broadcast(gamecode.syncNpcTransform, {
+            pos: positionData
+        })
     }
     pushPlayerBack(player, direct, range) {
         player.position.add(direct.unitVector.scale(range))

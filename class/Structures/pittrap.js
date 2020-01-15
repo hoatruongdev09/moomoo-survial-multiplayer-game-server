@@ -13,6 +13,7 @@ class GamePitTrap {
         this.initCollider()
 
         this.trappedPlayer = []
+        this.trappedNpc = []
     }
     checkPlayerTrapped(id) {
         let result = false
@@ -23,16 +24,36 @@ class GamePitTrap {
         })
         return result
     }
+    checkNpcTrapped(id) {
+        let result = false
+        this.trappedNpc.forEach(n => {
+            if (n != null && n.id == id) {
+                result = true
+            }
+        })
+        return result
+    }
     trapPlayer(player) {
         if (this.checkPlayerTrapped(player.idGame)) {
-            return;
+            return
         }
         this.trappedPlayer.push(player)
-        console.log("trapped player: ", this.trappedPlayer)
+        // console.log("trapped player: ", this.trappedPlayer)
         player.speedModifier = 0
+    }
+    trapNpc(npc) {
+        if (this.checkNpcTrapped(npc.id)) {
+            return
+        }
+        this.trappedNpc.push(npc)
+        // console.log("trapped npc: ", this.trappedNpc)
+        npc.isTrapped = true
     }
     unTrapPlayer(player) {
         player.speedModifier = 1
+    }
+    unTrapNpc(npc) {
+        npc.isTrapped = false
     }
     initCollider() {
         this.bodyCollider = new SAT.Circle(new SAT.Vector(this.position.x, this.position.y), this.size)
@@ -41,6 +62,11 @@ class GamePitTrap {
         this.trappedPlayer.forEach(p => {
             if (p != null) {
                 p.speedModifier = 1
+            }
+        })
+        this.trappedNpc.forEach(n => {
+            if (n != null) {
+                n.isTrapped = false
             }
         })
     }

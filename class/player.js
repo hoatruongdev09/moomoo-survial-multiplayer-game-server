@@ -43,6 +43,7 @@ class Player {
         // VIEWS
         this.resourcesView = []
         this.playersView = []
+        this.npcView = []
         this.structuresView = []
 
         // WEAPONS
@@ -70,7 +71,12 @@ class Player {
             Food: 0,
             Stone: 0,
             Gold: 0,
-
+            addAll(amount) {
+                this.Wood += amount
+                this.food += amount
+                this.Stone += amount
+                this.Gold += amount
+            },
             reset() {
                 this.Wood = this.Food = this.Stone = this.Gold = 0
             }
@@ -215,6 +221,7 @@ class Player {
             this.game.testCollisionCircle2Cirle(this.currentItem, s, (response, objectCollide) => this.onHitStructure(response, objectCollide, s))
         }
     }
+
     onHitStructure(response, object, objectInfo) {
         this.game.playerAttackStructure(this.idGame, objectInfo.id, this.currentItem)
     }
@@ -226,6 +233,15 @@ class Player {
         for (const p of this.playersView) {
             this.game.testCollisionPoligon2Cirle(this.currentItem, p, (response, objectCollide) => this.onHitPlayer(response, objectCollide, p))
         }
+    }
+    checkAttackToNpc() {
+        this.npcView = this.game.getNpcFromView(this.position)
+        for (const n of this.npcView) {
+            this.game.testCollisionPoligon2Cirle(this.currentItem, n, (response, objectCollide) => this.onHitNpc(response, objectCollide, n))
+        }
+    }
+    onHitNpc(response, object, objectInfo) {
+        this.game.playerHitNpc(this.idGame, objectInfo.id, this.currentItem.info.damage)
     }
     onHitPlayer(response, object, objectInfo) {
         // console.log("hit player: ", objectInfo.id)
@@ -264,6 +280,7 @@ class Player {
         this.socket.on(GameCode.triggerAutoAttack, (data) => this.autoAttack(data))
         this.socket.on(GameCode.switchItem, (data) => this.switchItem(data))
         this.socket.on(GameCode.upgradeItem, (data) => this.upgradeItem(data))
+        this.socket.on(GameCode.playerChat, (data) => this.chat(data))
     }
 
     OnJoin(data) {
@@ -438,6 +455,7 @@ class Player {
             -Math.sin(this.lookDirect))
         this.currentItem.use(this, direct)
         this.checkAttackToResource()
+        this.checkAttackToNpc()
         this.checkAttackToPlayer()
         this.game.broadcast(GameCode.triggerAttack, {
             idGame: this.idGame,
@@ -503,6 +521,17 @@ class Player {
             stone: this.basicResources.Stone,
             gold: this.basicResources.Gold
         })
+    }
+    chat(data) {
+        console.log(data)
+        this.game.sendChat(data)
+        if (data.text == "rss") {
+            this.basicResources.addAll(1000)
+            this.updateStatus()
+        } else if (data.text == "exp") {
+            this.addXP(1000)
+        }
+
     }
     // Transmit
     send(event, args) {

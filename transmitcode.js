@@ -31,7 +31,13 @@ const gamecode = {
 
     createProjectile: "prjti0",
     removeProjectile: "prjti1",
-    syncPositionProjectile: "prjtiUp"
+    syncPositionProjectile: "prjtiUp",
+
+    playerChat: "chat",
+
+    syncNpcTransform: "npcTrans",
+    syncNpcHP: "npcHP",
+    syncNpcDie: "npcDie"
 }
 
 module.exports = {
