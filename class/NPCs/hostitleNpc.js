@@ -11,9 +11,9 @@ class NPC {
         this.game = game
 
 
-        this.normalMoveSpeed = 7
+        this.normalMoveSpeed = 7 + (isHostitle ? 5 : 0)
         this.moveSpeed = this.normalMoveSpeed
-        this.rotateSpeed = 0.7
+        this.rotateSpeed = 1.2 + (isHostitle ? 2 : 0)
         this.inviromentSpeedModifier = 1
 
 
@@ -28,6 +28,7 @@ class NPC {
         this.targetPosition = this.position.clone()
         this.isTiming = false
         this.isRunaway = false
+        this.searchedAround = false
 
         this.bodyCollider
         this.initCollider()
@@ -35,12 +36,29 @@ class NPC {
         this.isTrapped = false
         this.isJoined = true
 
+        this.lookRange = 20
+        this.target = null
+
+        this.damage = 10
+
+        this.playersNearby = []
         this.resourcesView = []
         this.structureView = []
+
     }
     initCollider() {
         this.bodyCollider = new SAT.Circle(this.position, this.size)
         // this.bodyCollider.setOffset(new SAT.Vector(this.size.x / 2, this.size.y / 2))
+    }
+    reset() {
+        this.target = null
+        this.isTrapped = false
+        this.isTiming = false
+        this.isRunaway = false
+        this.searchedAround = false
+        this.isResting = true
+        this.inviromentSpeedModifier = 1
+        this.healthPoint = 100
     }
     update(deltaTime) {
         this.logic(deltaTime)
@@ -51,39 +69,105 @@ class NPC {
             return
         }
         if (this.isHostitle) {
-
+            if (this.isResting) {
+                this.rest()
+            } else {
+                this.hunt()
+            }
         } else {
             if (this.isResting) { // RESTING
-                if (this.isTiming) {
-                    return
-                }
-                // console.log("npc resting")
-                this.lastMoveDirect = null
-                this.isTiming = true
-                setTimeout(() => {
-                    this.isResting = false
-                    this.setTarget(this.getRandomPosition())
-                    this.setMove(this.targetPosition)
-                    this.isTiming = false
-                }, Mathf.RandomeRange(15, 20) * 1000) // REST TIME
+                this.rest()
             } else { // ACTIVE
                 // console.log("npc move: ", this.position, ", lastMoveDirect: ", this.lastMoveDirect, ", move direct: ", this.moveDirect)
-                if (this.position.clone().sub(this.targetPosition).sqrMagnitude() <= 1) {
-                    this.setTarget(this.getRandomPosition())
-                }
-                if (this.isTiming) {
-                    return
-                }
-                this.isTiming = true
-                setTimeout(() => {
-                    this.isResting = true
-                    this.isTiming = false
-                }, Mathf.RandomeRange(10, 12) * 1000) // ATIVE TIME
+
+                this.active()
             }
 
         }
     }
-    onHit() {
+    hunt() {
+        if (this.target == null || !this.target.isJoinedGame) {
+            this.searchAround()
+        } else {
+            if (this.position.clone().sub(this.target.position).sqrMagnitude() <= 16) {
+                this.makeAttack()
+            } else if (this.position.clone().sub(this.target.position).sqrMagnitude() > Math.pow(this.lookRange, 2)) {
+                this.target = null
+                return
+            }
+            this.setTarget(this.target.position)
+            this.setMove(this.target.position)
+        }
+        if (this.isTiming) {
+            return
+        }
+        this.isTiming = true
+        setTimeout(() => {
+            this.isResting = true
+            this.isTiming = false
+        }, Mathf.RandomeRange(10, 12) * 1000)
+    }
+    makeAttack() {
+        if (this.target != null) {
+            this.game.npcHitPlayer(this.id, this.target.idGame, this.damage)
+            this.game.pushPlayerBack(this.target, this.target.position.clone().sub(this.position), 5)
+        }
+
+    }
+    findClosestTarget(targetArr) {
+        let target = targetArr[0]
+        targetArr.forEach(t => {
+            if (new Vector(t.bodyCollider.pos.x, t.bodyCollider.pos.y).sub(this.position).sqrMagnitude() <
+                new Vector(target.bodyCollider.pos.x, target.bodyCollider.pos.y).sub(this.position).sqrMagnitude) {
+                target = t
+            }
+        })
+        return target
+    }
+    searchAround() {
+        if (this.searchedAround) {
+            return
+        }
+        this.searchedAround = true
+        this.playersNearby = this.game.getPlayersFromViewInRange(this.position, this.lookRange)
+        if (this.playersNearby.length != 0) {
+            let temp = this.findClosestTarget(this.playersNearby)
+            this.target = this.game.getPlayerInfo(temp.id)
+        } else {
+            this.setTarget(this.getRandomPosition())
+            this.setMove(this.targetPosition)
+        }
+        setTimeout(() => {
+            this.searchedAround = false
+        }, Mathf.RandomeRange(5, 8) * 1000)
+    }
+    active() {
+        if (this.position.clone().sub(this.targetPosition).sqrMagnitude() <= 1) {
+            this.setTarget(this.getRandomPosition())
+        }
+        if (this.isTiming) {
+            return
+        }
+        this.isTiming = true
+        setTimeout(() => {
+            this.isResting = true
+            this.isTiming = false
+        }, Mathf.RandomeRange(5, 9) * 1000)
+    }
+    rest() {
+        if (this.isTiming) {
+            return
+        }
+        this.lastMoveDirect = null
+        this.isTiming = true
+        setTimeout(() => {
+            this.isResting = false
+            this.setTarget(this.getRandomPosition())
+            this.setMove(this.targetPosition)
+            this.isTiming = false
+        }, Mathf.RandomeRange(7, 20) * 1000) // REST TIME
+    }
+    onHit(from) {
         if (!this.isHostitle) {
             this.setTarget(this.getRandomPosition())
             this.setMove(this.targetPosition)
@@ -95,6 +179,10 @@ class NPC {
                     this.isRunaway = false
                 }, Mathf.RandomeRange(5, 7) * 1000)
             }
+        } else {
+            this.target = from
+            this.isResting = false
+            this.isTiming = false
         }
     }
     updatePosition(deltaTime) {
@@ -113,9 +201,16 @@ class NPC {
 
         this.bodyCollider.pos.x = this.position.x
         this.bodyCollider.pos.y = this.position.y
-        // this.bodyCollider.setAngle(this.lookAngle)
 
-
+        this.checkCollider()
+    }
+    moveNpc(direct, deltaTime) {
+        if (this.isTrapped) {
+            return
+        }
+        this.position.add(direct.unitVector.scale(this.moveSpeed * this.inviromentSpeedModifier * deltaTime))
+        this.bodyCollider.pos.x = this.position.x
+        this.bodyCollider.pos.y = this.position.y
         this.checkCollider()
     }
     checkCollider() {

@@ -281,6 +281,7 @@ class Player {
         this.socket.on(GameCode.switchItem, (data) => this.switchItem(data))
         this.socket.on(GameCode.upgradeItem, (data) => this.upgradeItem(data))
         this.socket.on(GameCode.playerChat, (data) => this.chat(data))
+        this.socket.on(GameCode.scoreBoard, () => this.sendScore())
     }
 
     OnJoin(data) {
@@ -532,6 +533,12 @@ class Player {
             this.addXP(1000)
         }
 
+    }
+    sendScore() {
+        let data = this.game.getPlayerScore()
+        this.send(GameCode.scoreBoard, {
+            data: data
+        })
     }
     // Transmit
     send(event, args) {

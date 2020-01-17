@@ -23,10 +23,10 @@ class Map {
             y: Y
         }
     }
-    checkIfPlayerIsInSnow(position) {
+    checkIfIsInSnow(position) {
         return position.y > this.snowSize.lo
     }
-    checkIfPlayerIsInRiver(position) {
+    checkIfIsInRiver(position) {
         return position.y < this.riverSize.hi && position.y > this.riverSize.lo
     }
 

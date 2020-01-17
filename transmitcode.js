@@ -37,7 +37,10 @@ const gamecode = {
 
     syncNpcTransform: "npcTrans",
     syncNpcHP: "npcHP",
-    syncNpcDie: "npcDie"
+    syncNpcDie: "npcDie",
+    spawnNpc: "spwnNpc",
+
+    scoreBoard: "scrBoard"
 }
 
 module.exports = {
