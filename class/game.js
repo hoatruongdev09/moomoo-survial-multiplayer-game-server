@@ -741,9 +741,9 @@ class Game {
         let data = []
         for (let i = 0; i < this.structures.length; i++) {
             if (this.structures[i].userId == idPlayer) {
+                data.push(this.structures[i].id)
                 this.structures[i].destroy()
                 this.structures.splice(i, 1)
-                data.push(i)
                 i--
             }
         }

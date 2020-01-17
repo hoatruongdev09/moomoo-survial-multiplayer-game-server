@@ -14,7 +14,7 @@ class GameWindmill {
         this.xp = info.xp
 
         this.update = setInterval(() => {
-            this.user.addGold(this.gold)
+            this.addGold(this.gold)
             this.user.addXP(this.xp)
         }, 1000)
 
@@ -23,6 +23,12 @@ class GameWindmill {
     }
     initCollider() {
         this.bodyCollider = new SAT.Circle(new SAT.Vector(this.position.x, this.position.y), this.size)
+    }
+    addGold(value) {
+        if (this.user != null) {
+            this.user.basicResources.Gold += value
+            this.user.scores += value
+        }
     }
     destroy() {
         clearInterval(this.update)
