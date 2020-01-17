@@ -226,7 +226,7 @@ class Player {
         this.game.playerAttackStructure(this.idGame, objectInfo.id, this.currentItem)
     }
     onHitResource(response, object, objectInfo) {
-        this.game.playerAttackResource(this.idGame, objectInfo.id, this.currentItem)
+        this.game.playerAttackResource(this, objectInfo.id, this.currentItem)
     }
     checkAttackToPlayer() {
         this.playersView = this.game.getPlayersFromView(this.position)

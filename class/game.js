@@ -682,14 +682,18 @@ class Game {
             this.removeStructure(structure.id)
         }
     }
-    playerAttackResource(idPlayer, idResource, weapon) {
+    playerAttackResource(player, idResource, weapon) {
         let key = this.getKeyByValue(ResourceType, this.resources[idResource].idType)
         if (key == "Gold") {
-            this.players[idPlayer].addGold(weapon.info.goldGatherRate)
+            this.addGold(player, weapon.info.goldGatherRate)
         } else {
-            this.players[idPlayer].receiveResource(weapon.info.gatherRate, key)
+            player.receiveResource(weapon.info.gatherRate, key)
         }
-        this.players[idPlayer].addXP(weapon.info.goldGatherRate)
+        player.addXP(weapon.info.goldGatherRate)
+    }
+    addGold(player, value) {
+        player.basicResources.Gold += value
+        player.scores += value
     }
     /* #endregion */
 
