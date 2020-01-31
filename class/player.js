@@ -305,7 +305,10 @@ class Player {
         if (this.game != null) {
             this.game.removePlayer(this)
         }
-
+        this.isAutoAttack = false
+        if (this.intervalAutoAttack != null) {
+            clearInterval(this.intervalAutoAttack)
+        }
         this.server.removePlayer(this)
     }
 
