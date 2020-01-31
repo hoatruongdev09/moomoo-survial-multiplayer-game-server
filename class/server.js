@@ -1,4 +1,4 @@
-const io = require('socket.io')
+let io = require('socket.io')
 const ws = require('ws')
 
 const Game = require('./game')
@@ -10,12 +10,12 @@ const GameCode = require('../transmitcode').GameCode
 const gameconfig = require('./gameconfig')
 
 class Server {
-    constructor(config) {
+    constructor(config, expressServer) {
         this.config = config
         this.currentPlayerCount = 0;
         this.players
         this.games
-
+        this.expressServer = expressServer
         this.time = new Time()
         this.init()
     }
@@ -46,9 +46,15 @@ class Server {
         });
         this.evalWss = wss;
 
-        let port = process.env.PORT || 8080
-        console.log("game running on port: ", port);
-        io(port).on("connection", socket => {
+
+        if (this.expressServer != null) {
+            io = require('socket.io')(this.expressServer)
+        } else {
+            let port = process.env.PORT || 8080
+            console.log("game running on port: ", port);
+            io = io(port)
+        }
+        io.on("connection", socket => {
             console.log("an io connection")
             this.handleSocket(socket)
 
