@@ -14,7 +14,7 @@ class Ranged {
         }
         let position = player.position.clone().add(direct.clone().scale(2))
         let idProjectile = player.game.getProjectileId()
-        let bullet = new Bullet(idProjectile, player, direct, position, 0.2, this.info.bulletSpeed, this.info.range, this.info.damage)
+        let bullet = new Bullet(idProjectile, 0, player, direct, position, 0.2, this.info.bulletSpeed, this.info.range, this.info.damage)
         player.game.addProjectTile(bullet, Math.atan2(direct.y, direct.x))
         this.useItem(player)
         this.canUse = false

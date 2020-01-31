@@ -5,10 +5,15 @@ class MineStone {
         this.info = info
     }
     use(player, direct) {
-        let id = player.game.generateStructeId()
         let position = player.position.clone().add(direct.clone().scale(this.info.range))
-        let mine = new GameMineStone(id, player.idGame, position, this.info)
+        let mine = new GameMineStone(null, player.idGame, position, this.info)
+        if (!player.game.checkOverlapStructure(player.idGame, mine)) {
+            return false
+        }
+        let id = player.game.generateStructeId()
         player.game.addStructure(player, mine)
+        mine.id = id
+        return true
     }
 }
 module.exports = MineStone

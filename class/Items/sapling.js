@@ -5,10 +5,15 @@ class Sapling {
         this.info = info
     }
     use(player, direct) {
-        let id = player.game.generateStructeId()
         let position = player.position.clone().add(direct.clone().scale(this.info.range))
-        let mine = new GameSapling(id, player.idGame, position, this.info)
-        player.game.addStructure(player, mine)
+        let sapling = new GameSapling(null, player.idGame, position, this.info)
+        if (!player.game.checkOverlapStructure(player.idGame, sapling)) {
+            return false
+        }
+        let id = player.game.generateStructeId()
+        player.game.addStructure(player, sapling)
+        sapling.id = id
+        return true
     }
 }
 module.exports = Sapling

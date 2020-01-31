@@ -182,12 +182,12 @@ const weaponInfo = {
         {
             id: "w8",
             main: false,
-            age: 8,
+            age: 1, //8,
             type: "Ranged",
             name: "Crossbow",
             description: "Deals more damage and has greater range",
             cost: {
-                Wood: 5
+                Wood: 0 //5
             },
             range: 35,
             damage: 35,

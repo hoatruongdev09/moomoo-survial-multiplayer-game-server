@@ -28,7 +28,7 @@ const itemInfo = {
     },
     infos: [{
             id: "i0",
-            type: "Pad",
+            type: "Blocker",
             age: 7,
             name: "Blocker",
             description: "Blocks building in radius",
@@ -38,8 +38,8 @@ const itemInfo = {
             },
             health: 400,
             limit: 3,
-            size: 5, // radius
-            range: 5
+            size: 3, // radius
+            range: 15
         },
         {
             id: "i1",
@@ -154,16 +154,16 @@ const itemInfo = {
         },
         {
             id: "i8",
-            type: "Pad",
+            type: "Platform",
             age: 7,
             name: "Platform",
             description: "Platform to shoot over walls and cross over water",
             cost: {
-                Wood: 20
+                Wood: 0 //20
             },
             health: 300,
             limit: 12,
-            size: 3, // radius
+            size: 10, // radius
             range: 3,
         },
         {
@@ -217,7 +217,7 @@ const itemInfo = {
         },
         {
             id: "i12",
-            type: "Pad",
+            type: "Spawnpad",
             age: 9,
             name: "Spawn Pad",
             description: "You will spawn here when you die but it will disappear",
@@ -277,7 +277,7 @@ const itemInfo = {
             range: 3,
         }, {
             id: "i16",
-            type: "Pad",
+            type: "Teleporter",
             age: 7,
             name: "Teleporter",
             description: "Teleports you to a random spot on the map",
@@ -303,7 +303,10 @@ const itemInfo = {
             health: 800,
             limit: 2,
             size: 2, // radius
-            range: 3,
+            range: 24,
+            damage: 15,
+            fireRate: 3000,
+            bulletSpeed: 20
         },
         {
             id: "i18",

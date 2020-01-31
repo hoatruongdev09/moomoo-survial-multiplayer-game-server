@@ -65,28 +65,28 @@ class Game {
     initializeNPC() {
         let j = 0;
         for (let i = 0; i < this.gameConfig.npcDuckCount; i++, j++) { // DUCK
-            this.npc[j] = new NPC(j, 4, false, this.getRandomPosition(), this, 2)
+            this.npc[j] = new NPC(j, 4, false, 250, this.getRandomPosition(), this, 2)
         }
         for (let i = 0; i < this.gameConfig.npcChickenCount; i++, j++) { // CHICKEN
-            this.npc[j] = new NPC(j, 3, false, this.getRandomPosition(), this, 2)
+            this.npc[j] = new NPC(j, 3, false, 250, this.getRandomPosition(), this, 2)
         }
         for (let i = 0; i < this.gameConfig.npcCowCount; i++, j++) { // COW
-            this.npc[j] = new NPC(j, 0, false, this.getRandomPosition(), this, 2.4)
+            this.npc[j] = new NPC(j, 0, false, 500, this.getRandomPosition(), this, 2.4)
         }
         for (let i = 0; i < this.gameConfig.npcBullCount; i++, j++) { // BULL
-            this.npc[j] = new NPC(j, 5, false, this.getRandomPosition(), this, 2.4)
+            this.npc[j] = new NPC(j, 5, false, 700, this.getRandomPosition(), this, 2.4)
         }
         for (let i = 0; i < this.gameConfig.npcSheepCount; i++, j++) { // SHEEP
-            this.npc[j] = new NPC(j, 2, false, this.getRandomPosition(), this, 2.4)
+            this.npc[j] = new NPC(j, 2, false, 600, this.getRandomPosition(), this, 2.4)
         }
         for (let i = 0; i < this.gameConfig.npcPigCount; i++, j++) { // PIG
-            this.npc[j] = new NPC(j, 1, false, this.getRandomPosition(), this, 2.4)
+            this.npc[j] = new NPC(j, 1, false, 550, this.getRandomPosition(), this, 2.4)
         }
         for (let i = 0; i < this.gameConfig.npcBullyCount; i++, j++) { // BULLY
-            this.npc[j] = new NPC(j, 6, true, this.getRandomPosition(), this, 2.4)
+            this.npc[j] = new NPC(j, 6, true, 800, this.getRandomPosition(), this, 2.4)
         }
         for (let i = 0; i < this.gameConfig.npcWolfCount; i++, j++) { // WOLF
-            this.npc[j] = new NPC(j, 7, true, this.getRandomPosition(), this, 2.4)
+            this.npc[j] = new NPC(j, 7, true, 700, this.getRandomPosition(), this, 2.4)
         }
     }
     /* #endregion */
@@ -141,7 +141,15 @@ class Game {
         }
     }
     playerJoin(player) {
-        let tempPosition = this.map.randomPosition()
+        let tempPosition
+        if (player.spawnPad != null) {
+            tempPosition = player.spawnPad.position
+            this.removePlayerSpawnPad(player.idGame)
+            player.structures.Spawnpad = 0
+            player.spawnPad = null
+        } else {
+            tempPosition = this.map.randomPosition()
+        }
         player.enterGame({
             moveSpeed: this.gameConfig.playerSpeed,
             position: new Vector(tempPosition.x, tempPosition.y),
@@ -166,6 +174,7 @@ class Game {
                 id: player.idGame
             })
         }
+        this.removePlayerSpawnPad(player.idGame)
         this.removePlayerStructures(player.idGame)
         this.players[player.idGame] = null
         this.currentPlayerCount--
@@ -254,12 +263,34 @@ class Game {
         }
         return data
     }
+    syncPlayerPosition(player) {
+        var positionData = []
+        var lookData = []
+        positionData.push({
+            id: player.idGame,
+            pos: {
+                x: player.position.x,
+                y: player.position.y
+            }
+        })
+        lookData.push({
+            id: player.idGame,
+            angle: player.lookDirect
+        })
+
+        if (positionData.length != 0 || lookData.length != 0) {
+            this.broadcast(gamecode.syncTransform, {
+                pos: positionData,
+                rot: lookData
+            })
+        }
+    }
     syncSinglePlayerPosition(p, deltaTime) {
         let syncTransform = {
             pos: null,
             rot: null
         }
-        if (this.map.checkIfIsInRiver(p.position)) {
+        if (this.map.checkIfIsInRiver(p.position) && !p.platformStanding) {
             p.inviromentSpeedModifier = this.gameConfig.riverSpeedModifier
             p.movePlayer(0, deltaTime)
         } else if (this.map.checkIfIsInSnow(p.position)) {
@@ -388,7 +419,7 @@ class Game {
                 data.push({
                     id: n.id,
                     skinId: n.skinId,
-                    hp: n.healthPoint,
+                    hp: n.getHpPercent(),
                     pos: {
                         x: n.position.x,
                         y: n.position.y
@@ -513,7 +544,7 @@ class Game {
             })
             if (this.players[idFrom] != null && this.players[idFrom].isJoinedGame) {
                 this.players[idFrom].kills++
-                this.players[idFrom].addGold(250)
+                this.addGold(this.players[idFrom], 250)
                 this.players[idFrom].addXP(100)
             }
         } else {
@@ -576,14 +607,14 @@ class Game {
             })
             this.respawnNpc(this.npc[idTarget])
             if (this.players[idFrom] != null && this.players[idFrom].isJoinedGame) {
-                this.players[idFrom].addGold += 100
+                this.addGold(this.players[idFrom], 100)
                 this.players[idFrom].addXP(50)
             }
         } else {
             let data = []
             data.push({
                 id: idTarget,
-                hp: this.npc[idTarget].healthPoint
+                hp: this.npc[idTarget].getHpPercent()
             })
             // BROAD CAST EVENT HP
             this.syncNpcHealthpoint(data)
@@ -647,9 +678,18 @@ class Game {
             structure.healPlayer(this.players[idFrom])
             return
         }
+        if (structure.toString() == "Platform") {
+            structure.addStandingPlayer(this.players[idFrom])
+            return
+        }
+        if (structure.toString() == "Teleporter") {
+            structure.addWaitToTeleporter(this.players[idFrom])
+            return
+        }
         if (structure.userId == idFrom) {
             return
         }
+
         if (structure.toString() == "Spike") {
             this.playerStructureHitPlayer(idStructure.userId, idFrom, structure.damage)
             this.pushPlayerBack(this.players[idFrom], this.players[idFrom].position.clone().sub(structure.position), 5)
@@ -712,11 +752,37 @@ class Game {
     generateStructeId() {
         return this.structuresCount++
     }
+    checkOverlapStructure(playerId, strc) {
+        for (let i = 0; i < this.structures.length; i++) {
+            if (this.testCollisionCircle2Cirle(strc, this.structures[i], (res, obj) => {})) {
+                return false
+            }
+            if (this.structures[i].toString() == "Blocker" && this.structures[i].userId != playerId) {
+                let distance = this.structures[i].position.clone().sub(strc.position).sqrMagnitude()
+                if (distance <= Math.pow(this.structures[i].range, 2)) {
+                    return false
+                }
+            }
+        }
+        for (let i = 0; i < this.resources.length; i++) {
+            if (this.resources[i] != null && this.testCollisionCircle2Cirle(strc, this.resources[i], (res, obj) => {})) {
+                return false
+            }
+        }
+        for (let i = 0; i < this.npc.length; i++) {
+            if (this.testCollisionCircle2Cirle(strc, this.npc[i], (res, obj) => {})) {
+                return false
+            }
+        }
+
+        return true
+    }
     addStructure(user, item) {
         this.structures.push(item)
         user.structures[item.toString()] += 1
         this.broadcast(gamecode.spawnnStructures, {
             id: item.id,
+            fromId: user.idGame,
             itemId: item.itemId,
             pos: {
                 x: item.position.x,
@@ -741,10 +807,28 @@ class Game {
         let data = []
         for (let i = 0; i < this.structures.length; i++) {
             if (this.structures[i].userId == idPlayer) {
-                data.push(this.structures[i].id)
-                this.structures[i].destroy()
-                this.structures.splice(i, 1)
-                i--
+                if (this.structures[i].toString() != "Spawnpad") {
+                    data.push(this.structures[i].id)
+                    this.structures[i].destroy()
+                    this.structures.splice(i, 1)
+                    i--
+                }
+            }
+        }
+        this.broadcast(gamecode.removeStructures, {
+            id: data
+        })
+    }
+    removePlayerSpawnPad(idPlayer) {
+        let data = []
+        for (let i = 0; i < this.structures.length; i++) {
+            if (this.structures[i].userId == idPlayer) {
+                if (this.structures[i].toString() == "Spawnpad") {
+                    data.push(this.structures[i].id)
+                    this.structures[i].destroy()
+                    this.structures.splice(i, 1)
+                    break
+                }
             }
         }
         this.broadcast(gamecode.removeStructures, {
@@ -761,6 +845,7 @@ class Game {
         this.projectile.push(item)
         this.broadcast(gamecode.createProjectile, {
             id: item.id,
+            skinId: item.idSkin,
             pos: {
                 x: item.position.x,
                 y: item.position.y

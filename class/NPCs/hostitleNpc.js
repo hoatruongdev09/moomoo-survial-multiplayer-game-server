@@ -3,7 +3,7 @@ const Vector = require('../../GameUtils/vector')
 const Mathf = require('mathf')
 
 class NPC {
-    constructor(id, skinId, isHostitle, position, game, size) {
+    constructor(id, skinId, isHostitle, maxHp, position, game, size) {
         this.id = id
         this.skinId = skinId
         this.size = size
@@ -20,8 +20,8 @@ class NPC {
         this.lastMoveDirect
         this.moveDirect = Vector.zero()
         this.lookAngle
-
-        this.healthPoint = 100
+        this.maxHp = maxHp
+        this.healthPoint = maxHp
 
         this.isHostitle = isHostitle
         this.isResting = true
@@ -58,7 +58,7 @@ class NPC {
         this.searchedAround = false
         this.isResting = true
         this.inviromentSpeedModifier = 1
-        this.healthPoint = 100
+        this.healthPoint = this.maxHp
     }
     update(deltaTime) {
         this.logic(deltaTime)
@@ -259,6 +259,8 @@ class NPC {
         return this.game.getRandomPosition();
 
     }
-
+    getHpPercent() {
+        return this.healthPoint / this.maxHp
+    }
 }
 module.exports = NPC

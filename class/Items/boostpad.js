@@ -5,10 +5,15 @@ class BoostPad {
         this.info = info
     }
     use(player, direct) {
-        let id = player.game.generateStructeId()
         let position = player.position.clone().add(direct.clone().scale(this.info.range))
-        let spike = new GameBoostPad(id, player.idGame, position, this.info, direct)
-        player.game.addStructure(player, spike)
+        let boostPad = new GameBoostPad(null, player.idGame, position, this.info, direct)
+        if (!player.game.checkOverlapStructure(player.idGame, boostPad)) {
+            return false
+        }
+        let id = player.game.generateStructeId()
+        player.game.addStructure(player, boostPad)
+        boostPad.id = id
+        return true
     }
 }
 module.exports = BoostPad

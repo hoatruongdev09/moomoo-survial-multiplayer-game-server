@@ -8,7 +8,11 @@ const BoostPad = require('./boostpad')
 const HealingPad = require('./healingpad')
 const MineStone = require('./minestone')
 const Sapling = require('./sapling')
-
+const Platform = require('./platform')
+const Turret = require('./turret')
+const Teleporter = require('./teleporter')
+const Spawnpad = require('./spawnpad')
+const Blocker = require('./blocker')
 class Item {
     constructor(info) {
         this.info = info
@@ -49,6 +53,26 @@ class Item {
             this.item = new Sapling(this.info)
             return
         }
+        if (this.info.type == "Platform") {
+            this.item = new Platform(this.info)
+            return
+        }
+        if (this.info.type == "Turret") {
+            this.item = new Turret(this.info)
+            return
+        }
+        if (this.info.type == "Teleporter") {
+            this.item = new Teleporter(this.info)
+            return
+        }
+        if (this.info.type == "Spawnpad") {
+            this.item = new Spawnpad(this.info)
+            return
+        }
+        if (this.info.type == "Blocker") {
+            this.item = new Blocker(this.info)
+            return
+        }
     }
 
 
@@ -60,12 +84,13 @@ class Item {
         }
     }
     useItem(player, direct) {
-        let keys = Object.keys(this.info.cost)
-        keys.forEach(k => {
-            player.basicResources[k] -= this.info.cost[k]
-        })
-        player.updateStatus()
-        this.item.use(player, direct)
+        if (this.item.use(player, direct)) {
+            let keys = Object.keys(this.info.cost)
+            keys.forEach(k => {
+                player.basicResources[k] -= this.info.cost[k]
+            })
+            player.updateStatus()
+        }
     }
     checkPlayerCanUseItem(player) {
         let keys = Object.keys(this.info.cost)

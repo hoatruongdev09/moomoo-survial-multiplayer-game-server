@@ -1,7 +1,7 @@
 const SAT = require('sat')
 
 class Bullet {
-    constructor(id, user, moveDirect, startPosition, size, moveSpeed, range, damage) {
+    constructor(id, idSkin, user, moveDirect, startPosition, size, moveSpeed, range, damage) {
         this.id = id
         this.user = user
         this.startPosition = startPosition
@@ -10,11 +10,13 @@ class Bullet {
         this.damage = damage
         this.moveSpeed = moveSpeed
         this.range = range
+        this.idSkin = idSkin
         this.bodyCollider = new SAT.Circle(new SAT.Vector(this.position.x, this.position.y), size)
         this.isDestroy = false
         this.resourcesView = []
         this.playerView = []
         this.structureView = []
+        this.npcView = []
     }
     updatePosition(deltaTime) {
         this.position.add(this.direct.clone().scale(this.moveSpeed * deltaTime))
@@ -29,6 +31,14 @@ class Bullet {
         this.checkColliderWithPlayer()
         this.checkColliderWithStructure()
         this.checkColliderWithResources()
+        this.checkColliderWithNpc()
+    }
+    checkColliderWithNpc() {
+        this.npcView = this.user.game.getNpcFromView(this.position)
+        console.log("npc view: ", this.npcView)
+        for (const n of this.npcView) {
+            this.user.game.testCollisionCircle2Cirle(this, n, (response, objectCollider) => this.onHitNpc(response, objectCollider, n))
+        }
     }
     checkColliderWithResources() {
         this.resourcesView = this.user.game.getResourceFromView(this.position)
@@ -52,9 +62,13 @@ class Bullet {
             this.user.game.testCollisionCircle2Cirle(this, p, (response, objectCollider) => this.onHitPlayer(response, objectCollider, p))
         }
     }
+    onHitNpc(response, object, objectInfo) {
+        this.user.game.playerHitNpc(this.user.idGame, objectInfo.id, this.damage)
+        this.isDestroy = true
+    }
     onHitPlayer(response, object, objectInfo) {
         this.user.game.playerHitPlayer(this.user.idGame, objectInfo.id, this.damage)
-        this.isDestroy = true;
+        this.isDestroy = true
     }
     destroy() {
 

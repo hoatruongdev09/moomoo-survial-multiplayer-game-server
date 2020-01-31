@@ -84,7 +84,9 @@ class Player {
         // EFFECT
         this.speedModifier = 1
         this.inviromentSpeedModifier = 1
+        this.platformStanding = false
         // STRUCTURES
+        this.spawnPad = null
         this.structures = {
             Wall: 0,
             Windmill: 0,
@@ -94,6 +96,10 @@ class Player {
             HealingPad: 0,
             MineStone: 0,
             Sapling: 0,
+            Platform: 0,
+            Teleporter: 0,
+            Spawnpad: 0,
+            Blocker: 0,
 
             reset() {
                 this.Windmill = 0
@@ -104,6 +110,9 @@ class Player {
                 this.HealingPad = 0
                 this.MineStone = 0
                 this.Sapling = 0
+                this.Platform = 0
+                this.Teleporter = 0
+                this.Blocker = 0
             }
         }
 
@@ -167,8 +176,8 @@ class Player {
             Math.sin(this.lastMovement)
         )
 
-        this.position.add(this.moveDirect.clone().scale(this.moveSpeed * this.speedModifier * this.inviromentSpeedModifier * deltaTime))
-        // console.log(this.position)
+        this.position.add(this.moveDirect.clone().scale(this.moveSpeed * (!this.platformStanding ? this.speedModifier * this.inviromentSpeedModifier : 1) * deltaTime))
+        // console.log("modifier: ", (this.platformStanding == false ? this.speedModifier * this.inviromentSpeedModifier : 1))
 
         this.bodyCollider.pos.x = this.position.x
         this.bodyCollider.pos.y = this.position.y
@@ -487,7 +496,11 @@ class Player {
     }
     addXP(value) {
         this.levelInfo.xp += value
-        if (this.levelInfo.xp >= levelDescription[this.levelInfo.level].nextLevelUpXp) {
+        let currentLv = this.levelInfo.level
+        if (this.levelInfo.level >= levelDescription.length) {
+            currentLv = levelDescription.length
+        }
+        if (this.levelInfo.xp >= levelDescription[currentLv].nextLevelUpXp) {
             this.levelInfo.level++
             this.levelInfo.xp = 0
             this.onLevelUp()
