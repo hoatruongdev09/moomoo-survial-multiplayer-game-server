@@ -281,6 +281,7 @@ class Player {
     }
     registerListenter() {
         this.socket.on('disconnect', () => this.onDisconnect())
+        this.socket.on(ServerCode.OnPing, () => this.onPing())
         this.socket.on(ServerCode.OnRequestJoin, (data) => this.OnJoin(data))
         this.socket.on(GameCode.receivedData, (data) => this.OnRecievedGameData(data))
         this.socket.on(GameCode.syncLookDirect, (data) => this.syncLookDirect(data))
@@ -292,7 +293,9 @@ class Player {
         this.socket.on(GameCode.playerChat, (data) => this.chat(data))
         this.socket.on(GameCode.scoreBoard, () => this.sendScore())
     }
-
+    onPing() {
+        this.send(ServerCode.OnPing, null)
+    }
     OnJoin(data) {
         // console.log("on join: ", data)
         this.skinId = data.skinId

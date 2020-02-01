@@ -2,6 +2,7 @@ const servercode = {
     OnConnect: "oncon",
     OnFailedToConnect: "onConFailed",
     OnRequestJoin: "onJoin",
+    OnPing: "ping"
 }
 const gamecode = {
     gameData: "gameData",
