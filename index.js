@@ -18,6 +18,9 @@ let listener = web.listen(PORT)
 app.get('/', (req, res) => {
     res.status(200).send("OK")
 })
+app.get('/connectstring', (req, res) => {
+    res.status(200).send("https://moomoo-server.herokuapp.com")
+})
 console.log("express run on: ", listener.address().port)
 
 let server = new Server(ServerConfig, web)

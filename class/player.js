@@ -11,11 +11,12 @@ const Item = require('./Items/item')
 
 const levelDescription = require('./levelInfo')
 class Player {
-    constructor(idServer, server, socket) {
+    constructor(idServer, server, socket, isWebSocket) {
         // SERVER IDENTITIES 
         this.idServer = idServer
         this.server = server
         this.socket = socket
+        this.isWebSocket = isWebSocket
 
         // SERVER FUNCTION
         this.handleSocket(socket)
@@ -273,7 +274,7 @@ class Player {
         this.position.y -= overlapPos.y
     }
     handleSocket(socket) {
-        socket.emit(ServerCode.OnConnect, {
+        this.send(ServerCode.OnConnect, {
             id: this.idServer,
             listGame: this.server.listGame()
         })
@@ -558,7 +559,11 @@ class Player {
     }
     // Transmit
     send(event, args) {
-        this.socket.emit(event, args)
+        if (!this.isWebSocket) {
+            this.socket.emit(event, args)
+        } else {
+            this.socket.send("WTFFFF")
+        }
     }
 }
 module.exports = Player

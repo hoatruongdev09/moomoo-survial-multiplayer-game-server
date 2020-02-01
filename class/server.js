@@ -31,28 +31,25 @@ class Server {
         this.createGame(gameconfig, "GAME 1")
     }
     initializeSocket() {
-        let wss
-        if (this.expressServer != null) {
-            wss = new ws.Server({
-                server: this.expressServer
-            })
-        } else {
-            wss = new ws.Server({
-                port: process.env.PORT || 8080
-            });
-        }
-
-        wss.on('connection', ws => {
-            let id = ws.protocol.replace(/[^0-9A-Za-z_\-]/g, '');
-            for (let i of this.players) {
-                if (i && i.socket && i.socket.id == id) {
-                    this.handleEval(i, ws);
-                    break;
-                }
-            }
-            console.log("a web socket connection");
-        });
-        this.evalWss = wss;
+        // let wss
+        // if (this.expressServer != null) {
+        //     wss = new ws.Server({
+        //         server: this.expressServer
+        //     }, () => {
+        //         console.log("create web socket")
+        //     })
+        // } else {
+        //     wss = new ws.Server({
+        //         port: process.env.PORT || 8080
+        //     }, () => {
+        //         console.log("create defaul port websocket")
+        //     });
+        // }
+        // wss.on('connection', ws => {
+        //     console.log("a web socket connection");
+        //     this.handleWebSocket(ws)
+        // });
+        // this.evalWss = wss;
 
 
         if (this.expressServer != null) {
@@ -68,13 +65,27 @@ class Server {
 
         })
     }
-    handleSocket(socket) {
-        let slot = this.findEmptyPlayersSlot()
+    handleWebSocket(ws) {
+        let slot = this.findEmptyGameSlot()
         if (slot != null) {
-            let player = new Player(slot, this, socket)
+            let player = new Player(slot, this, ws, true)
             this.players[slot] = player
             this.currentPlayerCount++;
         } else {
+            console.log("server is null")
+            ws.emit(ServerCode.OnFailedToConnect, {
+                reason: "Server is full"
+            })
+        }
+    }
+    handleSocket(socket) {
+        let slot = this.findEmptyPlayersSlot()
+        if (slot != null) {
+            let player = new Player(slot, this, socket, false)
+            this.players[slot] = player
+            this.currentPlayerCount++;
+        } else {
+            console.log("server is full")
             socket.emit(ServerCode.OnFailedToConnect, {
                 reason: "Server is full"
             })
@@ -82,7 +93,7 @@ class Server {
 
     }
     handleEval(player, web) {
-        console.log("WTF")
+        console.log("handle eval")
         player.remote = web;
     }
     // PLAYER
