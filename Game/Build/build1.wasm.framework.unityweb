@@ -1258,7 +1258,7 @@ function _emscripten_asm_const_id(code, a0) {
  return ASM_CONSTS[code](a0);
 }
 STATIC_BASE = GLOBAL_BASE;
-STATICTOP = STATIC_BASE + 4051040;
+STATICTOP = STATIC_BASE + 3987392;
 __ATINIT__.push({
  func: (function() {
   ___cxx_global_var_init();
@@ -3037,7 +3037,7 @@ __ATINIT__.push({
  })
 }, {
  func: (function() {
-  __GLOBAL__sub_I_Thread_cpp_66832();
+  __GLOBAL__sub_I_Thread_cpp_12783();
  })
 }, {
  func: (function() {
@@ -3073,7 +3073,7 @@ __ATINIT__.push({
  })
 }, {
  func: (function() {
-  __GLOBAL__sub_I_Assembly_cpp_67583();
+  __GLOBAL__sub_I_Assembly_cpp_13328();
  })
 }, {
  func: (function() {
@@ -3081,7 +3081,7 @@ __ATINIT__.push({
  })
 }, {
  func: (function() {
-  __GLOBAL__sub_I_Runtime_cpp_68204();
+  __GLOBAL__sub_I_Runtime_cpp_13857();
  })
 }, {
  func: (function() {
@@ -3104,7 +3104,7 @@ __ATINIT__.push({
   __GLOBAL__sub_I_Il2CppCodeRegistration_cpp();
  })
 });
-var STATIC_BUMP = 4051040;
+var STATIC_BUMP = 3987392;
 Module["STATIC_BASE"] = STATIC_BASE;
 Module["STATIC_BUMP"] = STATIC_BUMP;
 var tempDoublePtr = STATICTOP;
@@ -17428,8 +17428,8 @@ function nullFunc_vjji(x) {
  Module["printErr"]("Build with ASSERTIONS=2 for more info.");
  abort(x);
 }
-Module["wasmTableSize"] = 107254;
-Module["wasmMaxTableSize"] = 107254;
+Module["wasmTableSize"] = 107249;
+Module["wasmMaxTableSize"] = 107249;
 function invoke_dddi(index, a1, a2, a3) {
  try {
   return Module["dynCall_dddi"](index, a1, a2, a3);
@@ -21117,11 +21117,11 @@ asm["__GLOBAL__sub_I_Assembly_cpp"] = (function() {
  assert(!runtimeExited, "the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)");
  return real___GLOBAL__sub_I_Assembly_cpp.apply(null, arguments);
 });
-var real___GLOBAL__sub_I_Assembly_cpp_67583 = asm["__GLOBAL__sub_I_Assembly_cpp_67583"];
-asm["__GLOBAL__sub_I_Assembly_cpp_67583"] = (function() {
+var real___GLOBAL__sub_I_Assembly_cpp_13328 = asm["__GLOBAL__sub_I_Assembly_cpp_13328"];
+asm["__GLOBAL__sub_I_Assembly_cpp_13328"] = (function() {
  assert(runtimeInitialized, "you need to wait for the runtime to be ready (e.g. wait for main() to be called)");
  assert(!runtimeExited, "the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)");
- return real___GLOBAL__sub_I_Assembly_cpp_67583.apply(null, arguments);
+ return real___GLOBAL__sub_I_Assembly_cpp_13328.apply(null, arguments);
 });
 var real___GLOBAL__sub_I_AssetBundleFileSystem_cpp = asm["__GLOBAL__sub_I_AssetBundleFileSystem_cpp"];
 asm["__GLOBAL__sub_I_AssetBundleFileSystem_cpp"] = (function() {
@@ -22521,11 +22521,11 @@ asm["__GLOBAL__sub_I_Runtime_cpp"] = (function() {
  assert(!runtimeExited, "the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)");
  return real___GLOBAL__sub_I_Runtime_cpp.apply(null, arguments);
 });
-var real___GLOBAL__sub_I_Runtime_cpp_68204 = asm["__GLOBAL__sub_I_Runtime_cpp_68204"];
-asm["__GLOBAL__sub_I_Runtime_cpp_68204"] = (function() {
+var real___GLOBAL__sub_I_Runtime_cpp_13857 = asm["__GLOBAL__sub_I_Runtime_cpp_13857"];
+asm["__GLOBAL__sub_I_Runtime_cpp_13857"] = (function() {
  assert(runtimeInitialized, "you need to wait for the runtime to be ready (e.g. wait for main() to be called)");
  assert(!runtimeExited, "the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)");
- return real___GLOBAL__sub_I_Runtime_cpp_68204.apply(null, arguments);
+ return real___GLOBAL__sub_I_Runtime_cpp_13857.apply(null, arguments);
 });
 var real___GLOBAL__sub_I_Shader_cpp = asm["__GLOBAL__sub_I_Shader_cpp"];
 asm["__GLOBAL__sub_I_Shader_cpp"] = (function() {
@@ -22641,11 +22641,11 @@ asm["__GLOBAL__sub_I_Thread_cpp"] = (function() {
  assert(!runtimeExited, "the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)");
  return real___GLOBAL__sub_I_Thread_cpp.apply(null, arguments);
 });
-var real___GLOBAL__sub_I_Thread_cpp_66832 = asm["__GLOBAL__sub_I_Thread_cpp_66832"];
-asm["__GLOBAL__sub_I_Thread_cpp_66832"] = (function() {
+var real___GLOBAL__sub_I_Thread_cpp_12783 = asm["__GLOBAL__sub_I_Thread_cpp_12783"];
+asm["__GLOBAL__sub_I_Thread_cpp_12783"] = (function() {
  assert(runtimeInitialized, "you need to wait for the runtime to be ready (e.g. wait for main() to be called)");
  assert(!runtimeExited, "the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)");
- return real___GLOBAL__sub_I_Thread_cpp_66832.apply(null, arguments);
+ return real___GLOBAL__sub_I_Thread_cpp_12783.apply(null, arguments);
 });
 var real___GLOBAL__sub_I_TilemapScriptingClasses_cpp = asm["__GLOBAL__sub_I_TilemapScriptingClasses_cpp"];
 asm["__GLOBAL__sub_I_TilemapScriptingClasses_cpp"] = (function() {
@@ -24093,10 +24093,10 @@ var __GLOBAL__sub_I_Assembly_cpp = Module["__GLOBAL__sub_I_Assembly_cpp"] = (fun
  assert(!runtimeExited, "the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)");
  return Module["asm"]["__GLOBAL__sub_I_Assembly_cpp"].apply(null, arguments);
 });
-var __GLOBAL__sub_I_Assembly_cpp_67583 = Module["__GLOBAL__sub_I_Assembly_cpp_67583"] = (function() {
+var __GLOBAL__sub_I_Assembly_cpp_13328 = Module["__GLOBAL__sub_I_Assembly_cpp_13328"] = (function() {
  assert(runtimeInitialized, "you need to wait for the runtime to be ready (e.g. wait for main() to be called)");
  assert(!runtimeExited, "the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)");
- return Module["asm"]["__GLOBAL__sub_I_Assembly_cpp_67583"].apply(null, arguments);
+ return Module["asm"]["__GLOBAL__sub_I_Assembly_cpp_13328"].apply(null, arguments);
 });
 var __GLOBAL__sub_I_AssetBundleFileSystem_cpp = Module["__GLOBAL__sub_I_AssetBundleFileSystem_cpp"] = (function() {
  assert(runtimeInitialized, "you need to wait for the runtime to be ready (e.g. wait for main() to be called)");
@@ -25263,10 +25263,10 @@ var __GLOBAL__sub_I_Runtime_cpp = Module["__GLOBAL__sub_I_Runtime_cpp"] = (funct
  assert(!runtimeExited, "the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)");
  return Module["asm"]["__GLOBAL__sub_I_Runtime_cpp"].apply(null, arguments);
 });
-var __GLOBAL__sub_I_Runtime_cpp_68204 = Module["__GLOBAL__sub_I_Runtime_cpp_68204"] = (function() {
+var __GLOBAL__sub_I_Runtime_cpp_13857 = Module["__GLOBAL__sub_I_Runtime_cpp_13857"] = (function() {
  assert(runtimeInitialized, "you need to wait for the runtime to be ready (e.g. wait for main() to be called)");
  assert(!runtimeExited, "the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)");
- return Module["asm"]["__GLOBAL__sub_I_Runtime_cpp_68204"].apply(null, arguments);
+ return Module["asm"]["__GLOBAL__sub_I_Runtime_cpp_13857"].apply(null, arguments);
 });
 var __GLOBAL__sub_I_Shader_cpp = Module["__GLOBAL__sub_I_Shader_cpp"] = (function() {
  assert(runtimeInitialized, "you need to wait for the runtime to be ready (e.g. wait for main() to be called)");
@@ -25363,10 +25363,10 @@ var __GLOBAL__sub_I_Thread_cpp = Module["__GLOBAL__sub_I_Thread_cpp"] = (functio
  assert(!runtimeExited, "the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)");
  return Module["asm"]["__GLOBAL__sub_I_Thread_cpp"].apply(null, arguments);
 });
-var __GLOBAL__sub_I_Thread_cpp_66832 = Module["__GLOBAL__sub_I_Thread_cpp_66832"] = (function() {
+var __GLOBAL__sub_I_Thread_cpp_12783 = Module["__GLOBAL__sub_I_Thread_cpp_12783"] = (function() {
  assert(runtimeInitialized, "you need to wait for the runtime to be ready (e.g. wait for main() to be called)");
  assert(!runtimeExited, "the runtime was exited (use NO_EXIT_RUNTIME to keep it alive after main() exits)");
- return Module["asm"]["__GLOBAL__sub_I_Thread_cpp_66832"].apply(null, arguments);
+ return Module["asm"]["__GLOBAL__sub_I_Thread_cpp_12783"].apply(null, arguments);
 });
 var __GLOBAL__sub_I_TilemapScriptingClasses_cpp = Module["__GLOBAL__sub_I_TilemapScriptingClasses_cpp"] = (function() {
  assert(runtimeInitialized, "you need to wait for the runtime to be ready (e.g. wait for main() to be called)");
