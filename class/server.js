@@ -81,7 +81,7 @@ class Server {
     handleSocket(socket) {
         let slot = this.findEmptyPlayersSlot()
         if (slot != null) {
-            let player = new Player(slot, this, socket, false)
+            let player = new Player(slot, this, socket)
             this.players[slot] = player
             this.currentPlayerCount++;
         } else {

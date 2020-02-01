@@ -11,12 +11,11 @@ const Item = require('./Items/item')
 
 const levelDescription = require('./levelInfo')
 class Player {
-    constructor(idServer, server, socket, isWebSocket) {
+    constructor(idServer, server, socket) {
         // SERVER IDENTITIES 
         this.idServer = idServer
         this.server = server
         this.socket = socket
-        this.isWebSocket = isWebSocket
 
         // SERVER FUNCTION
         this.handleSocket(socket)
@@ -559,11 +558,8 @@ class Player {
     }
     // Transmit
     send(event, args) {
-        if (!this.isWebSocket) {
-            this.socket.emit(event, args)
-        } else {
-            this.socket.send("WTFFFF")
-        }
+        this.socket.emit(event, args)
+
     }
 }
 module.exports = Player
