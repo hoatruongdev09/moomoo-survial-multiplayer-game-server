@@ -31,9 +31,17 @@ class Server {
         this.createGame(gameconfig, "GAME 1")
     }
     initializeSocket() {
-        let wss = new ws.Server({
-            port: 5050
-        });
+        let wss
+        if (this.expressServer != null) {
+            wss = new ws.Server({
+                server: this.expressServer
+            })
+        } else {
+            wss = new ws.Server({
+                port: process.env.PORT || 8080
+            });
+        }
+
         wss.on('connection', ws => {
             let id = ws.protocol.replace(/[^0-9A-Za-z_\-]/g, '');
             for (let i of this.players) {
@@ -42,7 +50,7 @@ class Server {
                     break;
                 }
             }
-            console.log("connection");
+            console.log("a web socket connection");
         });
         this.evalWss = wss;
 
