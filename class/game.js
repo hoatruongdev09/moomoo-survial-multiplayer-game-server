@@ -12,6 +12,8 @@ const Vector = require('../GameUtils/vector')
 const WeaponInfo = require('./weapon/weaponInfo')
 const ItemInfo = require('./Items/itemInfo')
 
+const ClanManager = require('./clanManager').ClanManager
+
 const NPC = require('./NPCs/hostitleNpc')
 class Game {
     constructor(id, server, gameConfig, name) {
@@ -29,7 +31,7 @@ class Game {
         this.structures = []
         this.projectile = []
 
-
+        this.clanManager = new ClanManager(this)
         this.projectileCount = 0
         this.structuresCount = 0
 

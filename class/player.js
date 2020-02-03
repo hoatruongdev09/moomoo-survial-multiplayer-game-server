@@ -1,5 +1,6 @@
 const ServerCode = require('../transmitcode').ServerCode
 const GameCode = require('../transmitcode').GameCode
+const ClanCode = require('../transmitcode').ClanCode
 
 
 const Vector = require('../GameUtils/vector')
@@ -26,6 +27,7 @@ class Player {
         this.isJoinedGame = false
         this.name = ""
         this.skinId = 0
+        this.clanId = null
 
         // MOVEMENT PROPERTIES
         this.moveSpeed
@@ -292,6 +294,12 @@ class Player {
         this.socket.on(GameCode.upgradeItem, (data) => this.upgradeItem(data))
         this.socket.on(GameCode.playerChat, (data) => this.chat(data))
         this.socket.on(GameCode.scoreBoard, () => this.sendScore())
+
+        this.socket.on(ClanCode.createClan, (data) => this.createClan(data))
+        this.socket.on(ClanCode.joinClan, (data) => this.joinClan(data))
+        this.socket.on(ClanCode.kickMember, (data) => this.kickMember(data))
+        this.socket.on(ClanCode.removeClan, (data) => this.removeClan(data))
+
     }
     onPing() {
         this.send(ServerCode.OnPing, null)

@@ -43,8 +43,16 @@ const gamecode = {
 
     scoreBoard: "scrBoard"
 }
-
+const clanCode = {
+    createClan: "clCreate",
+    removeClan: "clRemove",
+    joinClan: "clJoin",
+    kickMember: "clKick",
+    member: "clMember",
+    listClan: "clList"
+}
 module.exports = {
     ServerCode: servercode,
-    GameCode: gamecode
+    GameCode: gamecode,
+    ClanCode: clanCode
 }
