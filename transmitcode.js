@@ -2,7 +2,8 @@ const servercode = {
     OnConnect: "oncon",
     OnFailedToConnect: "onConFailed",
     OnRequestJoin: "onJoin",
-    OnPing: "ping"
+    OnPing: "ping",
+    Error: "err"
 }
 const gamecode = {
     gameData: "gameData",
@@ -46,6 +47,7 @@ const gamecode = {
 const clanCode = {
     createClan: "clCreate",
     removeClan: "clRemove",
+    requestJoin: "clRequestJoin",
     joinClan: "clJoin",
     kickMember: "clKick",
     member: "clMember",

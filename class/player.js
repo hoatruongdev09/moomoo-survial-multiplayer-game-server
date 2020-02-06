@@ -123,88 +123,70 @@ class Player {
         this.intervalAutoAttack
 
     }
-    enterGame(data) {
-        this.isJoinedGame = true
-        this.moveSpeed = data.moveSpeed
-        this.position = data.position
-        this.lookDirect = data.lookDirect
+    registerListenter() {
+        this.socket.on('disconnect', () => this.onDisconnect())
+        this.socket.on(ServerCode.OnPing, () => this.onPing())
+        this.socket.on(ServerCode.OnRequestJoin, (data) => this.OnJoin(data))
+        this.socket.on(GameCode.receivedData, (data) => this.OnRecievedGameData(data))
+        this.socket.on(GameCode.syncLookDirect, (data) => this.syncLookDirect(data))
+        this.socket.on(GameCode.syncMoveDirect, (data) => this.syncMoveDirect(data))
+        this.socket.on(GameCode.triggerAttack, (data) => this.useItem(data))
+        this.socket.on(GameCode.triggerAutoAttack, (data) => this.autoAttack(data))
+        this.socket.on(GameCode.switchItem, (data) => this.switchItem(data))
+        this.socket.on(GameCode.upgradeItem, (data) => this.upgradeItem(data))
+        this.socket.on(GameCode.playerChat, (data) => this.chat(data))
+        this.socket.on(GameCode.scoreBoard, () => this.sendScore())
 
-        this.healthPoint = 100
-        this.kills = 0
-        this.scores = 0
-        this.levelInfo.reset()
-        this.basicResources.reset()
-
-        this.onwedItems = data.items.items
-        this.weapons = data.items.weapons
-        this.currentItem = this.createWeapon(this.weapons[0])
-
-        this.isAutoAttack = false
-        clearInterval(this.intervalAutoAttack)
-
-        this.structures.reset()
-        if (this.bodyCollider == null) {
-            this.bodyCollider = new SAT.Circle(new SAT.Vector(this.position.x, this.position.syncLookDirect), data.bodyRadius)
-
-        } else {
-            this.bodyCollider.pos.x = this.position.x
-            this.bodyCollider.pos.y = this.position.y
-            // this.bodyCollider = new SAT.Circle(new SAT.Vector(this.position.x, this.position.syncLookDirect), data.bodyRadius)
-        }
-        this.updateStatus()
-        this.syncItem()
+        this.socket.on(ClanCode.createClan, (data) => this.createClan(data))
+        this.socket.on(ClanCode.kickMember, (data) => this.kickMember(data))
+        this.socket.on(ClanCode.joinClan, (data) => this.requestJoinClan(data))
+        this.socket.on(ClanCode.requestJoin, (data) => this.responRequestJoinClan(data))
     }
-    createWeapon(info) {
-        if (info.type == "Melee") {
-            return new Melee(info)
-        }
-        if (info.type == "Ranged") {
-            return new Ranged(info)
-        }
-    }
-    createItem(info) {
-        return new Item(info)
-    }
+
     update(deltaTime) {
         this.updatePosition(deltaTime)
         this.updateRotation()
     }
-    updatePosition(deltaTime) {
-        if (this.lastMovement == null) {
+    /* #region  CLAN EVENTS */
+    createClan(data) {
+        this.game.createClan(data.name, this)
+    }
+    kickMember(data) {
+        if (this.clanId == null) {
             return
         }
-        this.moveDirect = new Vector(
-            Math.cos(this.lastMovement),
-            Math.sin(this.lastMovement)
-        )
+        if (this.game.clanManager.checkIsMasterOfClan(this.idGame, this.clanId)) {
+            if (data.id == this.idGame) {
+                this.game.clanManager.removeClan(this.clanId)
+            } else {
+                this.game.clanManager.kickMember(data.id, this.clanId)
+            }
+        } else {
+            if (data.id == this.idGame) {
+                this.game.clanManager.kickMember(data.id, this.clanId)
+            }
+        }
 
-        this.position.add(this.moveDirect.clone().scale(this.moveSpeed * (!this.platformStanding ? this.speedModifier * this.inviromentSpeedModifier : 1) * deltaTime))
-        // console.log("modifier: ", (this.platformStanding == false ? this.speedModifier * this.inviromentSpeedModifier : 1))
-
-        this.bodyCollider.pos.x = this.position.x
-        this.bodyCollider.pos.y = this.position.y
-
-        this.checkCollider()
     }
-    movePlayer(direct, deltaTime) {
-        this.lastMovement = direct
-        this.moveDirect = new Vector(
-            Math.cos(this.lastMovement),
-            Math.sin(this.lastMovement)
-        )
-        this.position.add(this.moveDirect.clone().scale(this.moveSpeed * deltaTime))
-        this.bodyCollider.pos.x = this.position.x
-        this.bodyCollider.pos.y = this.position.y
-
-        this.checkCollider()
-    }
-    updateRotation() {
-        if (this.lastLook == null) {
+    requestJoinClan(data) {
+        console.log("request join clan: ", data, " this.clanId: ", this.clanId)
+        if (this.clanId != null) {
             return
         }
-        this.lookDirect = this.lastLook
-
+        this.game.clanManager.addRequestJoin(this, data.id)
+        // this.game.clanManager.addMember(this, data.id)
     }
+    responRequestJoinClan(data) {
+        if (this.clanId == null) {
+            return
+        }
+        if (this.game.clanManager.checkIsMasterOfClan(this.idGame, this.clanId)) {
+            this.game.clanManager.respondRequestJoin(data.id, this.clanId, data.action);
+        }
+    }
+    /* #endregion */
+
+    /* #region  COLLISION EVENTS */
     checkCollider() {
         this.checkColliderWithResources()
         this.checkColliderWithStructures()
@@ -274,32 +256,15 @@ class Player {
         this.position.x -= overlapPos.x
         this.position.y -= overlapPos.y
     }
+    /* #endregion */
+
+    /* #region  CONNECT EVENTS */
     handleSocket(socket) {
         this.send(ServerCode.OnConnect, {
             id: this.idServer,
             listGame: this.server.listGame()
         })
         this.registerListenter()
-    }
-    registerListenter() {
-        this.socket.on('disconnect', () => this.onDisconnect())
-        this.socket.on(ServerCode.OnPing, () => this.onPing())
-        this.socket.on(ServerCode.OnRequestJoin, (data) => this.OnJoin(data))
-        this.socket.on(GameCode.receivedData, (data) => this.OnRecievedGameData(data))
-        this.socket.on(GameCode.syncLookDirect, (data) => this.syncLookDirect(data))
-        this.socket.on(GameCode.syncMoveDirect, (data) => this.syncMoveDirect(data))
-        this.socket.on(GameCode.triggerAttack, (data) => this.useItem(data))
-        this.socket.on(GameCode.triggerAutoAttack, (data) => this.autoAttack(data))
-        this.socket.on(GameCode.switchItem, (data) => this.switchItem(data))
-        this.socket.on(GameCode.upgradeItem, (data) => this.upgradeItem(data))
-        this.socket.on(GameCode.playerChat, (data) => this.chat(data))
-        this.socket.on(GameCode.scoreBoard, () => this.sendScore())
-
-        this.socket.on(ClanCode.createClan, (data) => this.createClan(data))
-        this.socket.on(ClanCode.joinClan, (data) => this.joinClan(data))
-        this.socket.on(ClanCode.kickMember, (data) => this.kickMember(data))
-        this.socket.on(ClanCode.removeClan, (data) => this.removeClan(data))
-
     }
     onPing() {
         this.send(ServerCode.OnPing, null)
@@ -320,14 +285,100 @@ class Player {
         if (this.intervalAutoAttack != null) {
             clearInterval(this.intervalAutoAttack)
         }
+        this.kickMember({
+            id: this.idGame
+        })
         this.server.removePlayer(this)
     }
+    enterGame(data) {
+        this.isJoinedGame = true
+        this.moveSpeed = data.moveSpeed
+        this.position = data.position
+        this.lookDirect = data.lookDirect
 
+        this.healthPoint = 100
+        this.kills = 0
+        this.scores = 0
+        this.levelInfo.reset()
+        this.basicResources.reset()
+
+        this.onwedItems = data.items.items
+        this.weapons = data.items.weapons
+        this.currentItem = this.createWeapon(this.weapons[0])
+
+        this.isAutoAttack = false
+        clearInterval(this.intervalAutoAttack)
+
+        this.structures.reset()
+        if (this.bodyCollider == null) {
+            this.bodyCollider = new SAT.Circle(new SAT.Vector(this.position.x, this.position.syncLookDirect), data.bodyRadius)
+
+        } else {
+            this.bodyCollider.pos.x = this.position.x
+            this.bodyCollider.pos.y = this.position.y
+            // this.bodyCollider = new SAT.Circle(new SAT.Vector(this.position.x, this.position.syncLookDirect), data.bodyRadius)
+        }
+        this.updateStatus()
+        this.syncItem()
+    }
+    /* #endregion */
+
+    /* #region  TRANFORM EVENTS */
+    updatePosition(deltaTime) {
+        if (this.lastMovement == null) {
+            return
+        }
+        this.moveDirect = new Vector(
+            Math.cos(this.lastMovement),
+            Math.sin(this.lastMovement)
+        )
+
+        this.position.add(this.moveDirect.clone().scale(this.moveSpeed * (!this.platformStanding ? this.speedModifier * this.inviromentSpeedModifier : 1) * deltaTime))
+        // console.log("modifier: ", (this.platformStanding == false ? this.speedModifier * this.inviromentSpeedModifier : 1))
+
+        this.bodyCollider.pos.x = this.position.x
+        this.bodyCollider.pos.y = this.position.y
+
+        this.checkCollider()
+    }
     syncLookDirect(data) {
         this.lastLook = data
     }
     syncMoveDirect(data) {
         this.lastMovement = data
+    }
+    movePlayer(direct, deltaTime) {
+        this.lastMovement = direct
+        this.moveDirect = new Vector(
+            Math.cos(this.lastMovement),
+            Math.sin(this.lastMovement)
+        )
+        this.position.add(this.moveDirect.clone().scale(this.moveSpeed * deltaTime))
+        this.bodyCollider.pos.x = this.position.x
+        this.bodyCollider.pos.y = this.position.y
+
+        this.checkCollider()
+    }
+    updateRotation() {
+        if (this.lastLook == null) {
+            return
+        }
+        this.lookDirect = this.lastLook
+
+    }
+    /* #endregion */
+
+    /* #region  ITEM EVENTS */
+    createWeapon(info) {
+        if (info.type == "Melee") {
+            return new Melee(info)
+        }
+        if (info.type == "Ranged") {
+            return new Ranged(info)
+        }
+    }
+    createItem(info) {
+        return new Item(info)
     }
     useItem(data) {
         // console.log("current item: ", this.currentItem)
@@ -501,6 +552,9 @@ class Player {
             -Math.sin(this.lookDirect))
         this.currentItem.use(this, direct)
     }
+    /* #endregion */
+
+    /* #region  PLAYER STATUS */
     receiveResource(amount, type) {
         this.basicResources[type] += amount
     }
@@ -550,6 +604,10 @@ class Player {
             gold: this.basicResources.Gold
         })
     }
+    /* #endregion */
+
+    /* #region  TRANSMIT EVENTS */
+
     chat(data) {
         console.log(data)
         this.game.sendChat(data)
@@ -572,5 +630,6 @@ class Player {
         this.socket.emit(event, args)
 
     }
+    /* #endregion */
 }
 module.exports = Player
