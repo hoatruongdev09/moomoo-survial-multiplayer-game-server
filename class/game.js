@@ -58,7 +58,7 @@ class Game {
         this.players = new Array(this.gameConfig.maxPlayer)
         this.npc = new Array(this.gameConfig.npcCount())
         this.initializeResources()
-        // this.initializeNPC()
+        this.initializeNPC()
     }
     initializeResources() {
         this.resources = new Array(this.gameConfig.resourceCount())
