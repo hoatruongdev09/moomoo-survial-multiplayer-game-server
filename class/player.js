@@ -13,15 +13,18 @@ const Item = require('./Items/item')
 const levelDescription = require('./levelInfo')
 class Player {
     constructor(idServer, server, socket) {
-        // SERVER IDENTITIES 
+        /* #region SERVER IDENTITIES  */
+
         this.idServer = idServer
         this.server = server
         this.socket = socket
+        /* #endregion */
 
         // SERVER FUNCTION
         this.handleSocket(socket)
-
-        // GAME IDENTITIES
+        this.isSuspend = false
+        this.isDelayQuit = false
+        /* #region GAME IDENTITIES */
         this.game = null
         this.idGame = -1
         this.isJoinedGame = false
@@ -29,6 +32,7 @@ class Player {
         this.skinId = 0
         this.clanId = null
 
+        /* #endregion */
         // MOVEMENT PROPERTIES
         this.moveSpeed
 
@@ -117,7 +121,11 @@ class Player {
                 this.Blocker = 0
             }
         }
-
+        // OWNED HATS & ACCESSORIES
+        this.ownedHat = []
+        this.ownedAccessories = []
+        this.equipedHat = null
+        this.equipedAccessory = null
         // MISC
         this.isAutoAttack = false
         this.intervalAutoAttack
@@ -126,8 +134,9 @@ class Player {
     registerListenter() {
         this.socket.on('disconnect', () => this.onDisconnect())
         this.socket.on(ServerCode.OnPing, () => this.onPing())
-        this.socket.on(ServerCode.OnRequestJoin, (data) => this.OnJoin(data))
-        this.socket.on(GameCode.receivedData, (data) => this.OnRecievedGameData(data))
+        this.socket.on(ServerCode.OnRequestJoin, (data) => this.onJoin(data))
+        this.socket.on(ServerCode.ClientStatus, (data) => this.onRecievedClientStatus(data))
+        this.socket.on(GameCode.receivedData, (data) => this.onRecievedGameData(data))
         this.socket.on(GameCode.syncLookDirect, (data) => this.syncLookDirect(data))
         this.socket.on(GameCode.syncMoveDirect, (data) => this.syncMoveDirect(data))
         this.socket.on(GameCode.triggerAttack, (data) => this.useItem(data))
@@ -136,6 +145,7 @@ class Player {
         this.socket.on(GameCode.upgradeItem, (data) => this.upgradeItem(data))
         this.socket.on(GameCode.playerChat, (data) => this.chat(data))
         this.socket.on(GameCode.scoreBoard, () => this.sendScore())
+        this.socket.on(GameCode.shopSelectItem, (data) => this.chooseItem(data))
 
         this.socket.on(ClanCode.createClan, (data) => this.createClan(data))
         this.socket.on(ClanCode.kickMember, (data) => this.kickMember(data))
@@ -269,15 +279,34 @@ class Player {
     onPing() {
         this.send(ServerCode.OnPing, null)
     }
-    OnJoin(data) {
+    onJoin(data) {
         // console.log("on join: ", data)
         this.skinId = data.skinId
         this.server.playerJoinGame(this, data)
     }
-    OnRecievedGameData(data) {
+    onRecievedClientStatus(data) {
+        if (data.focus !== true) {
+            this.isSuspend = false
+            this.isDelayQuit = false
+        } else {
+            this.isSuspend = true
+            this.isDelayQuit = true
+            setTimeout(() => {
+                if (this.isDelayQuit) {
+                    this.isSuspend = false
+                    console.log(`player: ${this.idServer} kicked for afk too long`)
+                    this.onDisconnect()
+                }
+            }, 30000)
+        }
+    }
+    onRecievedGameData(data) {
         this.game.playerJoin(this)
     }
     onDisconnect() {
+        if (this.isSuspend) {
+            return
+        }
         if (this.game != null) {
             this.game.removePlayer(this)
         }
@@ -306,6 +335,9 @@ class Player {
         this.weapons = data.items.weapons
         this.currentItem = this.createWeapon(this.weapons[0])
 
+        this.ownedHat = data.shop.hats
+        this.ownedAccessories = data.shop.accessories
+
         this.isAutoAttack = false
         clearInterval(this.intervalAutoAttack)
 
@@ -320,6 +352,7 @@ class Player {
         }
         this.updateStatus()
         this.syncItem()
+        this.syncItemShop();
     }
     /* #endregion */
 
@@ -472,6 +505,85 @@ class Player {
         this.send(GameCode.syncItem, {
             items: this.getCurrentItems()
         })
+    }
+    syncItemShop() {
+        this.send(GameCode.syncShop, {
+            owned: this.ownedAccessories.concat(this.ownedHat).map(i => {
+                return i.id
+            }),
+            equipedHat: (this.equipedHat == null ? "" : this.equipedHat.id),
+            equipedAccessory: (this.equipedAccessory == null ? "" : this.equipedAccessory.id)
+        })
+    }
+    chooseItem(data) {
+        console.log("choose item: ", data)
+        if (data.id[0] == "h") {
+            if (this.checkIfOwnedHatHaveItem(data.id)) { // if owned this item
+                if (this.equipedHat != null && this.equipedHat.id == data.id) { // if equiped then unequip
+                    this.equipedHat = null
+                } else { // if not equiped then equip
+                    this.equipedHat = this.getOwnedItemById(data.id)
+                }
+            } else { // if not owned this item
+                let item = this.game.getHatById(data.id)
+                if (this.basicResources.Gold >= item.price) {
+                    this.ownedHat.push(item)
+                    this.basicResources.Gold -= item.price
+                    this.updateStatus()
+                }
+            }
+        } else {
+            if (this.checkIfOwnedAccessoryHaveItem(data.id)) { // if owned this item
+                if (this.equipedAccessory != null && this.equipedAccessory.id == data.id) { // if equiped then unequip
+                    console.log("unequip accessory")
+                    this.equipedAccessory = null
+                } else { // if not equiped then equip
+                    console.log("equip accessory")
+                    this.equipedAccessory = this.getOwnedItemById(data.id)
+                }
+            } else { // if not owned this item
+                let item = this.game.getAccessoryById(data.id)
+                if (this.basicResources.Gold >= item.price) {
+                    this.ownedAccessories.push(item)
+                    this.basicResources.Gold -= item.price
+                    this.updateStatus()
+                }
+            }
+        }
+        this.syncEquipItem()
+        this.syncItemShop()
+    }
+    syncEquipItem() {
+        this.game.broadcast(GameCode.syncEquipItem, {
+            id: this.idGame,
+            hat: this.equipedHat == null ? "" : this.equipedHat.id,
+            acc: this.equipedAccessory == null ? "" : this.equipedAccessory.id
+        })
+    }
+    checkIfOwnedHatHaveItem(id) {
+        for (let i = 0; i < this.ownedHat.length; i++) {
+            if (this.ownedHat[i].id == id) {
+                return true
+            }
+        }
+        return false
+    }
+    checkIfOwnedAccessoryHaveItem(id) {
+        for (let i = 0; i < this.ownedAccessories.length; i++) {
+            if (this.ownedAccessories[i].id == id) {
+                return true
+            }
+        }
+        return false
+    }
+    getOwnedItemById(id) {
+        let allItem = this.ownedHat.concat(this.ownedAccessories)
+        for (let i = 0; i < allItem.length; i++) {
+            if (allItem[i].id == id) {
+                return allItem[i]
+            }
+        }
+        return null
     }
     upgradeWeapon(info) {
         if (info.main) {

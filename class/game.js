@@ -11,6 +11,8 @@ const Vector = require('../GameUtils/vector')
 
 const WeaponInfo = require('./weapon/weaponInfo')
 const ItemInfo = require('./Items/itemInfo')
+const AccessoryInfo = require('./Shop/Accessories')
+const HatInfo = require('./Shop/Hats')
 
 const ClanManager = require('./clanManager').ClanManager
 
@@ -56,7 +58,7 @@ class Game {
         this.players = new Array(this.gameConfig.maxPlayer)
         this.npc = new Array(this.gameConfig.npcCount())
         this.initializeResources()
-        this.initializeNPC()
+        // this.initializeNPC()
     }
     initializeResources() {
         this.resources = new Array(this.gameConfig.resourceCount())
@@ -165,7 +167,11 @@ class Game {
             position: new Vector(tempPosition.x, tempPosition.y),
             lookDirect: this.map.rangdomAngle(),
             bodyRadius: this.gameConfig.playColliderRadius,
-            items: this.getStarterPack()
+            items: this.getStarterPack(),
+            shop: {
+                hats: this.getStarterHats(),
+                accessories: this.getStarterAccessories()
+            }
         })
         this.broadcast(gamecode.spawnPlayer, {
             clientId: player.idServer,
@@ -400,7 +406,8 @@ class Game {
             structures: this.getStructuresInfo(),
             npc: this.getNpcInfo(),
             clans: this.clanManager.getClanData(),
-            clansMember: this.clanManager.getClansMemberData()
+            clansMember: this.clanManager.getClansMemberData(),
+            shop: this.getAllShopItem()
         }
 
         return gameData
@@ -414,6 +421,8 @@ class Game {
                     name: p.name,
                     skinId: p.skinId,
                     itemId: p.currentItem.info.id,
+                    hat: p.equipedHat == null ? "" : p.equipedHat.id,
+                    acc: p.equipedAccessory == null ? "" : p.equipedAccessory.id,
                     hp: p.healthPoint,
                     pos: {
                         x: p.position.x,
@@ -467,6 +476,26 @@ class Game {
             })
         })
         return data
+    }
+    /* #endregion */
+    /* #region  ITEM & SHOP */
+    getStarterHats() {
+        return HatInfo.getHatsByPrice(0)
+    }
+    getStarterAccessories() {
+        return AccessoryInfo.getAccessoriesByPrice(0)
+    }
+    getAllShopItem() {
+        return {
+            hats: HatInfo.getAllInfo(),
+            accessories: AccessoryInfo.getAllInfo()
+        }
+    }
+    getHatById(id) {
+        return HatInfo.getHatById(id);
+    }
+    getAccessoryById(id) {
+        return AccessoryInfo.getAccessoryById(id)
     }
     /* #endregion */
     /* #region  GAME WEAPON AND STRUCTURE */

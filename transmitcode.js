@@ -1,57 +1,54 @@
 const servercode = {
-    OnConnect: "oncon",
-    OnFailedToConnect: "onConFailed",
-    OnRequestJoin: "onJoin",
-    OnPing: "ping",
-    Error: "err"
+    OnConnect: "s0",
+    OnRequestJoin: "s1",
+    OnFailedToConnect: "s2",
+    OnPing: "s3",
+    Error: "s4",
+    ClientStatus: "s5",
 }
 const gamecode = {
-    gameData: "gameData",
-    receivedData: "rvGameData",
+    gameData: "g0",
+    receivedData: "g1",
+    spawnPlayer: "g2",
 
-    spawnPlayer: "spwnPlayer",
+    playerQuit: "g3",
 
-    playerQuit: "plQuit",
+    syncLookDirect: "g4",
+    syncMoveDirect: "g5",
+    syncTransform: "g6",
+    triggerAttack: "g7",
+    triggerAutoAttack: "g8",
+    playerHit: "g9",
+    playerDie: "g10",
+    playerStatus: "g11",
+    switchItem: "g12",
+    spawnnStructures: "g13",
+    removeStructures: "g14",
+    upgradeItem: "g15",
 
-    syncLookDirect: "syncLook",
-    syncMoveDirect: "syncMove",
-    triggerAttack: "attk",
-    triggerAutoAttack: "autoAttk",
+    syncItem: "g16",
 
-    syncTransform: "syncTrsform",
-
-    playerHit: "phit",
-    playerDie: "pdie",
-    playerStatus: "pstt",
-
-    switchItem: "swtItm",
-    spawnnStructures: "spwnStrc",
-    removeStructures: "rmvStrc",
-
-    upgradeItem: "ugdItem",
-    syncItem: "syncItem",
-
-    createProjectile: "prjti0",
-    removeProjectile: "prjti1",
-    syncPositionProjectile: "prjtiUp",
-
-    playerChat: "chat",
-
-    syncNpcTransform: "npcTrans",
-    syncNpcHP: "npcHP",
-    syncNpcDie: "npcDie",
-    spawnNpc: "spwnNpc",
-
-    scoreBoard: "scrBoard"
+    createProjectile: "g17",
+    removeProjectile: "g18",
+    syncPositionProjectile: "g19",
+    playerChat: "g20",
+    syncNpcTransform: "g21",
+    syncNpcHP: "g22",
+    syncNpcDie: "g23",
+    spawnNpc: "g24",
+    scoreBoard: "g25",
+    syncShop: "g26",
+    shopSelectItem: "g27",
+    syncEquipItem: "g28",
 }
 const clanCode = {
-    createClan: "clCreate",
-    removeClan: "clRemove",
-    requestJoin: "clRequestJoin",
-    joinClan: "clJoin",
-    kickMember: "clKick",
-    member: "clMember",
-    listClan: "clList"
+    createClan: "c0",
+    removeClan: "c1",
+    requestJoin: "c2",
+    joinClan: "c3",
+    kickMember: "c4",
+    member: "c5",
+    listClan: "c6",
 }
 module.exports = {
     ServerCode: servercode,
