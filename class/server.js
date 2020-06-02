@@ -107,7 +107,7 @@ class Server {
         return null
     }
     removePlayer(player) {
-        // console.log("WTF", player) 
+        console.log("removed player: ", player.idServer, " ", player.idGame)
         this.players[player.idServer] = null
         this.currentPlayerCount--
     }

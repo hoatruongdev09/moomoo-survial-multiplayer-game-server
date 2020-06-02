@@ -7,78 +7,164 @@ const Hats = {
         }
         return null;
     },
+    getHatsByPrice(price) {
+        let data = []
+        this.infos.forEach(hat => {
+            if (hat.price == price) {
+                data.push(hat)
+            }
+        })
+        return data
+    },
+    getAllInfo() {
+        let data = []
+        this.infos.forEach(hat => {
+            data.push({
+                id: hat.id,
+                name: hat.name,
+                price: hat.price,
+                description: hat.description
+            })
+        })
+        return data
+    },
     infos: [{
             id: "h0",
             name: "Moo Cap",
             price: 0,
+            description: "Coolest mooer around",
+            effect(player) {
+
+            }
         },
         {
             id: "h1",
             name: "Apple Cap",
             price: 0,
+            description: "Apple farm remembers",
+            effect(player) {
+
+            }
         }, {
             id: "h2",
             name: "Moo Head",
             price: 0,
+            description: "No effect",
+            effect(player) {
+
+            }
         }, {
             id: "h3",
             name: "Pig Head",
             price: 0,
+            description: "No effect",
+            effect(player) {
+
+            }
         }, {
             id: "h4",
             name: "Fluff Head",
             price: 0,
+            description: "No effect",
+            effect(player) {
+
+            }
         }, {
             id: "h5",
             name: "Pandou Head",
             price: 0,
+            description: "No effect",
+            effect(player) {
+
+            }
         }, {
             id: "h6",
             name: "Bear Head",
             price: 0,
+            description: "No effect",
+            effect(player) {
+
+            }
         },
         {
             id: "h7",
             name: "Monkey Head",
             price: 0,
+            description: "No effect",
+            effect(player) {
+
+            }
         }, {
             id: "h8",
             name: "Polar Head",
             price: 0,
+            description: "No effect",
+            effect(player) {
+
+            }
         },
         {
             id: "h9",
             name: "Fez Hat",
             price: 0,
+            description: "No effect",
+            effect(player) {
+
+            }
         },
         {
             id: "h10",
             name: "Enigma Hat",
             price: 0,
+            description: "Join the enigma army",
+            effect(player) {
+
+            }
         }, {
             id: "h11",
             name: "Blitz Hat",
             price: 0,
+            description: "Hey everybody I'm blitz",
+            effect(player) {
+
+            }
         }, {
             id: "h12",
             name: "Bob XIII Hat",
             price: 0,
+            description: "Like and subscribe",
+            effect(player) {
+
+            }
         }, {
             id: "h13",
             name: "Pumpkin Hat",
             price: 50,
+            description: "Spooooky",
+            effect(player) {
+
+            }
         }, {
             id: "h14",
             name: "Bummel Hat",
             price: 100,
+            description: "no effect",
+            effect(player) {
+
+            }
         }, {
             id: "h15",
             name: "Straw Hat",
             price: 500,
+            description: "no effect",
+            effect(player) {
+
+            }
         }, {
             id: "h16",
             name: "Winter cap",
             price: 600,
+            description: "Allows you to move at normal speed in snoW",
             effect(player) {
 
             }
@@ -86,18 +172,31 @@ const Hats = {
             id: "h17",
             name: "Cowboy Hat",
             price: 1000,
+            description: "No Effect",
+            effect(player) {
+
+            }
         }, {
             id: "h18",
             name: "Ranger Hat",
             price: 2000,
+            description: "No Effect",
+            effect(player) {
+
+            }
         }, {
             id: "h19",
             name: "Explorer Hat",
             price: 2000,
+            description: "No Effect",
+            effect(player) {
+
+            }
         }, {
             id: "h20",
             name: "Flipper Hat",
             price: 2500,
+            description: "Have more control while in water",
             effect(player) {
 
             }
@@ -106,6 +205,7 @@ const Hats = {
             id: "h21",
             name: "Marksman Hat",
             price: 3000,
+            description: "Increases arrow speed and range",
             effect(player) {
 
             }
@@ -114,17 +214,23 @@ const Hats = {
             id: "h22",
             name: "Bush Gear",
             price: 3000,
+            description: "Allows you to disguise yourself as a bush",
             effect(player) {
 
             }
         }, {
             id: "h23",
             name: "Halo",
-            price: 3000
+            price: 3000,
+            description: "No Effect",
+            effect(player) {
+
+            }
         }, {
             id: "h24",
             name: "Soldier Helmet",
             price: 4000,
+            description: "Reduces damage taken but slows movement",
             effect(player) {
 
             }
@@ -132,6 +238,7 @@ const Hats = {
             id: "h25",
             name: "Anti Venom Gear",
             price: 4000,
+            description: "Makes you immune to poison",
             effect(player) {
 
             }
@@ -140,6 +247,7 @@ const Hats = {
             id: "h26",
             name: "Medic Gear",
             price: 5000,
+            description: "You slowly regenerate health	",
             effect(player) {
 
             }
@@ -148,6 +256,7 @@ const Hats = {
             id: "h27",
             name: "Miner Helmet",
             price: 5000,
+            description: "Earn 1 extra gold per resource",
             effect(player) {
 
             }
@@ -155,6 +264,7 @@ const Hats = {
             id: "h28",
             name: "Musketeer Hat",
             price: 5000,
+            description: "Reduces cost of projectiles",
             effect(player) {
 
             }
@@ -162,6 +272,7 @@ const Hats = {
             id: "h29",
             name: "Bull Helmet",
             price: 6000,
+            description: "Increases damage done but drains health",
             effect(player) {
 
             }
@@ -169,6 +280,7 @@ const Hats = {
             id: "h30",
             name: "Emp Helmet",
             price: 6000,
+            description: "Turrets won't attack you but you move slower",
             effect(player) {
 
             }
@@ -176,6 +288,7 @@ const Hats = {
             id: "h31",
             name: "Booster Hat",
             price: 6000,
+            description: "Increases your movement speed",
             effect(player) {
 
             }
@@ -183,6 +296,7 @@ const Hats = {
             id: "h32",
             name: "Barbarian Armor",
             price: 8000,
+            description: "Knocks back enemies that attack you",
             effect(player) {
 
             }
@@ -190,6 +304,7 @@ const Hats = {
             id: "h33",
             name: "Plague Mask",
             price: 10000,
+            description: "Melee attacks deal poison damage",
             effect(player) {
 
             }
@@ -197,6 +312,7 @@ const Hats = {
             id: "h34",
             name: "Bull Mask",
             price: 10000,
+            description: "Bulls won't target you unless you attack them",
             effect(player) {
 
             }
@@ -205,6 +321,7 @@ const Hats = {
             id: "h35",
             name: "Windmill Hat",
             price: 10000,
+            description: "Generates points while worn	",
             effect(player) {
 
             }
@@ -212,6 +329,7 @@ const Hats = {
             id: "h36",
             name: "Spike Gear",
             price: 10000,
+            description: "Deal damage to players that damage you",
             effect(player) {
 
             }
@@ -219,6 +337,7 @@ const Hats = {
             id: "h37",
             name: "Turret Gear",
             price: 10000,
+            description: "You become a walking turret",
             effect(player) {
 
             }
@@ -226,6 +345,7 @@ const Hats = {
             id: "h38",
             name: "Samurai Armor",
             price: 12000,
+            description: "Increased attack speed and fire rate",
             effect(player) {
 
             }
@@ -233,6 +353,7 @@ const Hats = {
             id: "h39",
             name: "Dark Knight",
             price: 12000,
+            description: "Restores health when you deal damage",
             effect(player) {
 
             }
@@ -240,6 +361,7 @@ const Hats = {
             id: "h40",
             name: "Scavenger Gear",
             price: 15000,
+            description: "Earn double points for each kill",
             effect(player) {
 
             }
@@ -247,6 +369,7 @@ const Hats = {
             id: "h41",
             name: "Tank Gear",
             price: 15000,
+            description: "Increased damage to buildings but slower movement",
             effect(player) {
 
             }
@@ -254,6 +377,7 @@ const Hats = {
             id: "h42",
             name: "Thief Gear",
             price: 15000,
+            description: "Steal half of a players gold when you kill them.",
             effect(player) {
 
             }
@@ -261,6 +385,7 @@ const Hats = {
             id: "h43",
             name: "Bloodthirster Gear",
             price: 20000,
+            description: "Restore Health when dealing damage. And increased damage	",
             effect(player) {
 
             }
@@ -268,6 +393,7 @@ const Hats = {
             id: "h44",
             name: "Assassin Gear",
             price: 20000,
+            description: "Go invisible when not moving or attacking. Can't eat. Increased speed",
             effect(player) {
 
             }

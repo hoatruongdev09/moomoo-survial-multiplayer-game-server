@@ -11,6 +11,8 @@ const Vector = require('../GameUtils/vector')
 
 const WeaponInfo = require('./weapon/weaponInfo')
 const ItemInfo = require('./Items/itemInfo')
+const AccessoryInfo = require('./Shop/Accessories')
+const HatInfo = require('./Shop/Hats')
 
 const ClanManager = require('./clanManager').ClanManager
 
@@ -43,6 +45,13 @@ class Game {
         this.physic = new PhysicEngine()
         this.init()
     }
+    /* #region  CLAN MANAGER */
+
+
+    createClan(name, player) {
+        this.clanManager.createClan(name, player)
+    }
+    /* #endregion */
     /* #region  INITIALIZE  */
 
     init() {
@@ -132,6 +141,7 @@ class Game {
     addPlayer(player, data) {
         let slot = this.findEmptySlot()
         if (slot != null) {
+            console.log("player connect id: ", player.idServer, "with slot: ", slot)
             this.players[slot] = player
             this.currentPlayerCount++
             player.name = data.name
@@ -157,7 +167,11 @@ class Game {
             position: new Vector(tempPosition.x, tempPosition.y),
             lookDirect: this.map.rangdomAngle(),
             bodyRadius: this.gameConfig.playColliderRadius,
-            items: this.getStarterPack()
+            items: this.getStarterPack(),
+            shop: {
+                hats: this.getStarterHats(),
+                accessories: this.getStarterAccessories()
+            }
         })
         this.broadcast(gamecode.spawnPlayer, {
             clientId: player.idServer,
@@ -390,7 +404,10 @@ class Game {
             resource: this.getResourceInfo(),
             players: this.getPlayersInfo(),
             structures: this.getStructuresInfo(),
-            npc: this.getNpcInfo()
+            npc: this.getNpcInfo(),
+            clans: this.clanManager.getClanData(),
+            clansMember: this.clanManager.getClansMemberData(),
+            shop: this.getAllShopItem()
         }
 
         return gameData
@@ -404,6 +421,8 @@ class Game {
                     name: p.name,
                     skinId: p.skinId,
                     itemId: p.currentItem.info.id,
+                    hat: p.equipedHat == null ? "" : p.equipedHat.id,
+                    acc: p.equipedAccessory == null ? "" : p.equipedAccessory.id,
                     hp: p.healthPoint,
                     pos: {
                         x: p.position.x,
@@ -457,6 +476,26 @@ class Game {
             })
         })
         return data
+    }
+    /* #endregion */
+    /* #region  ITEM & SHOP */
+    getStarterHats() {
+        return HatInfo.getHatsByPrice(0)
+    }
+    getStarterAccessories() {
+        return AccessoryInfo.getAccessoriesByPrice(0)
+    }
+    getAllShopItem() {
+        return {
+            hats: HatInfo.getAllInfo(),
+            accessories: AccessoryInfo.getAllInfo()
+        }
+    }
+    getHatById(id) {
+        return HatInfo.getHatById(id);
+    }
+    getAccessoryById(id) {
+        return AccessoryInfo.getAccessoryById(id)
     }
     /* #endregion */
     /* #region  GAME WEAPON AND STRUCTURE */
@@ -536,6 +575,9 @@ class Game {
     /* #endregion */
     /* #region   COLLISION CHECK*/
     playerHitPlayer(idFrom, idTarget, damage) {
+        if (this.players[idTarget].clanId == this.players[idFrom].clanId && this.players[idTarget] != null) {
+            return
+        }
         console.log("player hit damage: ", damage)
         this.players[idTarget].healthPoint -= damage
         if (this.players[idTarget].healthPoint <= 0) {
@@ -628,6 +670,9 @@ class Game {
         })
     }
     playerStructureHitPlayer(idFrom, idTarget, damage) {
+        if (this.players[idTarget].clanId == this.players[idFrom].clanId && this.players[idTarget] != null) {
+            return
+        }
         this.players[idTarget].healthPoint -= damage
         if (this.players[idTarget].healthPoint <= 0) {
             this.players[idTarget].isJoinedGame = false
@@ -688,7 +733,7 @@ class Game {
             structure.addWaitToTeleporter(this.players[idFrom])
             return
         }
-        if (structure.userId == idFrom) {
+        if (structure.userId == idFrom || (this.players[idFrom].clanId == this.players[structure.userId].clanId && this.players[idFrom] != null)) {
             return
         }
 
@@ -716,7 +761,7 @@ class Game {
             this.players[idPlayer].receiveResource(weapon.info.gatherRate, key)
             this.players[idPlayer].addXP(weapon.info.goldGatherRate)
         }
-        if (idPlayer == structure.userId) {
+        if (idPlayer == structure.userId || (this.players[idPlayer].clanId == this.players[structure.userId].clanId && this.players[idPlayer].clanId != null)) {
             return
         }
         structure.takeDamge(damage)
@@ -772,8 +817,10 @@ class Game {
             }
         }
         for (let i = 0; i < this.npc.length; i++) {
-            if (this.testCollisionCircle2Cirle(strc, this.npc[i], (res, obj) => {})) {
-                return false
+            if (this.npc[i] != null) {
+                if (this.testCollisionCircle2Cirle(strc, this.npc[i], (res, obj) => {})) {
+                    return false
+                }
             }
         }
 
@@ -817,9 +864,11 @@ class Game {
                 }
             }
         }
-        this.broadcast(gamecode.removeStructures, {
-            id: data
-        })
+        if (data.length != 0) {
+            this.broadcast(gamecode.removeStructures, {
+                id: data
+            })
+        }
     }
     removePlayerSpawnPad(idPlayer) {
         let data = []

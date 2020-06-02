@@ -1,6 +1,6 @@
 const SAT = require('sat')
 const Vector = require('../../GameUtils/vector')
-const Mathf = require('mathf')
+const Mathf = require('../../GameUtils/mathfPlus')
 
 class NPC {
     constructor(id, skinId, isHostitle, maxHp, position, game, size) {

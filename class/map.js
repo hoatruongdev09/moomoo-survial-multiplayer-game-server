@@ -1,4 +1,5 @@
-const Mathf = require('mathf')
+const MathfPlus = require('../GameUtils/mathfPlus')
+const Mathf = require('../GameUtils/mathfPlus')
 
 class Map {
     constructor(size, offset, snowSize, riverSize) {
