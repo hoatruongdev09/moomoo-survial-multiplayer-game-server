@@ -11,7 +11,7 @@ class NPC {
         this.game = game
 
 
-        this.normalMoveSpeed = 7 + (isHostitle ? 5 : 0)
+        this.normalMoveSpeed = 6 + (isHostitle ? 2 : 0)
         this.moveSpeed = this.normalMoveSpeed
         this.rotateSpeed = 1.2 + (isHostitle ? 2 : 0)
         this.inviromentSpeedModifier = 1
@@ -85,6 +85,19 @@ class NPC {
 
         }
     }
+    rest() {
+        if (this.isTiming) {
+            return
+        }
+        this.lastMoveDirect = null
+        this.isTiming = true
+        setTimeout(() => {
+            this.isResting = false
+            this.setTarget(this.getRandomPosition())
+            this.setMove(this.targetPosition)
+            this.isTiming = false
+        }, Mathf.RandomeRange(7, 20) * 1000) // REST TIME
+    }
     hunt() {
         if (this.target == null || !this.target.isJoinedGame) {
             this.searchAround()
@@ -111,6 +124,12 @@ class NPC {
         if (this.target != null) {
             this.game.npcHitPlayer(this.id, this.target.idGame, this.damage)
             this.game.pushPlayerBack(this.target, this.target.position.clone().sub(this.position), 5)
+
+            this.isResting = true
+            this.isTiming = true
+            setTimeout(() => {
+                this.isTiming = false
+            }, Mathf.RandomeRange(5, 6) * 1000)
         }
 
     }
@@ -154,19 +173,7 @@ class NPC {
             this.isTiming = false
         }, Mathf.RandomeRange(5, 9) * 1000)
     }
-    rest() {
-        if (this.isTiming) {
-            return
-        }
-        this.lastMoveDirect = null
-        this.isTiming = true
-        setTimeout(() => {
-            this.isResting = false
-            this.setTarget(this.getRandomPosition())
-            this.setMove(this.targetPosition)
-            this.isTiming = false
-        }, Mathf.RandomeRange(7, 20) * 1000) // REST TIME
-    }
+
     onHit(from) {
         if (!this.isHostitle) {
             this.setTarget(this.getRandomPosition())

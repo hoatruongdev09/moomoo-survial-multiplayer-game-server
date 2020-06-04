@@ -1,27 +1,24 @@
-const SAT = require('sat')
-
-
+const SAT = require("sat");
 
 class PhysicEngine {
-    constructor() {
-
+  constructor() {}
+  testCircle2Cirle(circle1, circle2, response) {
+    let res = new SAT.Response();
+    let collision = SAT.testCircleCircle(circle1, circle2, res);
+    if (collision) {
+      response(res, circle2);
     }
-    testCircle2Cirle(circle1, circle2, response) {
-        let res = new SAT.Response()
-        let collision = SAT.testCircleCircle(circle1, circle2, res)
-        if (collision) {
-            response(res, circle2)
-        }
-        return collision
+    return collision;
+  }
+  testPoligon2Cirle(poli, circle, response) {
+    let res = new SAT.Response();
+    let collision = SAT.testPolygonCircle(poli, circle, res);
+    if (collision) {
+      response(res, circle);
     }
-    testPoligon2Cirle(poli, circle, response) {
-        let res = new SAT.Response()
-        let collision = SAT.testPolygonCircle(poli, circle, res)
-        if (collision) {
-            response(res, circle)
-        }
-        return collision
-    }
+    console.log("collission: ", collision);
+    return collision;
+  }
 }
 
-module.exports = PhysicEngine
+module.exports = PhysicEngine;
