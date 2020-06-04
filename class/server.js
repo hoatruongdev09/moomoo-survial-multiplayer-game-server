@@ -9,6 +9,11 @@ const ServerCode = require('../transmitcode').ServerCode
 const GameCode = require('../transmitcode').GameCode
 const gameconfig = require('./gameconfig')
 
+const serverList = {
+    asia: "ec2-13-250-27-202.ap-southeast-1.compute.amazonaws.com:8080",
+    us: "moomoo-server.herokuapp.com",
+}
+
 class Server {
     constructor(config, expressServer) {
         this.config = config

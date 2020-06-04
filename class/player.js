@@ -151,6 +151,7 @@ class Player {
         this.socket.on(ClanCode.kickMember, (data) => this.kickMember(data))
         this.socket.on(ClanCode.joinClan, (data) => this.requestJoinClan(data))
         this.socket.on(ClanCode.requestJoin, (data) => this.responRequestJoinClan(data))
+        this.socket.on(ServerCode.ServerList, () => this.onServerList())
     }
 
     update(deltaTime) {
@@ -193,6 +194,9 @@ class Player {
         if (this.game.clanManager.checkIsMasterOfClan(this.idGame, this.clanId)) {
             this.game.clanManager.respondRequestJoin(data.id, this.clanId, data.action);
         }
+    }
+    onServerList() {
+
     }
     /* #endregion */
 
