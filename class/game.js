@@ -720,11 +720,11 @@ class Game {
     onNpcDie(player, npc) {
         this.npcs[npc.id].isJoined = false
         if (this.players[player.idGame] != null && this.players[player.idGame].isJoinedGame) {
-            this.addGold(this.players[idPlayer], 100)
+            this.addGold(this.players[player.idGame], 100)
         }
-        this.respawnNpc(this.npcs[idTarget]);
+        this.respawnNpc(this.npcs[npc.id]);
         this.broadcast(gamecode.syncNpcDie, {
-            id: idNpc,
+            id: npc.id,
         });
     }
     onNpcHit(npc) {
