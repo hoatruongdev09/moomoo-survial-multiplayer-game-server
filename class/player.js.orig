@@ -97,43 +97,13 @@ class Player {
         this.intervalAutoAttack;
     }
     registerListenter() {
-<<<<<<< HEAD
-        this.socket.on('disconnect', () => this.onDisconnect())
-        this.socket.on(ServerCode.OnPing, () => this.onPing())
-        this.socket.on(ServerCode.OnRequestJoin, (data) => this.onJoin(data))
-        this.socket.on(ServerCode.ClientStatus, (data) => this.onRecievedClientStatus(data))
-        this.socket.on(GameCode.receivedData, (data) => this.onRecievedGameData(data))
-        this.socket.on(GameCode.syncLookDirect, (data) => this.syncLookDirect(data))
-        this.socket.on(GameCode.syncMoveDirect, (data) => this.syncMoveDirect(data))
-        this.socket.on(GameCode.triggerAttack, (data) => this.useItem(data))
-        this.socket.on(GameCode.triggerAutoAttack, (data) => this.autoAttack(data))
-        this.socket.on(GameCode.switchItem, (data) => this.switchItem(data))
-        this.socket.on(GameCode.upgradeItem, (data) => this.upgradeItem(data))
-        this.socket.on(GameCode.playerChat, (data) => this.chat(data))
-        this.socket.on(GameCode.scoreBoard, () => this.sendScore())
-        this.socket.on(GameCode.shopSelectItem, (data) => this.chooseItem(data))
-
-        this.socket.on(ClanCode.createClan, (data) => this.createClan(data))
-        this.socket.on(ClanCode.kickMember, (data) => this.kickMember(data))
-        this.socket.on(ClanCode.joinClan, (data) => this.requestJoinClan(data))
-        this.socket.on(ClanCode.requestJoin, (data) => this.responRequestJoinClan(data))
-        this.socket.on(ServerCode.ServerList, () => this.onServerList())
-=======
         this.socket.on("disconnect", () => this.onDisconnect());
         this.socket.on(ServerCode.OnPing, () => this.onPing());
         this.socket.on(ServerCode.OnRequestJoin, (data) => this.onJoin(data));
-        this.socket.on(ServerCode.ClientStatus, (data) =>
-            this.onRecievedClientStatus(data)
-        );
-        this.socket.on(GameCode.receivedData, (data) =>
-            this.onRecievedGameData(data)
-        );
-        this.socket.on(GameCode.syncLookDirect, (data) =>
-            this.syncLookDirect(data)
-        );
-        this.socket.on(GameCode.syncMoveDirect, (data) =>
-            this.syncMoveDirect(data)
-        );
+        this.socket.on(ServerCode.ClientStatus, (data) => this.onRecievedClientStatus(data));
+        this.socket.on(GameCode.receivedData, (data) => this.onRecievedGameData(data));
+        this.socket.on(GameCode.syncLookDirect, (data) => this.syncLookDirect(data));
+        this.socket.on(GameCode.syncMoveDirect, (data) => this.syncMoveDirect(data));
         this.socket.on(GameCode.triggerAttack, (data) => this.useItem(data));
         this.socket.on(GameCode.triggerAutoAttack, (data) => this.autoAttack(data));
         this.socket.on(GameCode.switchItem, (data) => this.switchItem(data));
@@ -142,13 +112,17 @@ class Player {
         this.socket.on(GameCode.scoreBoard, () => this.sendScore());
         this.socket.on(GameCode.shopSelectItem, (data) => this.chooseItem(data));
 
+<<<<<<< HEAD
+        this.socket.on(ClanCode.createClan, (data) => this.createClan(data))
+        this.socket.on(ClanCode.kickMember, (data) => this.kickMember(data))
+        this.socket.on(ClanCode.joinClan, (data) => this.requestJoinClan(data))
+        this.socket.on(ClanCode.requestJoin, (data) => this.responRequestJoinClan(data))
+=======
         this.socket.on(ClanCode.createClan, (data) => this.createClan(data));
         this.socket.on(ClanCode.kickMember, (data) => this.kickMember(data));
         this.socket.on(ClanCode.joinClan, (data) => this.requestJoinClan(data));
-        this.socket.on(ClanCode.requestJoin, (data) =>
-            this.responRequestJoinClan(data)
-        );
->>>>>>> new-sync-position-method
+        this.socket.on(ClanCode.requestJoin, (data) => this.responRequestJoinClan(data));
+>>>>>>> 039481e08137b94f02ed72874c15cd18f22260b3
     }
 
     update(deltaTime) {
@@ -195,9 +169,6 @@ class Player {
             );
         }
     }
-    onServerList() {
-
-    }
     /* #endregion */
 
     /* #region  COLLISION EVENTS */
@@ -229,7 +200,7 @@ class Player {
                 this.currentItem,
                 r,
                 (response, objectCollide) =>
-                    this.onHitResource(response, objectCollide, r)
+                this.onHitResource(response, objectCollide, r)
             );
         }
     }
@@ -239,7 +210,7 @@ class Player {
                 this.currentItem,
                 s,
                 (response, objectCollide) =>
-                    this.onHitStructure(response, objectCollide, s)
+                this.onHitStructure(response, objectCollide, s)
             );
         }
     }
@@ -262,7 +233,7 @@ class Player {
                 this.currentItem,
                 p,
                 (response, objectCollide) =>
-                    this.onHitPlayer(response, objectCollide, p)
+                this.onHitPlayer(response, objectCollide, p)
             );
         }
     }
@@ -318,7 +289,6 @@ class Player {
         this.send(ServerCode.OnPing, null);
     }
     onJoin(data) {
-        console.log("on join: ", data)
         this.skinId = data.skinId;
         this.clientScreenSize.width = data.screenSizeX
         this.clientScreenSize.height = data.screenSizeY
@@ -550,8 +520,7 @@ class Player {
                 return i.id;
             }),
             equipedHat: this.equipedHat == null ? "" : this.equipedHat.id,
-            equipedAccessory:
-                this.equipedAccessory == null ? "" : this.equipedAccessory.id,
+            equipedAccessory: this.equipedAccessory == null ? "" : this.equipedAccessory.id,
         });
     }
     chooseItem(data) {
@@ -765,8 +734,7 @@ class Player {
             scores: this.scores,
             kills: this.kills,
             level: this.levelInfo.level,
-            xp:
-                this.levelInfo.xp /
+            xp: this.levelInfo.xp /
                 levelDescription[this.levelInfo.level].nextLevelUpXp,
             wood: this.basicResources.Wood,
             food: this.basicResources.Food,

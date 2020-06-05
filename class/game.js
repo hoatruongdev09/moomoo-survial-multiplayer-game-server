@@ -6,7 +6,6 @@ const ResourceType = require("./resource").ResourceType;
 
 const PhysicEngine = require("./physicEngine");
 
-const Mathf = require("mathf");
 const Vector = require("../GameUtils/vector");
 
 const WeaponInfo = require("./weapon/weaponInfo");
@@ -16,7 +15,7 @@ const HatInfo = require("./Shop/Hats");
 
 const ClanManager = require("./clanManager").ClanManager;
 
-const NPC = require("./NPCs/hostitleNpc");
+const NPC = require("./NPCs/newNPC");
 class Game {
     constructor(id, server, gameConfig, name) {
         this.name = name;
@@ -25,7 +24,7 @@ class Game {
         this.gameConfig = gameConfig;
 
         this.players;
-        this.npc;
+        this.npcs;
         this.currentPlayerCount = 0;
 
         this.resources;
@@ -72,7 +71,7 @@ class Game {
 
     init() {
         this.players = new Array(this.gameConfig.maxPlayer);
-        this.npc = new Array(this.gameConfig.npcCount());
+        this.npcs = new Array(this.gameConfig.npcCount());
         this.initializeResources();
         this.initializeNPC();
     }
@@ -95,95 +94,45 @@ class Game {
             this.resources[i] = rs;
         }
     }
+    getNpcEvent() {
+        return {
+            onDie: this.onNpcDie,
+            onHit: this.onNpcHit
+        }
+    }
     initializeNPC() {
         let j = 0;
         for (let i = 0; i < this.gameConfig.npcDuckCount; i++, j++) {
             // DUCK
-            this.npc[j] = new NPC(
-                j,
-                4,
-                false,
-                250,
-                this.getRandomPosition(),
-                this,
-                2
-            );
+            this.npcs[j] = new NPC(j, 4, false, 250, this.getRandomPosition(), this, 2);
         }
         for (let i = 0; i < this.gameConfig.npcChickenCount; i++, j++) {
             // CHICKEN
-            this.npc[j] = new NPC(
-                j,
-                3,
-                false,
-                250,
-                this.getRandomPosition(),
-                this,
-                2
-            );
+            this.npcs[j] = new NPC(j, 3, false, 250, this.getRandomPosition(), this, 2);
         }
         for (let i = 0; i < this.gameConfig.npcCowCount; i++, j++) {
             // COW
-            this.npc[j] = new NPC(j, 0, false, 500, this.getRandomPosition(), this, 2.4);
+            this.npcs[j] = new NPC(j, 0, false, 500, this.getRandomPosition(), this, 2.4);
         }
         for (let i = 0; i < this.gameConfig.npcBullCount; i++, j++) {
             // BULL
-            this.npc[j] = new NPC(
-                j,
-                5,
-                false,
-                700,
-                this.getRandomPosition(),
-                this,
-                2.4
-            );
+            this.npcs[j] = new NPC(j, 5, false, 700, this.getRandomPosition(), this, 2.4);
         }
         for (let i = 0; i < this.gameConfig.npcSheepCount; i++, j++) {
             // SHEEP
-            this.npc[j] = new NPC(
-                j,
-                2,
-                false,
-                600,
-                this.getRandomPosition(),
-                this,
-                2.4
-            );
+            this.npcs[j] = new NPC(j, 2, false, 600, this.getRandomPosition(), this, 2.4);
         }
         for (let i = 0; i < this.gameConfig.npcPigCount; i++, j++) {
             // PIG
-            this.npc[j] = new NPC(
-                j,
-                1,
-                false,
-                550,
-                this.getRandomPosition(),
-                this,
-                2.4
-            );
+            this.npcs[j] = new NPC(j, 1, false, 550, this.getRandomPosition(), this, 2.4);
         }
         for (let i = 0; i < this.gameConfig.npcBullyCount; i++, j++) {
             // BULLY
-            this.npc[j] = new NPC(
-                j,
-                6,
-                true,
-                800,
-                this.getRandomPosition(),
-                this,
-                2.4
-            );
+            this.npcs[j] = new NPC(j, 6, true, 800, this.getRandomPosition(), this, 2.4);
         }
         for (let i = 0; i < this.gameConfig.npcWolfCount; i++, j++) {
             // WOLF
-            this.npc[j] = new NPC(
-                j,
-                7,
-                true,
-                700,
-                this.getRandomPosition(),
-                this,
-                2.4
-            );
+            this.npcs[j] = new NPC(j, 7, true, 700, this.getRandomPosition(), this, 2.4);
         }
     }
     /* #endregion */
@@ -381,31 +330,12 @@ class Game {
         }
     }
     new_updateNPC(deltaTime) {
-        this.npc.forEach((n) => {
+        this.npcs.forEach((n) => {
             if (n != null && n.isJoined) {
                 n.update(deltaTime);
                 this.new_syncSingleNpcPosition(n, deltaTime);
             }
         });
-    }
-
-    updateNPC(deltaTime) {
-        let positionData = [];
-        let temp = null;
-        this.npc.forEach((n) => {
-            if (n != null && n.isJoined) {
-                n.update(deltaTime);
-                temp = this.syncSingleNpcPosition(n, deltaTime);
-                if (temp != null) {
-                    positionData.push(temp);
-                }
-            }
-        });
-        if (positionData.length != 0) {
-            this.broadcast(gamecode.syncNpcTransform, {
-                pos: positionData,
-            });
-        }
     }
     new_syncSingleNpcPosition(npc, deltaTime) {
         if (npc != null && npc.isJoined) {
@@ -420,62 +350,6 @@ class Game {
             npc.position = this.map.clampPositionToMap(npc.position);
         }
     }
-    syncSingleNpcPosition(npc, deltaTime) {
-        let data = null;
-        if (npc != null && npc.isJoined) {
-            if (this.map.checkIfIsInRiver(npc.position)) {
-                npc.inviromentSpeedModifier = this.gameConfig.riverSpeedModifier;
-                npc.moveNpc(new Vector(1, 0), deltaTime);
-                npc.position = this.map.clampPositionToMap(npc.position);
-                data = {
-                    id: npc.id,
-                    pos: {
-                        x: npc.position.x,
-                        y: npc.position.y,
-                    },
-                    rot: npc.lookAngle,
-                };
-            } else if (this.map.checkIfIsInSnow(npc.position)) {
-                npc.inviromentSpeedModifier = this.gameConfig.snowSpeedModifier;
-            } else {
-                npc.inviromentSpeedModifier = 1;
-            }
-            if (npc.lastMoveDirect != null) {
-                npc.position = this.map.clampPositionToMap(npc.position);
-                data = {
-                    id: npc.id,
-                    pos: {
-                        x: npc.position.x,
-                        y: npc.position.y,
-                    },
-                    rot: npc.lookAngle,
-                };
-            }
-        }
-        return data;
-    }
-    syncPlayerPosition(player) {
-        var positionData = [];
-        var lookData = [];
-        positionData.push({
-            id: player.idGame,
-            pos: {
-                x: player.position.x,
-                y: player.position.y,
-            },
-        });
-        lookData.push({
-            id: player.idGame,
-            angle: player.lookDirect,
-        });
-
-        if (positionData.length != 0 || lookData.length != 0) {
-            this.broadcast(gamecode.syncTransform, {
-                pos: positionData,
-                rot: lookData,
-            });
-        }
-    }
     new_syncSinglePlayerPosition(player, deltaTime) {
         if (this.map.checkIfIsInRiver(player.position) && !player.platformStanding) {
             player.inviromentSpeedModifier = this.gameConfig.riverSpeedModifier;
@@ -487,41 +361,10 @@ class Game {
         }
         player.position = this.map.clampPositionToMap(player.position);
     }
-    syncSinglePlayerPosition(player, deltaTime) {
-        let syncTransform = {
-            pos: null,
-            rot: null,
-        };
-        if (this.map.checkIfIsInRiver(player.position) && !player.platformStanding) {
-            player.inviromentSpeedModifier = this.gameConfig.riverSpeedModifier;
-            player.movePlayer(0, deltaTime);
-        } else if (this.map.checkIfIsInSnow(player.position)) {
-            player.inviromentSpeedModifier = this.gameConfig.snowSpeedModifier;
-        } else {
-            player.inviromentSpeedModifier = 1;
-        }
-        if (player.lastMovement != null) {
-            player.position = this.map.clampPositionToMap(player.position);
-            syncTransform.pos = {
-                id: player.idGame,
-                pos: {
-                    x: player.position.x,
-                    y: player.position.y,
-                },
-            };
-        }
-        if (player.lastLook != null) {
-            syncTransform.rot = {
-                id: player.idGame,
-                angle: player.lookDirect,
-            };
-        }
-        return syncTransform;
-    }
     getNpcFromView(position) {
         let viewObjects = [];
         let temp = new Vector(0, 0);
-        this.npc.forEach((n) => {
+        this.npcs.forEach((n) => {
             if (n != null && n.isJoined) {
                 temp.x = position.x - n.position.x;
                 temp.y = position.y - n.position.y;
@@ -538,7 +381,7 @@ class Game {
         return viewObjects;
     }
     getNpcFromScreenView(position, screenView) {
-        let viewObjects = this.npc.filter(n => {
+        let viewObjects = this.npcs.filter(n => {
             if (n != null && n.isJoined && this.checkIfPositionIsInScreenView(n.position, position, screenView)) {
                 return n
             }
@@ -650,7 +493,7 @@ class Game {
     }
     getNpcInfo() {
         let data = [];
-        this.npc.forEach((n) => {
+        this.npcs.forEach((n) => {
             if (n != null && n.isJoined) {
                 data.push({
                     id: n.id,
@@ -874,16 +717,38 @@ class Game {
     playerHitNpc(idFrom, idTarget, damage) {
         this.playerStructureHitNpc(idFrom, idTarget, damage);
     }
+    onNpcDie(player, npc) {
+        this.npcs[npc.id].isJoined = false
+        if (this.players[player.idGame] != null && this.players[player.idGame].isJoinedGame) {
+            this.addGold(this.players[idPlayer], 100)
+        }
+        this.respawnNpc(this.npcs[idTarget]);
+        this.broadcast(gamecode.syncNpcDie, {
+            id: idNpc,
+        });
+    }
+    onNpcHit(npc) {
+        if (this.npcs[npc.id].isJoined) {
+            let data = [{
+                id: npc.id,
+                hp: this.npcs[npc.id].getHpPercent()
+            }]
+            this.syncNpcHealthpoint(data)
+        }
+    }
     playerStructureHitNpc(idFrom, idTarget, damage) {
-        this.npc[idTarget].healthPoint -= damage;
-        this.npc[idTarget].onHit(this.players[idFrom]);
-        if (this.npc[idTarget].healthPoint <= 0) {
-            this.npc[idTarget].isJoined = false;
+        this.npcs[idTarget].onBeginHit(this.players[idFrom], damage);
+    }
+    old_playerStructureHitNpc(idFrom, idTarget, damage) {
+        this.npcs[idTarget].healthPoint -= damage;
+        this.npcs[idTarget].onHit(this.players[idFrom]);
+        if (this.npcs[idTarget].healthPoint <= 0) {
+            this.npcs[idTarget].isJoined = false;
             // BROAD CAST EVENT NPC DIE
             this.broadcast(gamecode.syncNpcDie, {
                 id: idTarget,
             });
-            this.respawnNpc(this.npc[idTarget]);
+            this.respawnNpc(this.npcs[idTarget]);
             if (this.players[idFrom] != null && this.players[idFrom].isJoinedGame) {
                 this.addGold(this.players[idFrom], 100);
                 this.players[idFrom].addXP(50);
@@ -892,7 +757,7 @@ class Game {
             let data = [];
             data.push({
                 id: idTarget,
-                hp: this.npc[idTarget].getHpPercent(),
+                hp: this.npcs[idTarget].getHpPercent(),
             });
             // BROAD CAST EVENT HP
             this.syncNpcHealthpoint(data);
@@ -941,14 +806,14 @@ class Game {
             return;
         }
         if (structure.toString() == "PitTrap") {
-            structure.trapNpc(this.npc[id]);
+            structure.trapNpc(this.npcs[id]);
             return;
         }
         if (structure.toString() == "Spike") {
             this.playerStructureHitNpc(structure.userId, id, structure.damage);
             this.pushNpcBack(
-                this.npc[id],
-                this.npc[id].position.clone().sub(structure.position),
+                this.npcs[id],
+                this.npcs[id].position.clone().sub(structure.position),
                 5
             );
         }
@@ -1100,10 +965,10 @@ class Game {
                 return false;
             }
         }
-        for (let i = 0; i < this.npc.length; i++) {
-            if (this.npc[i] != null) {
+        for (let i = 0; i < this.npcs.length; i++) {
+            if (this.npcs[i] != null) {
                 if (
-                    this.testCollisionCircle2Cirle(strc, this.npc[i], (res, obj) => { })
+                    this.testCollisionCircle2Cirle(strc, this.npcs[i], (res, obj) => { })
                 ) {
                     return false;
                 }

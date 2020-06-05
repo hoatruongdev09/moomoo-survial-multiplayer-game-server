@@ -100,18 +100,10 @@ class Player {
         this.socket.on("disconnect", () => this.onDisconnect());
         this.socket.on(ServerCode.OnPing, () => this.onPing());
         this.socket.on(ServerCode.OnRequestJoin, (data) => this.onJoin(data));
-        this.socket.on(ServerCode.ClientStatus, (data) =>
-            this.onRecievedClientStatus(data)
-        );
-        this.socket.on(GameCode.receivedData, (data) =>
-            this.onRecievedGameData(data)
-        );
-        this.socket.on(GameCode.syncLookDirect, (data) =>
-            this.syncLookDirect(data)
-        );
-        this.socket.on(GameCode.syncMoveDirect, (data) =>
-            this.syncMoveDirect(data)
-        );
+        this.socket.on(ServerCode.ClientStatus, (data) => this.onRecievedClientStatus(data));
+        this.socket.on(GameCode.receivedData, (data) => this.onRecievedGameData(data));
+        this.socket.on(GameCode.syncLookDirect, (data) => this.syncLookDirect(data));
+        this.socket.on(GameCode.syncMoveDirect, (data) => this.syncMoveDirect(data));
         this.socket.on(GameCode.triggerAttack, (data) => this.useItem(data));
         this.socket.on(GameCode.triggerAutoAttack, (data) => this.autoAttack(data));
         this.socket.on(GameCode.switchItem, (data) => this.switchItem(data));
@@ -120,10 +112,10 @@ class Player {
         this.socket.on(GameCode.scoreBoard, () => this.sendScore());
         this.socket.on(GameCode.shopSelectItem, (data) => this.chooseItem(data));
 
-        this.socket.on(ClanCode.createClan, (data) => this.createClan(data))
-        this.socket.on(ClanCode.kickMember, (data) => this.kickMember(data))
-        this.socket.on(ClanCode.joinClan, (data) => this.requestJoinClan(data))
-        this.socket.on(ClanCode.requestJoin, (data) => this.responRequestJoinClan(data))
+        this.socket.on(ClanCode.createClan, (data) => this.createClan(data));
+        this.socket.on(ClanCode.kickMember, (data) => this.kickMember(data));
+        this.socket.on(ClanCode.joinClan, (data) => this.requestJoinClan(data));
+        this.socket.on(ClanCode.requestJoin, (data) => this.responRequestJoinClan(data));
     }
 
     update(deltaTime) {
@@ -290,7 +282,6 @@ class Player {
         this.send(ServerCode.OnPing, null);
     }
     onJoin(data) {
-        console.log("on join: ", data)
         this.skinId = data.skinId;
         this.clientScreenSize.width = data.screenSizeX
         this.clientScreenSize.height = data.screenSizeY
