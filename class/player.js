@@ -1,151 +1,124 @@
-const ServerCode = require('../transmitcode').ServerCode
-const GameCode = require('../transmitcode').GameCode
-const ClanCode = require('../transmitcode').ClanCode
+const ServerCode = require("../transmitcode").ServerCode;
+const GameCode = require("../transmitcode").GameCode;
+const ClanCode = require("../transmitcode").ClanCode;
 
+const Vector = require("../GameUtils/vector");
+const SAT = require("sat");
 
-const Vector = require('../GameUtils/vector')
-const SAT = require('sat')
+const Melee = require("./weapon/melee");
+const Ranged = require("./weapon/ranged");
+const Item = require("./Items/item");
 
-const Melee = require('./weapon/melee')
-const Ranged = require('./weapon/ranged')
-const Item = require('./Items/item')
+const levelDescription = require("./levelInfo");
 
-const levelDescription = require('./levelInfo')
+const ResourceManager = require('./Player/resourcesManager')
+const StructueManager = require('./Player/structureManager')
+const LevelManager = require('./Player/levelManager')
 class Player {
     constructor(idServer, server, socket) {
         /* #region SERVER IDENTITIES  */
 
-        this.idServer = idServer
-        this.server = server
-        this.socket = socket
+        this.idServer = idServer;
+        this.server = server;
+        this.socket = socket;
         /* #endregion */
 
-        // SERVER FUNCTION
-        this.handleSocket(socket)
-        this.isSuspend = false
-        this.isDelayQuit = false
+        /* #region  CLIENT PROPERTIES */
+        this.clientScreenSize = {
+            width: 60,
+            height: 30
+        }
+        /* #endregion */
+
+
+        /* #region SERVER FUNCTION  */
+        this.handleSocket(socket);
+        this.isSuspend = false;
+        this.isDelayQuit = false;
+        /* #endregion */
+
         /* #region GAME IDENTITIES */
-        this.game = null
-        this.idGame = -1
-        this.isJoinedGame = false
-        this.name = ""
-        this.skinId = 0
-        this.clanId = null
+        this.game = null;
+        this.idGame = -1;
+        this.isJoinedGame = false;
+        this.name = "";
+        this.skinId = 0;
+        this.clanId = null;
 
         /* #endregion */
-        // MOVEMENT PROPERTIES
-        this.moveSpeed
 
-        // TRANSFORM 
-        this.position
-        this.moveDirect // vector
-        this.lookDirect // angle
-        this.lastMovement // angle
-        this.lastLook // angle
+        // MOVEMENT PROPERTIES
+        this.moveSpeed;
+
+        // TRANSFORM
+        this.position;
+        this.moveDirect; // vector
+        this.lookDirect; // angle
+        this.lastMovement; // angle
+        this.lastLook; // angle
 
         // BODYPART
-        this.bodyCollider
+        this.bodyCollider;
 
         // VIEWS
-        this.resourcesView = []
-        this.playersView = []
-        this.npcView = []
-        this.structuresView = []
+        this.resourcesView = [];
+        this.playersView = [];
+        this.npcView = [];
+        this.structuresView = [];
 
         // WEAPONS
-        this.weapons = []
-        this.onwedItems = []
+        this.weapons = [];
+        this.onwedItems = [];
 
-        this.currentItem = null
+        this.currentItem = null;
 
         // HEALTH
-        this.healthPoint = 100
-        this.kills = 0
-        this.scores = 0
+        this.healthPoint = 100;
+        this.kills = 0;
+        this.scores = 0;
 
-        this.levelInfo = {
-            xp: 0,
-            level: 1,
-            reset() {
-                this.xp = 0
-                this.level = 1
-            }
-        }
+        this.levelInfo = new LevelManager()
 
-        this.basicResources = {
-            Wood: 0,
-            Food: 0,
-            Stone: 0,
-            Gold: 0,
-            addAll(amount) {
-                this.Wood += amount
-                this.food += amount
-                this.Stone += amount
-                this.Gold += amount
-            },
-            reset() {
-                this.Wood = this.Food = this.Stone = this.Gold = 0
-            }
-        }
+        this.basicResources = new ResourceManager()
         // EFFECT
-        this.speedModifier = 1
-        this.inviromentSpeedModifier = 1
-        this.platformStanding = false
+        this.speedModifier = 1;
+        this.inviromentSpeedModifier = 1;
+        this.platformStanding = false;
         // STRUCTURES
         this.spawnPad = null
-        this.structures = {
-            Wall: 0,
-            Windmill: 0,
-            Spike: 0,
-            PitTrap: 0,
-            BoostPad: 0,
-            HealingPad: 0,
-            MineStone: 0,
-            Sapling: 0,
-            Platform: 0,
-            Teleporter: 0,
-            Spawnpad: 0,
-            Blocker: 0,
-
-            reset() {
-                this.Windmill = 0
-                this.Wall = 0
-                this.Spike = 0
-                this.PitTrap = 0
-                this.BoostPad = 0
-                this.HealingPad = 0
-                this.MineStone = 0
-                this.Sapling = 0
-                this.Platform = 0
-                this.Teleporter = 0
-                this.Blocker = 0
-            }
-        }
+        this.structures = new StructueManager()
         // OWNED HATS & ACCESSORIES
-        this.ownedHat = []
-        this.ownedAccessories = []
-        this.equipedHat = null
-        this.equipedAccessory = null
+        this.ownedHat = [];
+        this.ownedAccessories = [];
+        this.equipedHat = null;
+        this.equipedAccessory = null;
         // MISC
-        this.isAutoAttack = false
-        this.intervalAutoAttack
-
+        this.isAutoAttack = false;
+        this.intervalAutoAttack;
     }
     registerListenter() {
-        this.socket.on('disconnect', () => this.onDisconnect())
-        this.socket.on(ServerCode.OnPing, () => this.onPing())
-        this.socket.on(ServerCode.OnRequestJoin, (data) => this.onJoin(data))
-        this.socket.on(ServerCode.ClientStatus, (data) => this.onRecievedClientStatus(data))
-        this.socket.on(GameCode.receivedData, (data) => this.onRecievedGameData(data))
-        this.socket.on(GameCode.syncLookDirect, (data) => this.syncLookDirect(data))
-        this.socket.on(GameCode.syncMoveDirect, (data) => this.syncMoveDirect(data))
-        this.socket.on(GameCode.triggerAttack, (data) => this.useItem(data))
-        this.socket.on(GameCode.triggerAutoAttack, (data) => this.autoAttack(data))
-        this.socket.on(GameCode.switchItem, (data) => this.switchItem(data))
-        this.socket.on(GameCode.upgradeItem, (data) => this.upgradeItem(data))
-        this.socket.on(GameCode.playerChat, (data) => this.chat(data))
-        this.socket.on(GameCode.scoreBoard, () => this.sendScore())
-        this.socket.on(GameCode.shopSelectItem, (data) => this.chooseItem(data))
+        this.socket.on("disconnect", () => this.onDisconnect());
+        this.socket.on(ServerCode.OnPing, () => this.onPing());
+        this.socket.on(ServerCode.OnRequestJoin, (data) => this.onJoin(data));
+        this.socket.on(ServerCode.ClientStatus, (data) =>
+            this.onRecievedClientStatus(data)
+        );
+        this.socket.on(GameCode.receivedData, (data) =>
+            this.onRecievedGameData(data)
+        );
+        this.socket.on(GameCode.syncLookDirect, (data) =>
+            this.syncLookDirect(data)
+        );
+        this.socket.on(GameCode.syncMoveDirect, (data) =>
+            this.syncMoveDirect(data)
+        );
+        this.socket.on(GameCode.triggerAttack, (data) => this.useItem(data));
+        this.socket.on(GameCode.triggerAutoAttack, (data) => this.autoAttack(data));
+        this.socket.on(GameCode.switchItem, (data) => this.switchItem(data));
+        this.socket.on(GameCode.upgradeItem, (data) => this.upgradeItem(data));
+        this.socket.on(GameCode.playerChat, (data) => this.chat(data));
+        this.socket.on(GameCode.scoreBoard, () => this.sendScore());
+        this.socket.on(GameCode.shopSelectItem, (data) => this.chooseItem(data));
 
         this.socket.on(ClanCode.createClan, (data) => this.createClan(data))
         this.socket.on(ClanCode.kickMember, (data) => this.kickMember(data))
@@ -155,44 +128,47 @@ class Player {
     }
 
     update(deltaTime) {
-        this.updatePosition(deltaTime)
-        this.updateRotation()
+        this.updatePosition(deltaTime);
+        this.updateRotation();
     }
     /* #region  CLAN EVENTS */
     createClan(data) {
-        this.game.createClan(data.name, this)
+        this.game.createClan(data.name, this);
     }
     kickMember(data) {
         if (this.clanId == null) {
-            return
+            return;
         }
         if (this.game.clanManager.checkIsMasterOfClan(this.idGame, this.clanId)) {
             if (data.id == this.idGame) {
-                this.game.clanManager.removeClan(this.clanId)
+                this.game.clanManager.removeClan(this.clanId);
             } else {
-                this.game.clanManager.kickMember(data.id, this.clanId)
+                this.game.clanManager.kickMember(data.id, this.clanId);
             }
         } else {
             if (data.id == this.idGame) {
-                this.game.clanManager.kickMember(data.id, this.clanId)
+                this.game.clanManager.kickMember(data.id, this.clanId);
             }
         }
-
     }
     requestJoinClan(data) {
-        console.log("request join clan: ", data, " this.clanId: ", this.clanId)
+        console.log("request join clan: ", data, " this.clanId: ", this.clanId);
         if (this.clanId != null) {
-            return
+            return;
         }
-        this.game.clanManager.addRequestJoin(this, data.id)
+        this.game.clanManager.addRequestJoin(this, data.id);
         // this.game.clanManager.addMember(this, data.id)
     }
     responRequestJoinClan(data) {
         if (this.clanId == null) {
-            return
+            return;
         }
         if (this.game.clanManager.checkIsMasterOfClan(this.idGame, this.clanId)) {
-            this.game.clanManager.respondRequestJoin(data.id, this.clanId, data.action);
+            this.game.clanManager.respondRequestJoin(
+                data.id,
+                this.clanId,
+                data.action
+            );
         }
     }
     onServerList() {
@@ -202,73 +178,107 @@ class Player {
 
     /* #region  COLLISION EVENTS */
     checkCollider() {
-        this.checkColliderWithResources()
-        this.checkColliderWithStructures()
+        this.checkColliderWithResources();
+        this.checkColliderWithStructures();
     }
     checkColliderWithResources() {
-        this.resourcesView = this.game.getResourceFromView(this.position)
+        this.resourcesView = this.game.getResourceFromView(this.position);
         for (const r of this.resourcesView) {
-            this.game.testCollisionCircle2Cirle(this, r, (response, objectCollide) => this.onCollisionWithResource(response, objectCollide))
+            this.game.testCollisionCircle2Cirle(this, r, (response, objectCollide) =>
+                this.onCollisionWithResource(response, objectCollide)
+            );
         }
         // console.log("resource: ", this.resourcesView)
     }
     checkColliderWithStructures() {
-        this.structuresView = this.game.getStructureFromView(this.position)
+        this.structuresView = this.game.getStructureFromView(this.position);
         for (const s of this.structuresView) {
-            this.game.testCollisionCircle2Cirle(this, s, (response, objectCollide) => this.onCollisionWithStructures(response, objectCollide, s))
+            this.game.testCollisionCircle2Cirle(this, s, (response, objectCollide) =>
+                this.onCollisionWithStructures(response, objectCollide, s)
+            );
         }
     }
     checkAttackToResource() {
-        this.resourcesView = this.game.getResourceFromView(this.position)
+        this.resourcesView = this.game.getResourceFromView(this.position);
         for (const r of this.resourcesView) {
-            this.game.testCollisionPoligon2Cirle(this.currentItem, r, (response, objectCollide) => this.onHitResource(response, objectCollide, r))
+            this.game.testCollisionPoligon2Cirle(
+                this.currentItem,
+                r,
+                (response, objectCollide) =>
+                    this.onHitResource(response, objectCollide, r)
+            );
         }
-
+    }
+    checkAttackToStructure() {
         for (const s of this.structuresView) {
-            this.game.testCollisionCircle2Cirle(this.currentItem, s, (response, objectCollide) => this.onHitStructure(response, objectCollide, s))
+            this.game.testCollisionCircle2Cirle(
+                this.currentItem,
+                s,
+                (response, objectCollide) =>
+                    this.onHitStructure(response, objectCollide, s)
+            );
         }
     }
 
     onHitStructure(response, object, objectInfo) {
-        this.game.playerAttackStructure(this.idGame, objectInfo.id, this.currentItem)
+        this.game.playerAttackStructure(
+            this.idGame,
+            objectInfo.id,
+            this.currentItem
+        );
     }
     onHitResource(response, object, objectInfo) {
-        this.game.playerAttackResource(this, objectInfo.id, this.currentItem)
+        this.game.playerAttackResource(this, objectInfo.id, this.currentItem);
     }
     checkAttackToPlayer() {
-        this.playersView = this.game.getPlayersFromView(this.position)
+        this.playersView = this.game.getPlayersFromView(this.position);
+        // console.log("player view: ", this.playersView);
         for (const p of this.playersView) {
-            this.game.testCollisionPoligon2Cirle(this.currentItem, p, (response, objectCollide) => this.onHitPlayer(response, objectCollide, p))
+            this.game.testCollisionPoligon2Cirle(
+                this.currentItem,
+                p,
+                (response, objectCollide) =>
+                    this.onHitPlayer(response, objectCollide, p)
+            );
         }
     }
     checkAttackToNpc() {
-        this.npcView = this.game.getNpcFromView(this.position)
+        this.npcView = this.game.getNpcFromView(this.position);
         for (const n of this.npcView) {
-            this.game.testCollisionPoligon2Cirle(this.currentItem, n, (response, objectCollide) => this.onHitNpc(response, objectCollide, n))
+            this.game.testCollisionPoligon2Cirle(this.currentItem, n, (response, objectCollide) => this.onHitNpc(response, objectCollide, n));
         }
     }
     onHitNpc(response, object, objectInfo) {
-        this.game.playerHitNpc(this.idGame, objectInfo.id, this.currentItem.info.damage)
+        this.game.playerHitNpc(
+            this.idGame,
+            objectInfo.id,
+            this.currentItem.info.damage
+        );
     }
     onHitPlayer(response, object, objectInfo) {
-        // console.log("hit player: ", objectInfo.id)
         if (objectInfo.id != this.idGame) {
-            this.game.playerHitPlayer(this.idGame, objectInfo.id, this.currentItem.info.damage)
+            console.log("hit player: ", objectInfo.id);
+            this.game.playerHitPlayer(
+                this.idGame,
+                objectInfo.id,
+                this.currentItem.info.damage
+            );
         }
     }
     onCollisionWithStructures(response, object, objectInfo) {
-        if (["Wall", "Spike", "Windmill", "Turret", "MineStone", "Sapling"].includes(objectInfo.type)) {
+        let structures = ["Wall", "Spike", "Windmill", "Turret", "MineStone", "Sapling"]
+        if (structures.includes(objectInfo.type)) {
             // if (objectInfo.type == "Wall" || objectInfo.type == "Spike" || objectInfo.type == "Windmill" || objectInfo.type == "Turret" || ) {
-            let overlapPos = response.overlapV
-            this.position.x -= overlapPos.x
-            this.position.y -= overlapPos.y
+            let overlapPos = response.overlapV;
+            this.position.x -= overlapPos.x;
+            this.position.y -= overlapPos.y;
         }
-        this.game.playerHitStructures(this.idGame, objectInfo.id)
+        this.game.playerHitStructures(this.idGame, objectInfo.id);
     }
     onCollisionWithResource(response, object) {
-        let overlapPos = response.overlapV
-        this.position.x -= overlapPos.x
-        this.position.y -= overlapPos.y
+        let overlapPos = response.overlapV;
+        this.position.x -= overlapPos.x;
+        this.position.y -= overlapPos.y;
     }
     /* #endregion */
 
@@ -276,86 +286,87 @@ class Player {
     handleSocket(socket) {
         this.send(ServerCode.OnConnect, {
             id: this.idServer,
-            listGame: this.server.listGame()
-        })
-        this.registerListenter()
+            listGame: this.server.listGame(),
+        });
+        this.registerListenter();
     }
     onPing() {
-        this.send(ServerCode.OnPing, null)
+        this.send(ServerCode.OnPing, null);
     }
     onJoin(data) {
-        // console.log("on join: ", data)
-        this.skinId = data.skinId
-        this.server.playerJoinGame(this, data)
+        console.log("on join: ", data)
+        this.skinId = data.skinId;
+        this.clientScreenSize.width = data.screenSizeX
+        this.clientScreenSize.height = data.screenSizeY
+        this.server.playerJoinGame(this, data);
     }
     onRecievedClientStatus(data) {
         if (data.focus !== true) {
-            this.isSuspend = false
-            this.isDelayQuit = false
+            this.isSuspend = false;
+            this.isDelayQuit = false;
         } else {
-            this.isSuspend = true
-            this.isDelayQuit = true
+            this.isSuspend = true;
+            this.isDelayQuit = true;
             setTimeout(() => {
                 if (this.isDelayQuit) {
-                    this.isSuspend = false
-                    console.log(`player: ${this.idServer} kicked for afk too long`)
-                    this.onDisconnect()
+                    this.isSuspend = false;
+                    console.log(`player: ${this.idServer} kicked for afk too long`);
+                    this.onDisconnect();
                 }
-            }, 30000)
+            }, 30000);
         }
     }
     onRecievedGameData(data) {
-        this.game.playerJoin(this)
+        this.game.playerJoin(this);
     }
     onDisconnect() {
         if (this.isSuspend) {
-            return
+            return;
         }
         if (this.game != null) {
-            this.game.removePlayer(this)
+            this.game.removePlayer(this);
         }
-        this.isAutoAttack = false
+        this.isAutoAttack = false;
         if (this.intervalAutoAttack != null) {
-            clearInterval(this.intervalAutoAttack)
+            clearInterval(this.intervalAutoAttack);
         }
         this.kickMember({
-            id: this.idGame
-        })
-        this.server.removePlayer(this)
+            id: this.idGame,
+        });
+        this.server.removePlayer(this);
     }
     enterGame(data) {
-        this.isJoinedGame = true
-        this.moveSpeed = data.moveSpeed
-        this.position = data.position
-        this.lookDirect = data.lookDirect
+        this.isJoinedGame = true;
+        this.moveSpeed = data.moveSpeed;
+        this.position = data.position;
+        this.lookDirect = data.lookDirect;
 
-        this.healthPoint = 100
-        this.kills = 0
-        this.scores = 0
-        this.levelInfo.reset()
-        this.basicResources.reset()
+        this.healthPoint = 100;
+        this.kills = 0;
+        this.scores = 0;
+        this.levelInfo.reset();
+        this.basicResources.reset();
 
-        this.onwedItems = data.items.items
-        this.weapons = data.items.weapons
-        this.currentItem = this.createWeapon(this.weapons[0])
+        this.onwedItems = data.items.items;
+        this.weapons = data.items.weapons;
+        this.currentItem = this.createWeapon(this.weapons[0]);
 
-        this.ownedHat = data.shop.hats
-        this.ownedAccessories = data.shop.accessories
+        this.ownedHat = data.shop.hats;
+        this.ownedAccessories = data.shop.accessories;
 
-        this.isAutoAttack = false
-        clearInterval(this.intervalAutoAttack)
+        this.isAutoAttack = false;
+        clearInterval(this.intervalAutoAttack);
 
-        this.structures.reset()
+        this.structures.reset();
         if (this.bodyCollider == null) {
-            this.bodyCollider = new SAT.Circle(new SAT.Vector(this.position.x, this.position.syncLookDirect), data.bodyRadius)
-
+            this.bodyCollider = new SAT.Circle(new SAT.Vector(this.position.x, this.position.syncLookDirect), data.bodyRadius);
         } else {
-            this.bodyCollider.pos.x = this.position.x
-            this.bodyCollider.pos.y = this.position.y
+            this.bodyCollider.pos.x = this.position.x;
+            this.bodyCollider.pos.y = this.position.y;
             // this.bodyCollider = new SAT.Circle(new SAT.Vector(this.position.x, this.position.syncLookDirect), data.bodyRadius)
         }
-        this.updateStatus()
-        this.syncItem()
+        this.updateStatus();
+        this.syncItem();
         this.syncItemShop();
     }
     /* #endregion */
@@ -363,389 +374,406 @@ class Player {
     /* #region  TRANFORM EVENTS */
     updatePosition(deltaTime) {
         if (this.lastMovement == null) {
-            return
+            return;
         }
         this.moveDirect = new Vector(
             Math.cos(this.lastMovement),
             Math.sin(this.lastMovement)
-        )
+        );
 
-        this.position.add(this.moveDirect.clone().scale(this.moveSpeed * (!this.platformStanding ? this.speedModifier * this.inviromentSpeedModifier : 1) * deltaTime))
+        this.position.add(this.moveDirect.clone().scale(this.moveSpeed * (!this.platformStanding ? this.speedModifier * this.inviromentSpeedModifier : 1) * deltaTime));
         // console.log("modifier: ", (this.platformStanding == false ? this.speedModifier * this.inviromentSpeedModifier : 1))
 
-        this.bodyCollider.pos.x = this.position.x
-        this.bodyCollider.pos.y = this.position.y
+        this.bodyCollider.pos.x = this.position.x;
+        this.bodyCollider.pos.y = this.position.y;
 
-        this.checkCollider()
+        this.checkCollider();
     }
     syncLookDirect(data) {
-        this.lastLook = data
+        this.lastLook = data;
     }
     syncMoveDirect(data) {
-        this.lastMovement = data
+        this.lastMovement = data;
     }
     movePlayer(direct, deltaTime) {
-        this.lastMovement = direct
+        this.lastMovement = direct;
         this.moveDirect = new Vector(
             Math.cos(this.lastMovement),
             Math.sin(this.lastMovement)
-        )
-        this.position.add(this.moveDirect.clone().scale(this.moveSpeed * deltaTime))
-        this.bodyCollider.pos.x = this.position.x
-        this.bodyCollider.pos.y = this.position.y
+        );
+        this.position.add(
+            this.moveDirect.clone().scale(this.moveSpeed * deltaTime)
+        );
+        this.bodyCollider.pos.x = this.position.x;
+        this.bodyCollider.pos.y = this.position.y;
 
-        this.checkCollider()
+        this.checkCollider();
     }
     updateRotation() {
         if (this.lastLook == null) {
-            return
+            return;
         }
-        this.lookDirect = this.lastLook
-
+        this.lookDirect = this.lastLook;
     }
     /* #endregion */
 
     /* #region  ITEM EVENTS */
     createWeapon(info) {
         if (info.type == "Melee") {
-            return new Melee(info)
+            return new Melee(info);
         }
         if (info.type == "Ranged") {
-            return new Ranged(info)
+            return new Ranged(info);
         }
     }
     createItem(info) {
-        return new Item(info)
+        return new Item(info);
     }
     useItem(data) {
         // console.log("current item: ", this.currentItem)
         if (this.currentItem.toString() == "Melee") {
-            this.triggerMeleeAttack()
-            return
+            this.triggerMeleeAttack();
+            return;
         } else if (this.currentItem.toString() == "Ranged") {
-            this.triggerRangedAttack()
+            this.triggerRangedAttack();
         } else {
-            if (data.isbtn)
-                this.triggerUseItem()
+            if (data.isbtn) this.triggerUseItem();
         }
-
     }
     autoAttack(data) {
         if (this.currentItem.toString() == "Melee") {
-            this.isAutoAttack = data.action
+            this.isAutoAttack = data.action;
             if (!this.isAutoAttack) {
-                clearInterval(this.intervalAutoAttack)
+                clearInterval(this.intervalAutoAttack);
             } else {
-                this.startMeleeAutoAttack()
+                this.startMeleeAutoAttack();
             }
-            return
+            return;
         } else if (this.currentItem.toString() == "Ranged") {
-            this.isAutoAttack = data.action
+            this.isAutoAttack = data.action;
             if (!this.isAutoAttack) {
-                clearInterval(this.intervalAutoAttack)
+                clearInterval(this.intervalAutoAttack);
             } else {
-                this.startRangeAutoAttack()
+                this.startRangeAutoAttack();
             }
         }
     }
     startMeleeAutoAttack() {
         if (this.intervalAutoAttack != null) {
-            clearInterval(this.intervalAutoAttack)
+            clearInterval(this.intervalAutoAttack);
         }
         this.intervalAutoAttack = setInterval(() => {
-            this.triggerMeleeAttack()
-        }, this.currentItem.info.attackSpeed)
+            this.triggerMeleeAttack();
+        }, this.currentItem.info.attackSpeed);
     }
     startRangeAutoAttack() {
         if (this.intervalAutoAttack != null) {
-            clearInterval(this.intervalAutoAttack)
+            clearInterval(this.intervalAutoAttack);
         }
         this.intervalAutoAttack = setInterval(() => {
-            this.triggerRangedAttack()
-        }, this.currentItem.info.attackSpeed)
+            this.triggerRangedAttack();
+        }, this.currentItem.info.attackSpeed);
     }
     switchItem(data) {
         // console.log("swithc item: ", data)
         // console.log("last item: ", this.currentItem)
         if (this.currentItem.info.id == data.code) {
-            return
+            return;
         }
-        let type = data.code.charAt(0)
+        let type = data.code.charAt(0);
         if (type == "w") {
-            let weapon = this.findWeapon(data.code)
+            let weapon = this.findWeapon(data.code);
             if (weapon != null) {
-                this.currentItem = this.createWeapon(weapon)
+                this.currentItem = this.createWeapon(weapon);
             }
         } else if (type == "i") {
-            let item = this.findItem(data.code)
+            let item = this.findItem(data.code);
             if (item != null) {
-                this.currentItem = this.createItem(item)
+                this.currentItem = this.createItem(item);
             }
         }
         // console.log("current Item: ", this.currentItem)
         this.game.broadcast(GameCode.switchItem, {
             id: this.idGame,
-            item: this.currentItem.info.id
-        })
+            item: this.currentItem.info.id,
+        });
     }
     upgradeItem(data) {
         // console.log("weapon: ", this.weapons)
-        let itemType = data.code.charAt(0)
+        let itemType = data.code.charAt(0);
         if (itemType == "w") {
-            let info = this.game.getWeaponByCode(data.code)
-            this.upgradeWeapon(info)
+            let info = this.game.getWeaponByCode(data.code);
+            this.upgradeWeapon(info);
         } else if (itemType == "i") {
-            let info = this.game.getItemByCode(data.code)
-            this.upgradeOwnedItem(info)
-            this.currentItem = this.createItem(info)
+            let info = this.game.getItemByCode(data.code);
+            this.upgradeOwnedItem(info);
+            this.currentItem = this.createItem(info);
         }
         this.game.broadcast(GameCode.switchItem, {
             id: this.idGame,
-            item: this.currentItem.info.id
-        })
-        this.syncItem()
+            item: this.currentItem.info.id,
+        });
+        this.syncItem();
     }
     syncItem() {
         this.send(GameCode.syncItem, {
-            items: this.getCurrentItems()
-        })
+            items: this.getCurrentItems(),
+        });
     }
     syncItemShop() {
         this.send(GameCode.syncShop, {
-            owned: this.ownedAccessories.concat(this.ownedHat).map(i => {
-                return i.id
+            owned: this.ownedAccessories.concat(this.ownedHat).map((i) => {
+                return i.id;
             }),
-            equipedHat: (this.equipedHat == null ? "" : this.equipedHat.id),
-            equipedAccessory: (this.equipedAccessory == null ? "" : this.equipedAccessory.id)
-        })
+            equipedHat: this.equipedHat == null ? "" : this.equipedHat.id,
+            equipedAccessory:
+                this.equipedAccessory == null ? "" : this.equipedAccessory.id,
+        });
     }
     chooseItem(data) {
-        console.log("choose item: ", data)
+        console.log("choose item: ", data);
         if (data.id[0] == "h") {
-            if (this.checkIfOwnedHatHaveItem(data.id)) { // if owned this item
-                if (this.equipedHat != null && this.equipedHat.id == data.id) { // if equiped then unequip
-                    this.equipedHat = null
-                } else { // if not equiped then equip
-                    this.equipedHat = this.getOwnedItemById(data.id)
+            if (this.checkIfOwnedHatHaveItem(data.id)) {
+                // if owned this item
+                if (this.equipedHat != null && this.equipedHat.id == data.id) {
+                    // if equiped then unequip
+                    this.equipedHat = null;
+                } else {
+                    // if not equiped then equip
+                    this.equipedHat = this.getOwnedItemById(data.id);
                 }
-            } else { // if not owned this item
-                let item = this.game.getHatById(data.id)
+            } else {
+                // if not owned this item
+                let item = this.game.getHatById(data.id);
                 if (this.basicResources.Gold >= item.price) {
-                    this.ownedHat.push(item)
-                    this.basicResources.Gold -= item.price
-                    this.updateStatus()
+                    this.ownedHat.push(item);
+                    this.basicResources.Gold -= item.price;
+                    this.updateStatus();
                 }
             }
         } else {
-            if (this.checkIfOwnedAccessoryHaveItem(data.id)) { // if owned this item
-                if (this.equipedAccessory != null && this.equipedAccessory.id == data.id) { // if equiped then unequip
-                    console.log("unequip accessory")
-                    this.equipedAccessory = null
-                } else { // if not equiped then equip
-                    console.log("equip accessory")
-                    this.equipedAccessory = this.getOwnedItemById(data.id)
+            if (this.checkIfOwnedAccessoryHaveItem(data.id)) {
+                // if owned this item
+                if (this.equipedAccessory != null && this.equipedAccessory.id == data.id) {
+                    // if equiped then unequip
+                    // console.log("unequip accessory");
+                    this.equipedAccessory = null;
+                } else {
+                    // if not equiped then equip
+                    // console.log("equip accessory");
+                    this.equipedAccessory = this.getOwnedItemById(data.id);
                 }
-            } else { // if not owned this item
-                let item = this.game.getAccessoryById(data.id)
+            } else {
+                // if not owned this item
+                let item = this.game.getAccessoryById(data.id);
                 if (this.basicResources.Gold >= item.price) {
-                    this.ownedAccessories.push(item)
-                    this.basicResources.Gold -= item.price
-                    this.updateStatus()
+                    this.ownedAccessories.push(item);
+                    this.basicResources.Gold -= item.price;
+                    this.updateStatus();
                 }
             }
         }
-        this.syncEquipItem()
-        this.syncItemShop()
+        this.syncEquipItem();
+        this.syncItemShop();
     }
     syncEquipItem() {
         this.game.broadcast(GameCode.syncEquipItem, {
             id: this.idGame,
             hat: this.equipedHat == null ? "" : this.equipedHat.id,
-            acc: this.equipedAccessory == null ? "" : this.equipedAccessory.id
-        })
+            acc: this.equipedAccessory == null ? "" : this.equipedAccessory.id,
+        });
     }
     checkIfOwnedHatHaveItem(id) {
         for (let i = 0; i < this.ownedHat.length; i++) {
             if (this.ownedHat[i].id == id) {
-                return true
+                return true;
             }
         }
-        return false
+        return false;
     }
     checkIfOwnedAccessoryHaveItem(id) {
         for (let i = 0; i < this.ownedAccessories.length; i++) {
             if (this.ownedAccessories[i].id == id) {
-                return true
+                return true;
             }
         }
-        return false
+        return false;
     }
     getOwnedItemById(id) {
-        let allItem = this.ownedHat.concat(this.ownedAccessories)
+        let allItem = this.ownedHat.concat(this.ownedAccessories);
         for (let i = 0; i < allItem.length; i++) {
             if (allItem[i].id == id) {
-                return allItem[i]
+                return allItem[i];
             }
         }
-        return null
+        return null;
     }
     upgradeWeapon(info) {
         if (info.main) {
-            this.weapons[0] = info
+            this.weapons[0] = info;
         } else {
-            this.weapons[1] = info
+            this.weapons[1] = info;
         }
-        this.currentItem = this.createWeapon(info)
+        this.currentItem = this.createWeapon(info);
     }
     upgradeOwnedItem(info) {
-        if (info.type == "Windmill" || info.type == "Wall" || info.type == "Spike" || info.type == "Consume") {
+        if (
+            info.type == "Windmill" ||
+            info.type == "Wall" ||
+            info.type == "Spike" ||
+            info.type == "Consume"
+        ) {
             for (let i = 0; i < this.onwedItems.length; i++) {
                 if (this.onwedItems[i].type == info.type) {
-                    this.onwedItems.splice(i, 1)
-                    break
+                    this.onwedItems.splice(i, 1);
+                    break;
                 }
             }
         }
-        this.onwedItems.push(info)
+        this.onwedItems.push(info);
     }
     getCurrentItems() {
-        let data = []
-        this.weapons.forEach(w => {
-            if (w != null)
-                data.push(w.id)
-        })
-        this.onwedItems.forEach(i => {
-            data.push(i.id)
-        })
-        return data
+        let data = [];
+        this.weapons.forEach((w) => {
+            if (w != null) data.push(w.id);
+        });
+        this.onwedItems.forEach((i) => {
+            data.push(i.id);
+        });
+        return data;
     }
     findWeapon(id) {
-        let weapon = null
-        this.weapons.forEach(w => {
+        let weapon = null;
+        this.weapons.forEach((w) => {
             if (w != null && w.id == id) {
-                weapon = w
+                weapon = w;
             }
-        })
-        return weapon
+        });
+        return weapon;
     }
     findItem(id) {
-        let item = null
-        this.onwedItems.forEach(i => {
+        let item = null;
+        this.onwedItems.forEach((i) => {
             if (i.id == id) {
-                item = i
+                item = i;
             }
-        })
-        return item
+        });
+        return item;
     }
     triggerMeleeAttack() {
         if (!this.currentItem.canUse) {
-            return
+            return;
         }
         let direct = new Vector(
             -Math.cos(this.lookDirect),
-            -Math.sin(this.lookDirect))
-        this.currentItem.use(this, direct)
-        this.checkAttackToResource()
-        this.checkAttackToNpc()
-        this.checkAttackToPlayer()
+            -Math.sin(this.lookDirect)
+        );
+        this.currentItem.use(this, direct);
+        this.checkAttackToResource();
+        this.checkAttackToStructure();
+        this.checkAttackToNpc();
+        this.checkAttackToPlayer();
         this.game.broadcast(GameCode.triggerAttack, {
             idGame: this.idGame,
-            type: this.currentItem.idType
-        })
+            type: this.currentItem.idType,
+        });
     }
     triggerRangedAttack() {
         if (!this.currentItem.canUse) {
-            return
+            return;
         }
         let direct = new Vector(
             -Math.cos(this.lookDirect),
-            -Math.sin(this.lookDirect))
-        this.currentItem.use(this, direct)
+            -Math.sin(this.lookDirect)
+        );
+        this.currentItem.use(this, direct);
     }
     triggerUseItem() {
         let direct = new Vector(
             -Math.cos(this.lookDirect),
-            -Math.sin(this.lookDirect))
-        this.currentItem.use(this, direct)
+            -Math.sin(this.lookDirect)
+        );
+        this.currentItem.use(this, direct);
     }
     /* #endregion */
 
     /* #region  PLAYER STATUS */
     receiveResource(amount, type) {
-        this.basicResources[type] += amount
+        this.basicResources[type] += amount;
     }
     addGold(value) {
-        this.basicResources.Gold += value
-        this.scores += value
+        this.basicResources.Gold += value;
+        this.scores += value;
     }
     addXP(value) {
-        this.levelInfo.xp += value
-        let currentLv = this.levelInfo.level
+        this.levelInfo.xp += value;
+        let currentLv = this.levelInfo.level;
         if (this.levelInfo.level >= levelDescription.length) {
-            currentLv = levelDescription.length
+            currentLv = levelDescription.length;
+            return;
         }
         if (this.levelInfo.xp >= levelDescription[currentLv].nextLevelUpXp) {
-            this.levelInfo.level++
-            this.levelInfo.xp = 0
-            this.onLevelUp()
+            this.levelInfo.level++;
+            this.levelInfo.xp = 0;
+            this.onLevelUp();
         }
-        this.updateStatus()
+        this.updateStatus();
     }
     onLevelUp() {
-        let lvUpItem = []
-        let itemByLevel = this.game.getItemsByLevel(this.levelInfo.level)
-        itemByLevel.weapons.forEach(w => {
+        let lvUpItem = [];
+        let itemByLevel = this.game.getItemsByLevel(this.levelInfo.level);
+        itemByLevel.weapons.forEach((w) => {
             if (w != null) {
-                lvUpItem.push(w.id)
+                lvUpItem.push(w.id);
             }
-        })
-        itemByLevel.items.forEach(i => {
+        });
+        itemByLevel.items.forEach((i) => {
             if (i != null) {
-                lvUpItem.push(i.id)
+                lvUpItem.push(i.id);
             }
-        })
+        });
         this.send(GameCode.upgradeItem, {
-            items: lvUpItem
-        })
+            items: lvUpItem,
+        });
     }
     updateStatus() {
         this.send(GameCode.playerStatus, {
             scores: this.scores,
             kills: this.kills,
             level: this.levelInfo.level,
-            xp: this.levelInfo.xp / levelDescription[this.levelInfo.level].nextLevelUpXp,
+            xp:
+                this.levelInfo.xp /
+                levelDescription[this.levelInfo.level].nextLevelUpXp,
             wood: this.basicResources.Wood,
             food: this.basicResources.Food,
             stone: this.basicResources.Stone,
-            gold: this.basicResources.Gold
-        })
+            gold: this.basicResources.Gold,
+        });
     }
     /* #endregion */
 
     /* #region  TRANSMIT EVENTS */
 
     chat(data) {
-        console.log(data)
-        this.game.sendChat(data)
+        console.log(data);
+        this.game.sendChat(data);
         if (data.text == "rss") {
-            this.basicResources.addAll(1000)
-            this.updateStatus()
+            this.basicResources.addAll(1000);
+            this.updateStatus();
         } else if (data.text == "exp") {
-            this.addXP(1000)
+            this.addXP(1000);
         }
-
     }
     sendScore() {
-        let data = this.game.getPlayerScore()
+        let data = this.game.getPlayerScore();
         this.send(GameCode.scoreBoard, {
-            data: data
-        })
+            data: data,
+        });
     }
     // Transmit
     send(event, args) {
-        this.socket.emit(event, args)
-
+        this.socket.emit(event, args);
     }
     /* #endregion */
 }
-module.exports = Player
+module.exports = Player;

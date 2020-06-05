@@ -23,6 +23,7 @@ const gameConfig = {
     npcWolfCount: 4,
 
     viewSize: new Victor(15, 15),
+    viewScale: 0.8,
     viewResourceRadius: 5,
     viewPlayerRadius: 8,
 
