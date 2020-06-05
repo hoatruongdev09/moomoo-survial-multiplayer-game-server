@@ -1116,6 +1116,9 @@ class Game {
         });
     }
     pushPlayerBack(player, direct, range) {
+        if (this.players[player.idGame] == null || !this.players[player.idGame].isJoinedGame) {
+            return
+        }
         player.position.add(direct.unitVector.scale(range));
         var positionData = [];
         var lookData = [];

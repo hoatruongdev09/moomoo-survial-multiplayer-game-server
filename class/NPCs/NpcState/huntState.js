@@ -12,6 +12,7 @@ class HuntState extends NpcState {
         this.huntSpeed = 3
         this.huntRotateSpeed = 0.6
         this.attackRange = 16
+        this.attackDamage = 10
         this.escapeRange = 100
 
         this.checkTargetEscapeInterval = null
@@ -58,7 +59,8 @@ class HuntState extends NpcState {
         }
     }
     makeAttack() {
-        console.log("make attack")
+        this.npc.game.npcHitPlayer(this.npc.id, this.target.idGame, this.attackDamage)
+        this.npc.game.pushPlayerBack(this.target, this.target.position.clone().sub(this.npc.position), 5)
     }
     watchTargetStatus() {
         // console.log(this.target)
