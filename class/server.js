@@ -9,6 +9,8 @@ const ServerCode = require('../transmitcode').ServerCode
 const GameCode = require('../transmitcode').GameCode
 const gameconfig = require('./gameconfig')
 
+
+
 class Server {
     constructor(config, expressServer) {
         this.config = config
@@ -18,6 +20,7 @@ class Server {
         this.expressServer = expressServer
         this.time = new Time()
         this.init()
+
     }
 
     init() {
