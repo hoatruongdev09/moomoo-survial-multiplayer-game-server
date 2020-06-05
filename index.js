@@ -11,6 +11,13 @@ const path = require('path')
 const app = express()
 const web = require('http').Server(app)
 const PORT = process.env.PORT || 8080
+
+const serverList = {
+    local: "localhost:8080",
+    asia: "ec2-54-151-213-35.ap-southeast-1.compute.amazonaws.com:8080",
+    us: "moomoo-server.herokuapp.com",
+}
+
 app.use(express.static(path.join(__dirname, 'Game')));
 
 let listener = web.listen(PORT)
@@ -18,8 +25,8 @@ let listener = web.listen(PORT)
 app.get('/', (req, res) => {
     res.status(200).send("OK")
 })
-app.get('/connectstring', (req, res) => {
-    res.status(200).send("moomoo-server.herokuapp.com")
+app.get('/server_list', (req, res) => {
+    res.status(200).send(serverList)
 })
 console.log("express run on: ", listener.address().port)
 
