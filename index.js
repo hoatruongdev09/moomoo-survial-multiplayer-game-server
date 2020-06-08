@@ -2,6 +2,7 @@ const Server = require('./class/server')
 const ServerConfig = require('./class/serverconfig')
 
 const publicIp = require('public-ip');
+const axios = require('axios').default;
 
 
 
@@ -14,9 +15,9 @@ const app = express()
 const web = require('http').Server(app)
 const PORT = process.env.PORT || 8080
 
-const serverList = {
+var serverList = {
     local: "localhost:8080",
-    asia: "54.151.213.35:8080",
+    asia: "",
     us: "moomoo-server.herokuapp.com",
 }
 
@@ -30,12 +31,27 @@ app.get('/', (req, res) => {
 app.get('/server_list', (req, res) => {
     res.status(200).send(serverList)
 })
+app.get('/update_server', (req, res) => {
+    serverList[req.query.serverId] = req.query.serverAddress + ":8080"
+    console.log(`updated ${serverList[req.query.serverId]}`);
+
+    res.status(200);
+})
 console.log("express run on: ", listener.address().port)
 
 
 
 async function test() {
     console.log(`pulic ip: ${await publicIp.v4()}`)
+    let ip = await publicIp.v4()
+    axios.get("http://moomoo-server.herokuapp.com/update_server", {
+        serverId: ip
+    }).then(() => {
+
+    }).catch((error) => {
+        console.log("error send update server ", error.response);
+
+    })
 }
 test()
 
