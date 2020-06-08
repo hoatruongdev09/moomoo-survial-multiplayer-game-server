@@ -32,9 +32,10 @@ app.get('/server_list', (req, res) => {
     res.status(200).send(serverList)
 })
 app.get('/update_server', (req, res) => {
-    serverList[req.query.serverId] = req.query.serverAddress + ":8080"
-    console.log(`updated ${serverList[req.query.serverId]}`);
-
+    if (req.query.serverId != null) {
+        serverList[req.query.serverId] = req.query.serverAddress + ":8080"
+        console.log(`updated ${serverList[req.query.serverId]}`);
+    }
     res.status(200);
 })
 console.log("express run on: ", listener.address().port)
@@ -62,6 +63,6 @@ async function test() {
 
     })
 }
-test()
+// test()
 
 let server = new Server(ServerConfig, web)
