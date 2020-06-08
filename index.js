@@ -31,7 +31,7 @@ app.get('/', (req, res) => {
 app.get('/server_list', (req, res) => {
     res.status(200).send(serverList)
 })
-app.post('/update_server', (req, res) => {
+app.get('/update_server', (req, res) => {
     serverList[req.query.serverId] = req.query.serverAddress + ":8080"
     console.log(`updated ${serverList[req.query.serverId]}`);
 
@@ -50,10 +50,8 @@ async function test() {
     }
     console.log(query);
 
-    axios({
-        method: 'post',
-        url: 'http://54.151.213.35:8080/update_server',
-        data: {
+    axios.get('http://54.151.213.35/update_server', {
+        params: {
             serverId: 'asia',
             serverAddress: ip
         }
