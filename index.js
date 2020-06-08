@@ -1,6 +1,8 @@
 const Server = require('./class/server')
 const ServerConfig = require('./class/serverconfig')
 
+const publicIp = require('public-ip');
+
 
 
 
@@ -14,7 +16,7 @@ const PORT = process.env.PORT || 8080
 
 const serverList = {
     local: "localhost:8080",
-    asia: "ec2-54-151-213-35.ap-southeast-1.compute.amazonaws.com:8080",
+    asia: "54.151.213.35:8080",
     us: "moomoo-server.herokuapp.com",
 }
 
@@ -29,5 +31,12 @@ app.get('/server_list', (req, res) => {
     res.status(200).send(serverList)
 })
 console.log("express run on: ", listener.address().port)
+
+
+
+async function test() {
+    console.log(`pulic ip: ${await publicIp.v4()}`)
+}
+test()
 
 let server = new Server(ServerConfig, web)
