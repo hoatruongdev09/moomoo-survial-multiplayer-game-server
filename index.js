@@ -31,7 +31,7 @@ app.get('/', (req, res) => {
 app.get('/server_list', (req, res) => {
     res.status(200).send(serverList)
 })
-app.get('/update_server', (req, res) => {
+app.post('/update_server', (req, res) => {
     serverList[req.query.serverId] = req.query.serverAddress + ":8080"
     console.log(`updated ${serverList[req.query.serverId]}`);
 
@@ -44,8 +44,19 @@ console.log("express run on: ", listener.address().port)
 async function test() {
     console.log(`pulic ip: ${await publicIp.v4()}`)
     let ip = await publicIp.v4()
-    axios.get("http://moomoo-server.herokuapp.com/update_server", {
-        serverId: ip
+    let query = {
+        serverId: 'asia',
+        serverAddress: ip
+    }
+    console.log(query);
+
+    axios({
+        method: 'post',
+        url: 'http://54.151.213.35:8080/update_server',
+        data: {
+            serverId: 'asia',
+            serverAddress: ip
+        }
     }).then(() => {
 
     }).catch((error) => {
