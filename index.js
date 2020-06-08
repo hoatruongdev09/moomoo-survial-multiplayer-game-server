@@ -42,7 +42,7 @@ console.log("express run on: ", listener.address().port)
 
 
 
-async function test() {
+async function updateIpAdressOnMainServer() {
     console.log(`pulic ip: ${await publicIp.v4()}`)
     let ip = await publicIp.v4()
     let query = {
@@ -63,6 +63,6 @@ async function test() {
 
     })
 }
-// test()
+updateIpAdressOnMainServer()
 
 let server = new Server(ServerConfig, web)
