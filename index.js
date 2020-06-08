@@ -50,7 +50,7 @@ async function test() {
     }
     console.log(query);
 
-    axios.get('http://54.151.213.35/update_server', {
+    axios.get('moomoo-server.herokuapp.com/update_server', {
         params: {
             serverId: 'asia',
             serverAddress: ip
