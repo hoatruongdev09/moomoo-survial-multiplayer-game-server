@@ -63,6 +63,6 @@ async function updateIpAdressOnMainServer() {
 
     })
 }
-// updateIpAdressOnMainServer()
+updateIpAdressOnMainServer()
 
 let server = new Server(ServerConfig, web)
