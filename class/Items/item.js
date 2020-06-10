@@ -75,7 +75,21 @@ class Item {
         }
     }
 
-
+    new_use(player, direct, callback, consumeCallBack) {
+        if (this.item == null || !this.checkPlayerCanUseItem(player)) {
+            return
+        }
+        if (!this.new_useItem(player, direct)) {
+            return
+        }
+        callback(this.info.cost)
+        if (this.info.type == "Consume") {
+            consumeCallBack()
+        }
+    }
+    new_useItem(player, direct) {
+        return this.item.use(player, direct)
+    }
     use(player, direct) {
         if (this.item != null) {
             if (this.checkPlayerCanUseItem(player)) {

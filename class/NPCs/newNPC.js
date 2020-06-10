@@ -58,9 +58,8 @@ class NPC {
             this.stateManager.currentState.update(deltaTime)
         }
     }
-    onBeginHit(fromTarget, damage) {
+    onBeingHit(fromTarget, damage) {
         this.healthPoint -= damage
-        console.log(`damage: ${damage} | hp ${this.healthPoint}`)
         if (this.healthPoint <= 0) {
             this.game.onNpcDie(fromTarget, this)
         }

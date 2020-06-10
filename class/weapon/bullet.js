@@ -35,7 +35,6 @@ class Bullet {
     }
     checkColliderWithNpc() {
         this.npcView = this.user.game.getNpcFromView(this.position)
-        console.log("npc view: ", this.npcView)
         for (const n of this.npcView) {
             this.user.game.testCollisionCircle2Cirle(this, n, (response, objectCollider) => this.onHitNpc(response, objectCollider, n))
         }

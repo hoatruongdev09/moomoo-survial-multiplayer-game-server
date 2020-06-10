@@ -44,7 +44,6 @@ class HuntState extends NpcState {
         if (this.huntTimeOut != null) {
             clearTimeout(this.huntTimeOut)
         }
-        console.log("exit hunt state")
     }
     followTarget() {
         if (this.target == null || !this.target.isJoinedGame) {

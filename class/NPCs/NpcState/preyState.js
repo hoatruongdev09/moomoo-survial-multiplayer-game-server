@@ -9,12 +9,10 @@ class PreyState extends NpcState {
         this.preyTimeOut = null
     }
     enter() {
-        console.log("enter preying")
         this.startFindTarget()
         this.stopPreying()
     }
     exit() {
-        console.log("exit preying")
         if (this.preyInterval != null) {
             clearInterval(this.preyInterval)
         }

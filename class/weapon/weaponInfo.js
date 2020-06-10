@@ -33,13 +33,14 @@ const weaponInfo = {
         type: "Melee",
         name: "Tool Hammer",
         description: "Tool for gathering all resources",
+        cost: {},
         size: {
             x: 3,
             y: 5
         },
         range: 2,
         damage: 25,
-        structureDamge: 25,
+        structureDamage: 25,
         attackSpeed: 300, // milisecond
         movement: 1, // float percent
         gatherRate: 1,
@@ -52,13 +53,14 @@ const weaponInfo = {
         name: "Hand Axe",
         type: "Melee",
         description: "Gathers resources at a higher rate",
+        cost: {},
         size: {
             x: 3.2,
             y: 5
         },
         range: 2,
         damage: 30,
-        structureDamge: 30,
+        structureDamage: 30,
         attackSpeed: 400, // milisecond
         movement: 1, // float percent
         gatherRate: 2,
@@ -68,17 +70,17 @@ const weaponInfo = {
         id: "w2",
         main: true,
         age: 2,
-        type: "Melee",
         name: "Stick",
         type: "Melee",
         description: "Great for gathering but very weak",
+        cost: {},
         size: {
             x: 3.2,
             y: 5
         },
         range: 2,
         damage: 1,
-        structureDamge: 1,
+        structureDamage: 1,
         attackSpeed: 400, // milisecond
         movement: 1, // float percent
         gatherRate: 7,
@@ -90,13 +92,14 @@ const weaponInfo = {
         type: "Melee",
         name: "Short Sword",
         description: "Increased attack power but slower move speed",
+        cost: {},
         size: {
             x: 4,
             y: 5
         },
         range: 2,
         damage: 35,
-        structureDamge: 35,
+        structureDamage: 35,
         attackSpeed: 300, // milisecond
         movement: 0.85, // float percent
         gatherRate: 4,
@@ -109,13 +112,14 @@ const weaponInfo = {
         name: "Dagger",
         type: "Melee",
         description: "Really fast melee weapon",
+        cost: {},
         size: {
             x: 3.5,
             y: 5
         },
         range: 2,
         damage: 20,
-        structureDamge: 20,
+        structureDamage: 20,
         attackSpeed: 100, // milisecond
         movement: 1.13, // float percent
         gatherRate: 1,
@@ -128,13 +132,14 @@ const weaponInfo = {
         name: "Polearm",
         type: "Melee",
         description: "Long range melee weapon",
+        cost: {},
         size: {
             x: 5,
             y: 5
         },
         range: 2,
         damage: 45,
-        structureDamge: 45,
+        structureDamage: 45,
         attackSpeed: 700, // milisecond
         movement: 0.82, // float percent
         gatherRate: 1,
@@ -147,13 +152,14 @@ const weaponInfo = {
         name: "Bat",
         type: "Melee",
         description: "Fast long range melee weapon",
+        cost: {},
         size: {
             x: 4.4,
             y: 5
         },
         range: 2,
         damage: 20,
-        structureDamge: 20,
+        structureDamage: 20,
         attackSpeed: 300, // milisecond
         movement: 1, // float percent
         gatherRate: 1,
@@ -166,13 +172,14 @@ const weaponInfo = {
         name: "Great Axe",
         type: "Melee",
         description: "Deal more damage and gather more resource",
+        cost: {},
         size: {
             x: 3.2,
             y: 5
         },
         range: 2,
         damage: 35,
-        structureDamge: 25,
+        structureDamage: 25,
         attackSpeed: 400, // milisecond
         movement: 1, // float percent
         gatherRate: 4,
@@ -192,7 +199,7 @@ const weaponInfo = {
         range: 35,
         damage: 35,
         bulletSpeed: 35,
-        structureDamge: 0,
+        structureDamage: 0,
         attackSpeed: 700, // milisecond
         movement: 0.7, // float percent
         previous: "w11",
@@ -221,13 +228,14 @@ const weaponInfo = {
         type: "Melee",
         name: "Great Hammer",
         description: "Hammer used for destroying structures",
+        cost: {},
         size: {
             x: 3,
             y: 5
         },
         range: 2,
         damage: 10,
-        structureDamge: 75,
+        structureDamage: 75,
         attackSpeed: 400, // milisecond
         movement: 0.88, // float percent
         gatherRate: 1,
@@ -255,13 +263,14 @@ const weaponInfo = {
         type: "Melee",
         name: "Mc Grabby",
         description: "Steal resources from enemies",
+        cost: {},
         size: {
             x: 4,
             y: 5
         },
         range: 2,
         damage: 0,
-        structureDamge: 0,
+        structureDamage: 0,
         attackSpeed: 700, // milisecond
         movement: 1.05, // float percent
         gatherRate: 4,
@@ -289,13 +298,14 @@ const weaponInfo = {
         type: "Melee",
         name: "Katana",
         description: "Greater range and damage",
+        cost: {},
         size: {
             x: 4,
             y: 5
         },
         range: 2,
         damage: 40,
-        structureDamge: 40,
+        structureDamage: 40,
         attackSpeed: 300, // milisecond
         movement: 0.8, // float percent
         gatherRate: 1,

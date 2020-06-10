@@ -18,16 +18,6 @@ class SpawnPad {
         this.bodyCollider = new SAT.Circle(new SAT.Vector(this.position.x, this.position.y), this.size)
     }
     destroy() {
-        this.trappedPlayer.forEach(p => {
-            if (p != null) {
-                p.speedModifier = 1
-            }
-        })
-        this.trappedNpc.forEach(n => {
-            if (n != null) {
-                n.isTrapped = false
-            }
-        })
     }
     toString() {
         return "Spawnpad"

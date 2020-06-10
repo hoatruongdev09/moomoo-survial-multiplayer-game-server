@@ -1,13 +1,12 @@
 let io = require('socket.io')
-const ws = require('ws')
 
 const Game = require('./game')
 const Player = require('./player')
+const User = require('./User/user')
 const Time = require('../GameUtils/time')
 
 const ServerCode = require('../transmitcode').ServerCode
-const GameCode = require('../transmitcode').GameCode
-const gameconfig = require('./gameconfig')
+const gameConfig = require('./gameconfig')
 
 
 
@@ -15,7 +14,7 @@ class Server {
     constructor(config, expressServer) {
         this.config = config
         this.currentPlayerCount = 0;
-        this.players
+        this.users
         this.games
         this.expressServer = expressServer
         this.time = new Time()
@@ -26,35 +25,14 @@ class Server {
     init() {
         setInterval(() => this.update(), this.config.updateRate)
         this.initializeSocket()
-        this.players = new Array(this.config.maxPlayerSupport)
-        this.initialzeGames()
+        this.users = new Array(this.config.maxPlayerSupport)
+        this.initializeGames()
     }
-    initialzeGames() {
+    initializeGames() {
         this.games = new Array(this.config.maxGamesSupport)
-        this.createGame(gameconfig, "GAME 1")
+        this.createGame(gameConfig, "GAME 1")
     }
     initializeSocket() {
-        // let wss
-        // if (this.expressServer != null) {
-        //     wss = new ws.Server({
-        //         server: this.expressServer
-        //     }, () => {
-        //         console.log("create web socket")
-        //     })
-        // } else {
-        //     wss = new ws.Server({
-        //         port: process.env.PORT || 8080
-        //     }, () => {
-        //         console.log("create defaul port websocket")
-        //     });
-        // }
-        // wss.on('connection', ws => {
-        //     console.log("a web socket connection");
-        //     this.handleWebSocket(ws)
-        // });
-        // this.evalWss = wss;
-
-
         if (this.expressServer != null) {
             io = require('socket.io')(this.expressServer)
         } else {
@@ -64,7 +42,7 @@ class Server {
         }
         io.on("connection", socket => {
             console.log("an io connection")
-            this.handleSocket(socket)
+            this.new_handleSocket(socket)
 
         })
     }
@@ -72,20 +50,34 @@ class Server {
         let slot = this.findEmptyGameSlot()
         if (slot != null) {
             let player = new Player(slot, this, ws, true)
-            this.players[slot] = player
+            this.users[slot] = player
             this.currentPlayerCount++;
         } else {
             console.log("server is null")
-            ws.emit(ServerCode.OnFailedToConnect, {
+            ws.emit(ServerCode.Error, {
                 reason: "Server is full"
             })
         }
     }
+    new_handleSocket(socket) {
+        let slot = this.findEmptyPlayersSlot()
+        if (slot != null) {
+            let user = new User(this, socket, slot)
+            this.users[slot] = user
+            this.currentPlayerCount++;
+        } else {
+            console.log("server is full")
+            socket.emit(ServerCode.Error, {
+                reason: "Server is full"
+            })
+        }
+    }
+
     handleSocket(socket) {
         let slot = this.findEmptyPlayersSlot()
         if (slot != null) {
             let player = new Player(slot, this, socket)
-            this.players[slot] = player
+            this.users[slot] = player
             this.currentPlayerCount++;
         } else {
             console.log("server is full")
@@ -101,32 +93,37 @@ class Server {
     }
     // PLAYER
     findEmptyPlayersSlot() {
-        for (let i = 0; i < this.players.length; i++) {
-            if (this.players[i] == null) {
+        for (let i = 0; i < this.users.length; i++) {
+            if (this.users[i] == null) {
                 console.log(`return slot ${i}`)
                 return i;
             }
         }
         return null
     }
-    removePlayer(player) {
+    removePlayer(user) {
+        console.log("removed player: ", user.serverIndex, " ", user.idGame)
+        this.users[user.serverIndex] = null
+        this.currentPlayerCount--
+    }
+    old_removePlayer(player) {
         console.log("removed player: ", player.idServer, " ", player.idGame)
-        this.players[player.idServer] = null
+        this.users[player.idServer] = null
         this.currentPlayerCount--
     }
     // GAME
     findEmptyGameSlot() {
-        for (let i = 0; i < this.players.length; i++) {
+        for (let i = 0; i < this.users.length; i++) {
             if (this.games[i] == null) {
                 return i;
             }
         }
         return null
     }
-    createGame(gameconfig, name) {
+    createGame(gameConfig, name) {
         let slot = this.findEmptyGameSlot()
         if (slot != null) {
-            let game = new Game(slot, this, gameconfig, name)
+            let game = new Game(slot, this, gameConfig, name)
             this.games[slot] = game
         }
     }
@@ -140,6 +137,24 @@ class Server {
             })
         })
         return list
+    }
+    new_playerJoinGame(player, gameId) {
+        if (player.isJoinedGame) {
+            return
+        }
+        if (player.game == null) {
+            let game = this.games[gameId]
+            let joinCheck = game.new_canJoin()
+            if (joinCheck.result) {
+                game.new_addPlayer(player)
+            } else {
+                player.send(ServerCode.Error, {
+                    reason: "Game is full"
+                })
+            }
+        } else {
+            player.game.new_playerJoin(player)
+        }
     }
     playerJoinGame(player, data) {
         if (player.isJoinedGame) {
@@ -160,7 +175,6 @@ class Server {
     //
     update() {
         this.time.update()
-
         this.games.forEach((p) => {
             p.update(this.time.deltaTime)
         })
