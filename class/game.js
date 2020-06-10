@@ -155,6 +155,18 @@ class Game {
     isFull() {
         return this.currentPlayerCount >= this.gameConfig.maxPlayer;
     }
+    new_canJoin() {
+        if (this.currentPlayerCount >= this.gameConfig.maxPlayer) {
+            return {
+                result: false,
+                reason: "Game is full",
+            };
+        }
+        return {
+            result: true,
+            reason: "",
+        };
+    }
     canJoin(data) {
         if (data.name.length >= this.gameConfig.maxNameLength) {
             return {
@@ -173,10 +185,23 @@ class Game {
             reason: "",
         };
     }
+    new_addPlayer(player) {
+        let slot = this.findEmptySlot()
+        if (slot != null) {
+            this.players[slot] = player
+            this.currentPlayerCount++
+            player.receiveGameData({
+                game: this,
+                idGame: slot,
+                gameData: this.getCurrentGameData()
+            })
+        } else {
+            console.log("game slot is null")
+        }
+    }
     addPlayer(player, data) {
         let slot = this.findEmptySlot();
         if (slot != null) {
-            console.log("player connect id: ", player.idServer, "with slot: ", slot);
             this.players[slot] = player;
             this.currentPlayerCount++;
             player.name = data.name;
@@ -186,6 +211,45 @@ class Game {
         } else {
             console.log("game slot is null");
         }
+    }
+    onNewPlayerJoin(player) {
+        this.broadcast(gamecode.spawnPlayer, {
+            clientId: player.id,
+            id: player.idGame,
+            name: player.name,
+            skinId: player.skinId,
+            pos: {
+                x: player.position.x,
+                y: player.position.y,
+            },
+        });
+    }
+    onPlayerEquipItem(data) {
+        this.broadcast(gamecode.syncEquipItem, data)
+    }
+    new_playerJoin(player) {
+        let spawnPosition = this.map.randomPosition()
+        if (player.spawnPad != null) {
+            spawnPosition = player.spawnPad.position
+            this.removePlayerSpawnPad(player.idGame)
+            player.structures.Spawnpad = 0
+            player.spawnPad = null
+        }
+        let spawnRotation = this.map.rangdomAngle()
+        player.clientScreenSize.width *= this.gameConfig.viewScale
+        player.clientScreenSize.height *= this.gameConfig.viewScale
+        player.enterGame({
+            moveSpeed: this.gameConfig.playerSpeed,
+            position: new Vector(spawnPosition.x, spawnPosition.y),
+            lookDirect: spawnRotation,
+            bodyRadius: this.gameConfig.playColliderRadius,
+            items: this.getStarterPack(),
+            shop: {
+                hats: this.getStarterHats(),
+                accessories: this.getStarterAccessories(),
+            },
+        })
+        this.onNewPlayerJoin(player)
     }
     playerJoin(player) {
         let tempPosition;
@@ -210,16 +274,7 @@ class Game {
                 accessories: this.getStarterAccessories(),
             },
         });
-        this.broadcast(gamecode.spawnPlayer, {
-            clientId: player.idServer,
-            id: player.idGame,
-            name: player.name,
-            skinId: player.skinId,
-            pos: {
-                x: player.position.x,
-                y: player.position.y,
-            },
-        });
+        this.onNewPlayerJoin(player)
     }
     removePlayer(player) {
         if (player.isJoinedGame) {
@@ -479,8 +534,8 @@ class Game {
                     name: p.name,
                     skinId: p.skinId,
                     itemId: p.currentItem.info.id,
-                    hat: p.equipedHat == null ? "" : p.equipedHat.id,
-                    acc: p.equipedAccessory == null ? "" : p.equipedAccessory.id,
+                    hat: p.equippedHat == null ? "" : p.equippedHat.id,
+                    acc: p.equippedAccessory == null ? "" : p.equippedAccessory.id,
                     hp: p.healthPoint,
                     pos: {
                         x: p.position.x,
@@ -639,15 +694,36 @@ class Game {
     /* #endregion */
     /* #region   COLLISION CHECK*/
     checkBothPlayerAreInClan(player1, player2) {
-        if (player1 != null && player2 != null) {
-            if (player1.clanId == null || player2.clanId == null) {
-                return false;
-            }
-            return player1.clanId == player2.clanId;
-        }
-        return false;
+        if (player1 == null || player2 == null) { return }
+        if (!player1.isJoinedGame || !player2.isJoinedGame) { return }
+        if (player1.clanId == null || player2.clanId == null) { return }
+        return player1.clanId == player2.clanId
     }
     playerHitPlayer(idFrom, idTarget, damage) {
+        if (this.checkBothPlayerAreInClan(this.players[idFrom], this.players[idTarget])) {
+            return
+        }
+        this.players[idTarget].takeDamage(damage, (id) => {
+            this.bonusKillForPlayer(idFrom)
+        })
+
+    }
+    onPlayerGetHit(data) {
+        let pack = [];
+        pack.push(data);
+        this.syncPlayerHealthpoint(pack);
+    }
+    onPlayerDie(idPlayer) {
+        this.removePlayerStructures(idPlayer)
+        this.broadcast(gamecode.playerDie, { id: idPlayer })
+    }
+    bonusKillForPlayer(idPlayer) {
+        if (this.players[idPlayer] == null || !this.players[idPlayer].isJoinedGame) {
+            return
+        }
+        this.players[idPlayer].getBonus({ kill: 1, gold: 250, xp: 100 })
+    }
+    old_playerHitPlayer(idFrom, idTarget, damage) {
         if (this.checkBothPlayerAreInClan(this.players[idFrom], this.players[idTarget])) {
             console.log(
                 `${idTarget} : ${this.players[idTarget].clanId} == ${idFrom} : ${this.players[idFrom].clanId}`
@@ -678,6 +754,14 @@ class Game {
         }
     }
     npcHitPlayer(idFrom, idTarget, damage) {
+        if (this.players[idTarget] == null || !this.players[idTarget].isJoinedGame) {
+            return
+        }
+        this.players[idTarget].takeDamage(damage, (id) => {
+
+        })
+    }
+    old_npcHitPlayer(idFrom, idTarget, damage) {
         if (this.players[idTarget] == null) {
             return;
         }
@@ -705,7 +789,7 @@ class Game {
             this.broadcast(gamecode.spawnNpc, {
                 id: npc.id,
                 skinId: npc.skinId,
-                hp: npc.healthPoint,
+                hp: 1,
                 pos: {
                     x: npc.position.x,
                     y: npc.position.y,
@@ -716,6 +800,9 @@ class Game {
     }
     playerHitNpc(idFrom, idTarget, damage) {
         this.playerStructureHitNpc(idFrom, idTarget, damage);
+    }
+    onPlayerSwitchItem(data) {
+        this.broadcast(gamecode.switchItem, data)
     }
     onNpcDie(player, npc) {
         this.npcs[npc.id].isJoined = false
@@ -736,8 +823,11 @@ class Game {
             this.syncNpcHealthpoint(data)
         }
     }
+    onPlayerTriggerAttack(data) {
+        this.broadcast(gamecode.triggerAttack, data)
+    }
     playerStructureHitNpc(idFrom, idTarget, damage) {
-        this.npcs[idTarget].onBeginHit(this.players[idFrom], damage);
+        this.npcs[idTarget].onBeingHit(this.players[idFrom], damage);
     }
     old_playerStructureHitNpc(idFrom, idTarget, damage) {
         this.npcs[idTarget].healthPoint -= damage;
@@ -769,6 +859,9 @@ class Game {
         });
     }
     playerStructureHitPlayer(idFrom, idTarget, damage) {
+        this.playerHitPlayer(idFrom, idTarget, damage)
+    }
+    old_playerStructureHitPlayer(idFrom, idTarget, damage) {
         if (
             this.players[idTarget].clanId == this.players[idFrom].clanId &&
             this.players[idTarget] != null
@@ -870,7 +963,7 @@ class Game {
         }
     }
     playerAttackStructure(idPlayer, idStructure, weapon) {
-        let damage = weapon.info.structureDamge;
+        let damage = weapon.info.structureDamage;
         let structure = this.findStructureWithId(idStructure);
         // console.log("structure: ", structure)
         if (structure == null) {

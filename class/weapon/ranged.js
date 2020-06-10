@@ -5,6 +5,25 @@ class Ranged {
         this.info = info
         this.canUse = true
     }
+    new_use(player, direct, callback) {
+        if (!this.canUse || !this.checkPlayerCanUseItem(player)) {
+            return
+        }
+        let bullet = this.createBullet(player.game.getProjectileId(), player, player.position, direct)
+        player.game.addProjectTile(bullet, Math.atan2(direct.y, direct.x))
+        callback(this.info.cost)
+        this.coolDown()
+    }
+    createBullet(id, player, shootPosition, direct) {
+        let position = shootPosition.clone().add(direct.clone().scale(2))
+        return new Bullet(id, 0, player, direct, position, 0.2, this.info.bulletSpeed, this.info.range, this.info.damage)
+    }
+    coolDown() {
+        this.canUse = false
+        setTimeout(() => {
+            this.canUse = true
+        }, this.info.attackSpeed)
+    }
     use(player, direct) {
         if (!this.canUse) {
             return
@@ -31,6 +50,9 @@ class Ranged {
             }
         })
         return result
+    }
+    new_useItem(player, callback) {
+        callback(this.info.cost)
     }
     useItem(player) {
         let keys = Object.keys(this.info.cost)

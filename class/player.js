@@ -17,10 +17,10 @@ const LevelManager = require('./Player/levelManager')
 class Player {
     constructor(idServer, server, socket) {
         /* #region SERVER IDENTITIES  */
-
         this.idServer = idServer;
         this.server = server;
         this.socket = socket;
+        this.id = socket.id
         /* #endregion */
 
         /* #region  CLIENT PROPERTIES */
@@ -116,6 +116,7 @@ class Player {
         this.socket.on(ClanCode.kickMember, (data) => this.kickMember(data));
         this.socket.on(ClanCode.joinClan, (data) => this.requestJoinClan(data));
         this.socket.on(ClanCode.requestJoin, (data) => this.responRequestJoinClan(data));
+
     }
 
     update(deltaTime) {
@@ -346,7 +347,7 @@ class Player {
 
         this.structures.reset();
         if (this.bodyCollider == null) {
-            this.bodyCollider = new SAT.Circle(new SAT.Vector(this.position.x, this.position.syncLookDirect), data.bodyRadius);
+            this.bodyCollider = new SAT.Circle(new SAT.Vector(this.position.x, this.position.y), data.bodyRadius);
         } else {
             this.bodyCollider.pos.x = this.position.x;
             this.bodyCollider.pos.y = this.position.y;

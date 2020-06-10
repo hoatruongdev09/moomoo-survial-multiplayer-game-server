@@ -31,9 +31,6 @@ const levelInfo = [{
 }, {
     levelName: 10,
     nextLevelUpXp: 1000
-}, {
-    levelName: 10,
-    nextLevelUpXp: 1000
-}, ]
+}]
 
 module.exports = levelInfo

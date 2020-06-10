@@ -1,7 +1,7 @@
 const SAT = require("sat");
 
 class PhysicEngine {
-  constructor() {}
+  constructor() { }
   testCircle2Cirle(circle1, circle2, response) {
     let res = new SAT.Response();
     let collision = SAT.testCircleCircle(circle1, circle2, res);
@@ -16,7 +16,6 @@ class PhysicEngine {
     if (collision) {
       response(res, circle);
     }
-    console.log("collission: ", collision);
     return collision;
   }
 }
