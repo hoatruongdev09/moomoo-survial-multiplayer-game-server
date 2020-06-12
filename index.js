@@ -15,6 +15,8 @@ const app = express()
 const web = require('http').Server(app)
 const PORT = process.env.PORT || 8080
 
+const updateServerPasssword = "Dg;=8&gPZ%^e5q%"
+
 var serverList = {
     local: "localhost:8080",
     asia: "",
@@ -32,7 +34,7 @@ app.get('/server_list', (req, res) => {
     res.status(200).send(serverList)
 })
 app.get('/update_server', (req, res) => {
-    if (req.query.serverId != null) {
+    if (req.query.serverId != null && req.query.password === updateServerPasssword) {
         serverList[req.query.serverId] = req.query.serverAddress + ":8080"
         console.log(`updated ${serverList[req.query.serverId]}`);
     }
@@ -54,7 +56,8 @@ async function updateIpAdressOnMainServer() {
     axios.get('http://moomoo-server.herokuapp.com/update_server', {
         params: {
             serverId: 'asia',
-            serverAddress: ip
+            serverAddress: ip,
+            password: "Dg;=8&gPZ%^e5q%"
         }
     }).then(() => {
 
