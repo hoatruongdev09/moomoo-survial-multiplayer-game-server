@@ -1,7 +1,22 @@
 const SAT = require('sat')
+const BaseStructure = require('./baseStructure')
 
+class GameSpike extends BaseStructure {
+    constructor(id, position, direct, owner, info) {
+        super(id, position, direct, owner, info)
+        this.damage = info.damage
+    }
+    toString() {
+        return "Spike"
+    }
+    interact(player, callback) {
+        if (player.idGame != this.userId) {
+            callback(true)
+        }
+    }
+}
 
-class GameSpike {
+class old_GameSpike {
     constructor(id, userId, position, info) {
         this.id = id
         this.userId = userId
@@ -35,11 +50,20 @@ class GameSpike {
     toString() {
         return "Spike"
     }
-    takeDamge(damage) {
+    interact(player, callback) {
+        if (player.idGame != this.userId) {
+            callback(true)
+        }
+    }
+    takeDamage(damage, callback) {
         this.hp -= damage
         if (this.hp <= 0) {
             this.destroy()
+            callback()
         }
+    }
+    hitInteract(player, callback) {
+
     }
     get rotation() {
         return 0

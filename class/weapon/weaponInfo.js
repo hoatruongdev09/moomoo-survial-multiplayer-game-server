@@ -118,12 +118,12 @@ const weaponInfo = {
             y: 5
         },
         range: 2,
-        damage: 20,
-        structureDamage: 20,
-        attackSpeed: 100, // milisecond
+        damage: 2,
+        structureDamage: 1,
+        attackSpeed: 170, // milisecond
         movement: 1.13, // float percent
-        gatherRate: 1,
-        goldGatherRate: 5
+        gatherRate: 1.2,
+        goldGatherRate: 1
     },
     {
         id: "w5",

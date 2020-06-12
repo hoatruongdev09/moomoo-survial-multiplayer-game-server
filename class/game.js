@@ -13,7 +13,7 @@ const ItemInfo = require("./Items/itemInfo");
 const AccessoryInfo = require("./Shop/Accessories");
 const HatInfo = require("./Shop/Hats");
 
-const ClanManager = require("./clanManager").ClanManager;
+const ClanManager = require("./ClanManager/clanManager");
 
 const NPC = require("./NPCs/newNPC");
 class Game {
@@ -51,20 +51,25 @@ class Game {
     }
 
     update(deltaTime) {
-        // this.updatePlayers(deltaTime);
         this.new_updatePlayer(deltaTime);
         this.broadcastPlayerPosition();
         this.new_updateNPC(deltaTime);
         this.broadcastNpcPosition();
-        // this.updateNPC(deltaTime);
-        // this.syncPlayerPosition(deltaTime)
-        // this.syncNpcPosition(deltaTime)
         this.updatePositionProjectile(deltaTime);
     }
     /* #region  CLAN MANAGER */
 
     createClan(name, player) {
         this.clanManager.createClan(name, player);
+    }
+    removeClan(clanId) {
+        this.clanManager.removeClan(clanId)
+    }
+    kickMember(memberId, clanId) {
+        this.clanManager.kickMember(memberId, clanId)
+    }
+    checkIsMasterOfClan(memberId, clanId) {
+        this.clanManager.checkIsMasterOfClan(memberId, clanId)
     }
     /* #endregion */
     /* #region  INITIALIZE  */
@@ -212,21 +217,7 @@ class Game {
             console.log("game slot is null");
         }
     }
-    onNewPlayerJoin(player) {
-        this.broadcast(gamecode.spawnPlayer, {
-            clientId: player.id,
-            id: player.idGame,
-            name: player.name,
-            skinId: player.skinId,
-            pos: {
-                x: player.position.x,
-                y: player.position.y,
-            },
-        });
-    }
-    onPlayerEquipItem(data) {
-        this.broadcast(gamecode.syncEquipItem, data)
-    }
+
     new_playerJoin(player) {
         let spawnPosition = this.map.randomPosition()
         if (player.spawnPad != null) {
@@ -251,36 +242,9 @@ class Game {
         })
         this.onNewPlayerJoin(player)
     }
-    playerJoin(player) {
-        let tempPosition;
-        if (player.spawnPad != null) {
-            tempPosition = player.spawnPad.position;
-            this.removePlayerSpawnPad(player.idGame);
-            player.structures.Spawnpad = 0;
-            player.spawnPad = null;
-        } else {
-            tempPosition = this.map.randomPosition();
-        }
-        player.clientScreenSize.width *= this.gameConfig.viewScale
-        player.clientScreenSize.height *= this.gameConfig.viewScale
-        player.enterGame({
-            moveSpeed: this.gameConfig.playerSpeed,
-            position: new Vector(tempPosition.x, tempPosition.y),
-            lookDirect: this.map.rangdomAngle(),
-            bodyRadius: this.gameConfig.playColliderRadius,
-            items: this.getStarterPack(),
-            shop: {
-                hats: this.getStarterHats(),
-                accessories: this.getStarterAccessories(),
-            },
-        });
-        this.onNewPlayerJoin(player)
-    }
     removePlayer(player) {
         if (player.isJoinedGame) {
-            this.broadcast(gamecode.playerQuit, {
-                id: player.idGame,
-            });
+            this.onPlayerQuit(player.idGame)
         }
         this.removePlayerSpawnPad(player.idGame);
         this.removePlayerStructures(player.idGame);
@@ -677,15 +641,15 @@ class Game {
     /* #endregion */
 
     /* #region  COLLIDER TESTER */
-    testCollisionCircle2Cirle(object1, object2, response) {
-        return this.physic.testCircle2Cirle(
+    testCollisionCircle2Circle(object1, object2, response) {
+        return this.physic.testCircle2Circle(
             object1.bodyCollider,
             object2.bodyCollider,
             response
         );
     }
-    testCollisionPoligon2Cirle(poliObj, circleObj, response) {
-        return this.physic.testPoligon2Cirle(
+    testCollisionPolygon2Circle(poliObj, circleObj, response) {
+        return this.physic.testPolygon2Circle(
             poliObj.bodyCollider,
             circleObj.bodyCollider,
             response
@@ -708,50 +672,11 @@ class Game {
         })
 
     }
-    onPlayerGetHit(data) {
-        let pack = [];
-        pack.push(data);
-        this.syncPlayerHealthpoint(pack);
-    }
-    onPlayerDie(idPlayer) {
-        this.removePlayerStructures(idPlayer)
-        this.broadcast(gamecode.playerDie, { id: idPlayer })
-    }
     bonusKillForPlayer(idPlayer) {
         if (this.players[idPlayer] == null || !this.players[idPlayer].isJoinedGame) {
             return
         }
         this.players[idPlayer].getBonus({ kill: 1, gold: 250, xp: 100 })
-    }
-    old_playerHitPlayer(idFrom, idTarget, damage) {
-        if (this.checkBothPlayerAreInClan(this.players[idFrom], this.players[idTarget])) {
-            console.log(
-                `${idTarget} : ${this.players[idTarget].clanId} == ${idFrom} : ${this.players[idFrom].clanId}`
-            );
-            console.log("WTFFFF");
-            return;
-        }
-        console.log("player hit damage: ", damage);
-        this.players[idTarget].healthPoint -= damage;
-        if (this.players[idTarget].healthPoint <= 0) {
-            this.players[idTarget].isJoinedGame = false;
-            this.removePlayerStructures(idTarget);
-            this.broadcast(gamecode.playerDie, {
-                id: idTarget,
-            });
-            if (this.players[idFrom] != null && this.players[idFrom].isJoinedGame) {
-                this.players[idFrom].kills++;
-                this.addGold(this.players[idFrom], 250);
-                this.players[idFrom].addXP(100);
-            }
-        } else {
-            let data = [];
-            data.push({
-                id: idTarget,
-                hp: this.players[idTarget].healthPoint,
-            });
-            this.syncPlayerHealthpoint(data);
-        }
     }
     npcHitPlayer(idFrom, idTarget, damage) {
         if (this.players[idTarget] == null || !this.players[idTarget].isJoinedGame) {
@@ -761,32 +686,12 @@ class Game {
 
         })
     }
-    old_npcHitPlayer(idFrom, idTarget, damage) {
-        if (this.players[idTarget] == null) {
-            return;
-        }
-        this.players[idTarget].healthPoint -= damage;
-        if (this.players[idTarget].healthPoint <= 0) {
-            this.players[idTarget].isJoinedGame = false;
-            this.removePlayerStructures(idTarget);
-            this.broadcast(gamecode.playerDie, {
-                id: idTarget,
-            });
-        } else {
-            let data = [];
-            data.push({
-                id: idTarget,
-                hp: this.players[idTarget].healthPoint,
-            });
-            this.syncPlayerHealthpoint(data);
-        }
-    }
     respawnNpc(npc) {
         setTimeout(() => {
             npc.isJoined = true;
             npc.reset();
             npc.position = this.getRandomPosition();
-            this.broadcast(gamecode.spawnNpc, {
+            this.onCreateNpc({
                 id: npc.id,
                 skinId: npc.skinId,
                 hp: 1,
@@ -795,65 +700,16 @@ class Game {
                     y: npc.position.y,
                 },
                 rot: npc.lookAngle,
-            });
+            })
         }, 30 * 1000);
     }
     playerHitNpc(idFrom, idTarget, damage) {
         this.playerStructureHitNpc(idFrom, idTarget, damage);
     }
-    onPlayerSwitchItem(data) {
-        this.broadcast(gamecode.switchItem, data)
-    }
-    onNpcDie(player, npc) {
-        this.npcs[npc.id].isJoined = false
-        if (this.players[player.idGame] != null && this.players[player.idGame].isJoinedGame) {
-            this.addGold(this.players[player.idGame], 100)
-        }
-        this.respawnNpc(this.npcs[npc.id]);
-        this.broadcast(gamecode.syncNpcDie, {
-            id: npc.id,
-        });
-    }
-    onNpcHit(npc) {
-        if (this.npcs[npc.id].isJoined) {
-            let data = [{
-                id: npc.id,
-                hp: this.npcs[npc.id].getHpPercent()
-            }]
-            this.syncNpcHealthpoint(data)
-        }
-    }
-    onPlayerTriggerAttack(data) {
-        this.broadcast(gamecode.triggerAttack, data)
-    }
     playerStructureHitNpc(idFrom, idTarget, damage) {
         this.npcs[idTarget].onBeingHit(this.players[idFrom], damage);
     }
-    old_playerStructureHitNpc(idFrom, idTarget, damage) {
-        this.npcs[idTarget].healthPoint -= damage;
-        this.npcs[idTarget].onHit(this.players[idFrom]);
-        if (this.npcs[idTarget].healthPoint <= 0) {
-            this.npcs[idTarget].isJoined = false;
-            // BROAD CAST EVENT NPC DIE
-            this.broadcast(gamecode.syncNpcDie, {
-                id: idTarget,
-            });
-            this.respawnNpc(this.npcs[idTarget]);
-            if (this.players[idFrom] != null && this.players[idFrom].isJoinedGame) {
-                this.addGold(this.players[idFrom], 100);
-                this.players[idFrom].addXP(50);
-            }
-        } else {
-            let data = [];
-            data.push({
-                id: idTarget,
-                hp: this.npcs[idTarget].getHpPercent(),
-            });
-            // BROAD CAST EVENT HP
-            this.syncNpcHealthpoint(data);
-        }
-    }
-    syncNpcHealthpoint(data) {
+    syncNpcHP(data) {
         this.broadcast(gamecode.syncNpcHP, {
             data: data,
         });
@@ -861,34 +717,7 @@ class Game {
     playerStructureHitPlayer(idFrom, idTarget, damage) {
         this.playerHitPlayer(idFrom, idTarget, damage)
     }
-    old_playerStructureHitPlayer(idFrom, idTarget, damage) {
-        if (
-            this.players[idTarget].clanId == this.players[idFrom].clanId &&
-            this.players[idTarget] != null
-        ) {
-            return;
-        }
-        this.players[idTarget].healthPoint -= damage;
-        if (this.players[idTarget].healthPoint <= 0) {
-            this.players[idTarget].isJoinedGame = false;
-            this.broadcast(gamecode.playerDie, {
-                id: idTarget,
-            });
-            if (this.players[idFrom] != null && this.players[idFrom].isJoinedGame) {
-                this.players[idFrom].kills++;
-                this.players[idFrom].scores += 25;
-                this.players[idFrom].updateStatus();
-            }
-        } else {
-            let data = [];
-            data.push({
-                id: idTarget,
-                hp: this.players[idTarget].healthPoint,
-            });
-            this.syncPlayerHealthpoint(data);
-        }
-    }
-    syncPlayerHealthpoint(data) {
+    syncPlayerHP(data) {
         this.broadcast(gamecode.playerHit, {
             data: data,
         });
@@ -916,49 +745,21 @@ class Game {
         if (structure == null) {
             return;
         }
-        if (structure.toString() == "BoostPad") {
-            this.pushPlayerBack(
-                this.players[idFrom],
-                structure.direct,
-                structure.force
-            );
-            return;
+        structure.interact(this.players[idFrom], (action) => { })
+        if (this.checkBothPlayerAreInClan(this.players[idFrom], this.players[structure.userId])) {
+            return
         }
-        if (structure.toString() == "HealingPad") {
-            structure.healPlayer(this.players[idFrom]);
-            return;
-        }
-        if (structure.toString() == "Platform") {
-            structure.addStandingPlayer(this.players[idFrom]);
-            return;
-        }
-        if (structure.toString() == "Teleporter") {
-            structure.addWaitToTeleporter(this.players[idFrom]);
-            return;
-        }
-        if (
-            structure.userId == idFrom ||
-            (this.players[idFrom].clanId == this.players[structure.userId].clanId &&
-                this.players[idFrom] != null)
-        ) {
-            return;
-        }
-
         if (structure.toString() == "Spike") {
-            this.playerStructureHitPlayer(
-                idStructure.userId,
-                idFrom,
-                structure.damage
-            );
-            this.pushPlayerBack(
-                this.players[idFrom],
-                this.players[idFrom].position.clone().sub(structure.position),
-                5
-            );
+            structure.interact(this.players[idFrom], (action) => {
+                if (action) {
+                    this.playerStructureHitPlayer(idStructure.userId, idFrom, structure.damage);
+                    this.pushPlayerBack(this.players[idFrom], this.players[idFrom].position.clone().sub(structure.position), 5);
+                }
+            })
             return;
         }
         if (structure.toString() == "PitTrap") {
-            structure.trapPlayer(this.players[idFrom]);
+            structure.interact(this.players[idFrom], (action) => { });
             return;
         }
     }
@@ -969,25 +770,18 @@ class Game {
         if (structure == null) {
             return;
         }
-        if (
-            structure.toString() == "MineStone" ||
-            structure.toString() == "Sapling"
-        ) {
-            let key = this.getKeyByValue(ResourceType, structure.idType);
+        structure.hitInteract(this.players[idPlayer], (idType) => {
+            let key = this.getKeyByValue(ResourceType, idType);
             this.players[idPlayer].receiveResource(weapon.info.gatherRate, key);
             this.players[idPlayer].addXP(weapon.info.goldGatherRate);
+        })
+        if (this.checkBothPlayerAreInClan(this.players[idPlayer], this.players[structure.userId])) {
+            return
         }
-        if (
-            idPlayer == structure.userId ||
-            (this.players[idPlayer].clanId == this.players[structure.userId].clanId &&
-                this.players[idPlayer].clanId != null)
-        ) {
-            return;
-        }
-        structure.takeDamge(damage);
-        if (structure.hp <= 0) {
+        structure.takeDamage(damage, () => {
+            console.log("remove structure: ", structure.id)
             this.removeStructure(structure.id);
-        }
+        })
     }
     playerAttackResource(player, idResource, weapon) {
         let key = this.getKeyByValue(
@@ -1019,61 +813,55 @@ class Game {
         }
         return structure;
     }
-    generateStructeId() {
+    generateStructureId() {
         return this.structuresCount++;
     }
-    checkOverlapStructure(playerId, strc) {
-        for (let i = 0; i < this.structures.length; i++) {
-            if (
-                this.testCollisionCircle2Cirle(
-                    strc,
-                    this.structures[i],
-                    (res, obj) => { }
-                )
-            ) {
-                return false;
-            }
-            if (
-                this.structures[i].toString() == "Blocker" &&
-                this.structures[i].userId != playerId
-            ) {
-                let distance = this.structures[i].position
-                    .clone()
-                    .sub(strc.position)
-                    .sqrMagnitude();
-                if (distance <= Math.pow(this.structures[i].range, 2)) {
-                    return false;
-                }
-            }
-        }
-        for (let i = 0; i < this.resources.length; i++) {
-            if (
-                this.resources[i] != null &&
-                this.testCollisionCircle2Cirle(
-                    strc,
-                    this.resources[i],
-                    (res, obj) => { }
-                )
-            ) {
-                return false;
-            }
-        }
-        for (let i = 0; i < this.npcs.length; i++) {
-            if (this.npcs[i] != null) {
-                if (
-                    this.testCollisionCircle2Cirle(strc, this.npcs[i], (res, obj) => { })
-                ) {
-                    return false;
-                }
-            }
-        }
+    checkOverlapStructure(playerId, structure) {
+        let isOverlapWithStructure = this.checkStructureOverlapStructure(playerId, structure)
+        let isOverlapWithResource = this.checkStructureOverlapResource(playerId, structure)
+        let isOverlapWithNpc = this.checkStructureOverlapNpc(playerId, structure)
+        return isOverlapWithStructure && isOverlapWithResource && isOverlapWithNpc
 
-        return true;
+    }
+    checkStructureOverlapStructure(playerId, structure) {
+        let structureInView = this.getStructureFromView(structure.position)
+        for (let i = 0; i < structureInView.length; i++) {
+            if (this.testCollisionCircle2Circle(structure, structureInView[i], (res, obj) => { })) {
+                return false
+            }
+            if (structureInView[i].toString() == "Blocker" && structureInView[i].userId != playerId) {
+                let distance = structureInView[i].position.clone().sub(structure.position).sqrMagnitude()
+                if (distance < Math.pow(structureInView[i].range, 2)) {
+                    return false
+                }
+            }
+        }
+        return true
+    }
+    checkStructureOverlapResource(playerId, structure) {
+        let resourceInView = this.getResourceFromView(structure.position)
+        for (let i = 0; i < resourceInView.length; i++) {
+            if (this.testCollisionCircle2Circle(structure, resourceInView[i], (res, obj) => { })) {
+                return false
+            }
+        }
+        return true
+    }
+    checkStructureOverlapNpc(playerId, structure) {
+        let npcInView = this.getNpcInPlayerView(this.players[playerId])
+        for (let i = 0; i < npcInView.length; i++) {
+            if (npcInView[i].isJoined) {
+                if (this.testCollisionCircle2Circle(structure, npcInView[i], (res, obj) => { })) {
+                    return false
+                }
+            }
+        }
+        return true
     }
     addStructure(user, item) {
         this.structures.push(item);
         user.structures[item.toString()] += 1;
-        this.broadcast(gamecode.spawnnStructures, {
+        this.onCreateStructure({
             id: item.id,
             fromId: user.idGame,
             itemId: item.itemId,
@@ -1082,19 +870,17 @@ class Game {
                 y: item.position.y,
             },
             rot: item.rotation,
-        });
+        })
     }
     removeStructure(id) {
         for (let i = 0; i < this.structures.length; i++) {
             if (this.structures[i].id == id) {
                 this.structures[i].destroy();
                 this.structures.splice(i, 1);
-                this.broadcast(gamecode.removeStructures, {
-                    id: [id],
-                });
                 return;
             }
         }
+        this.onRemoveStructure([id])
     }
     removePlayerStructures(idPlayer) {
         let data = [];
@@ -1108,11 +894,7 @@ class Game {
                 }
             }
         }
-        if (data.length != 0) {
-            this.broadcast(gamecode.removeStructures, {
-                id: data,
-            });
-        }
+        this.onRemoveStructure(data)
     }
     removePlayerSpawnPad(idPlayer) {
         let data = [];
@@ -1126,9 +908,7 @@ class Game {
                 }
             }
         }
-        this.broadcast(gamecode.removeStructures, {
-            id: data,
-        });
+        this.onRemoveStructure(data)
     }
     /* #endregion */
     /* #region  PROJECTILE */
@@ -1138,7 +918,7 @@ class Game {
     }
     addProjectTile(item, direct) {
         this.projectile.push(item);
-        this.broadcast(gamecode.createProjectile, {
+        this.onCreateProjectile({
             id: item.id,
             skinId: item.idSkin,
             pos: {
@@ -1146,16 +926,14 @@ class Game {
                 y: item.position.y,
             },
             angle: direct,
-        });
+        })
     }
     removeProjectile(id) {
         for (let i = 0; i < i < this.projectile.length; i++) {
             if (this.projectile[i].id == id) {
                 this.projectile[i].destroy();
                 this.projectile.splice(i, 1);
-                this.broadcast(gamecode.removeProjectile, {
-                    id: [id],
-                });
+                this.onRemoveProjectile([id])
                 return;
             }
         }
@@ -1177,11 +955,90 @@ class Game {
             }
         });
         if (data.length != 0) {
-            this.broadcast(gamecode.syncPositionProjectile, {
-                pos: data,
-            });
+            this.onSyncProjectilePosition(data)
         }
     }
+    /* #endregion */
+    /* #region  GAME EVENTS */
+    onNewPlayerJoin(player) {
+        this.broadcast(gamecode.spawnPlayer, {
+            clientId: player.id,
+            id: player.idGame,
+            name: player.name,
+            skinId: player.skinId,
+            pos: {
+                x: player.position.x,
+                y: player.position.y,
+            },
+        });
+    }
+    onPlayerQuit(data) {
+        this.broadcast(gamecode.playerQuit, {
+            id: data
+        });
+    }
+    onPlayerEquipItem(data) {
+        this.broadcast(gamecode.syncEquipItem, data)
+    }
+    onPlayerGetHit(data) {
+        let pack = [];
+        pack.push(data);
+        this.syncPlayerHP(pack);
+    }
+    onPlayerDie(idPlayer) {
+        this.removePlayerStructures(idPlayer)
+        this.broadcast(gamecode.playerDie, { id: idPlayer })
+    }
+    onPlayerSwitchItem(data) {
+        this.broadcast(gamecode.switchItem, data)
+    }
+    onCreateNpc(data) {
+        this.broadcast(gamecode.spawnNpc, data)
+    }
+    onNpcDie(player, npc) {
+        this.npcs[npc.id].isJoined = false
+        if (this.players[player.idGame] != null && this.players[player.idGame].isJoinedGame) {
+            this.addGold(this.players[player.idGame], 100)
+        }
+        this.respawnNpc(this.npcs[npc.id]);
+        this.broadcast(gamecode.syncNpcDie, {
+            id: npc.id,
+        });
+    }
+    onNpcHit(npc) {
+        if (this.npcs[npc.id].isJoined) {
+            let data = [{
+                id: npc.id,
+                hp: this.npcs[npc.id].getHpPercent()
+            }]
+            this.syncNpcHP(data)
+        }
+    }
+    onPlayerTriggerAttack(data) {
+        this.broadcast(gamecode.triggerAttack, data)
+    }
+    onCreateStructure(data) {
+        this.broadcast(gamecode.spawnnStructures, data)
+    }
+    onRemoveStructure(data) {
+        this.broadcast(gamecode.removeStructures, {
+            id: data
+        })
+    }
+    onCreateProjectile(data) {
+        this.broadcast(gamecode.createProjectile, data)
+    }
+    onRemoveProjectile(data) {
+        this.broadcast(gamecode.removeProjectile, {
+            id: data
+        })
+    }
+    onSyncProjectilePosition(data) {
+        this.broadcast(gamecode.syncPositionProjectile, {
+            pos: data
+        })
+    }
+
     /* #endregion */
     getRandomPosition() {
         let pos = this.map.randomPosition();
@@ -1195,41 +1052,9 @@ class Game {
     }
     pushNpcBack(npc, direct, range) {
         npc.position.add(direct.unitVector.scale(range));
-        var positionData = [];
-        positionData.push({
-            id: npc.id,
-            pos: {
-                x: npc.position.x,
-                y: npc.position.y,
-            },
-            rot: npc.lookAngle,
-        });
-        this.broadcast(gamecode.syncNpcTransform, {
-            pos: positionData,
-        });
     }
     pushPlayerBack(player, direct, range) {
-        if (this.players[player.idGame] == null || !this.players[player.idGame].isJoinedGame) {
-            return
-        }
         player.position.add(direct.unitVector.scale(range));
-        var positionData = [];
-        var lookData = [];
-        positionData.push({
-            id: player.idGame,
-            pos: {
-                x: player.position.x,
-                y: player.position.y,
-            },
-        });
-        lookData.push({
-            id: player.idGame,
-            angle: player.lookDirect,
-        });
-        this.broadcast(gamecode.syncTransform, {
-            pos: positionData,
-            rot: lookData,
-        });
     }
     broadcast(event, args) {
         this.players.forEach((p) => {

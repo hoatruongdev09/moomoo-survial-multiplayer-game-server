@@ -1,7 +1,16 @@
 const SAT = require('sat')
+const BaseStructure = require('./baseStructure')
 
+class GameWall extends BaseStructure {
+    constructor(id, position, direct, owner, info) {
+        super(id, position, direct, owner, info)
+    }
+    toString() {
+        return "Wall"
+    }
+}
 
-class GameWall {
+class old_GameWall {
     constructor(id, userId, position, info) {
         this.id = id
         this.userId = userId
@@ -34,11 +43,15 @@ class GameWall {
     toString() {
         return "Wall"
     }
-    takeDamge(damage) {
+    takeDamage(damage, callback) {
         this.hp -= damage
         if (this.hp <= 0) {
             this.destroy()
+            callback()
         }
+    }
+    hitInteract(player, callback) {
+
     }
     get rotation() {
         return 0

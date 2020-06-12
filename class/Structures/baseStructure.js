@@ -1,25 +1,15 @@
 const SAT = require('sat')
-const BaseStructure = require('./baseStructure')
-class GameBlocker extends BaseStructure {
-    constructor(id, position, direct, owner, info) {
-        super(id, position, direct, owner, info)
-        this.range = info.range
-    }
-    toString() {
-        return "Blocker"
-    }
-}
+class BaseStructure {
 
-class old_GameBlocker {
-    constructor(id, userId, position, info) {
+    constructor(id, position, direct, owner, info) {
         this.id = id
-        this.userId = userId
+        this.owner = owner
         this.position = position
+        this.direct = direct
 
         this.hp = info.health
         this.size = info.size
         this.itemId = info.id
-        this.range = info.range
 
         this.bodyCollider
         this.initCollider()
@@ -27,11 +17,11 @@ class old_GameBlocker {
     initCollider() {
         this.bodyCollider = new SAT.Circle(new SAT.Vector(this.position.x, this.position.y), this.size)
     }
-    destroy() {
+    interact(user, callback) {
 
     }
-    toString() {
-        return "Blocker"
+    hitInteract(player, callback) {
+
     }
     takeDamage(damage, callback) {
         this.hp -= damage
@@ -39,12 +29,20 @@ class old_GameBlocker {
             this.destroy()
             callback()
         }
-    }
-    hitInteract(player, callback) {
 
     }
+    destroy() {
+
+    }
+    toString() {
+        return "base-structure"
+    }
+
+    get userId() {
+        return this.owner.idGame
+    }
     get rotation() {
-        return 0
+        return Math.atan2(this.direct.y, this.direct.x)
     }
 }
-module.exports = GameBlocker
+module.exports = BaseStructure
