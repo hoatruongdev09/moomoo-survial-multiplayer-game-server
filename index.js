@@ -34,7 +34,9 @@ app.get('/server_list', (req, res) => {
     res.status(200).send(serverList)
 })
 app.get('/update_server', (req, res) => {
-    if (req.query.serverId != null && req.query.password === updateServerPasssword) {
+    console.log(`req.query.password == updateServerPasssword ${req.query.password == updateServerPasssword}`);
+
+    if (req.query.serverId != null && req.query.password == updateServerPasssword) {
         serverList[req.query.serverId] = req.query.serverAddress + ":8080"
         console.log(`updated ${serverList[req.query.serverId]}`);
     }
@@ -66,6 +68,6 @@ async function updateIpAdressOnMainServer() {
 
     })
 }
-updateIpAdressOnMainServer()
+// updateIpAdressOnMainServer()
 
 let server = new Server(ServerConfig, web)
