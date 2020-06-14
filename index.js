@@ -59,7 +59,7 @@ async function updateIpAdressOnMainServer() {
         params: {
             serverId: 'asia',
             serverAddress: ip,
-            password: "Dg;=8&gPZ%^e5q%zz"
+            password: "Dg;=8&gPZ%^e5q%"
         }
     }).then(() => {
 
