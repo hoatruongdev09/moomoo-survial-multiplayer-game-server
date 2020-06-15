@@ -6,7 +6,7 @@ const axios = require('axios').default;
 const jsonfile = require('jsonfile')
 const path = require('path')
 
-const serverListFile = path.join(__dirname, 'files/serverListFile.json')
+const serverListFile = path.join(__dirname, 'jsonFiles/serverListFile.json')
 
 
 
@@ -38,16 +38,7 @@ app.get('/server_list', (req, res) => {
     res.status(200).send(serverList)
 })
 app.get('/update_server', (req, res) => {
-    console.log(`req.query.password == updateServerPasssword ${req.query.password == updateServerPasssword}`);
-
-    if (req.query.serverId != null && req.query.password == updateServerPasssword) {
-        serverList[req.query.serverId] = req.query.serverAddress + ":8080"
-        console.log(`updated ${serverList[req.query.serverId]}`);
-        jsonfile.writeFile(serverListFile, serverList, function (err) {
-            if (err) console.error(err)
-        })
-    }
-    res.status(200);
+    updateServer(req, res);
 })
 console.log("express run on: ", listener.address().port)
 
@@ -59,6 +50,19 @@ jsonfile.readFile(serverListFile)
     .catch(error => console.error("No server list file found. Use default"))
 
 
+
+function updateServer(req, res) {
+    console.log(`req.query.password == updateServerPasssword ${req.query.password == updateServerPasssword}`);
+    if (req.query.serverId != null && req.query.password == updateServerPasssword) {
+        serverList[req.query.serverId] = req.query.serverAddress + ":8080";
+        console.log(`updated ${serverList[req.query.serverId]}`);
+        jsonfile.writeFile(serverListFile, serverList, function (err) {
+            if (err)
+                console.error(err);
+        });
+    }
+    res.status(200);
+}
 
 async function updateIpAdressOnMainServer() {
     console.log(`pulic ip: ${await publicIp.v4()}`)
