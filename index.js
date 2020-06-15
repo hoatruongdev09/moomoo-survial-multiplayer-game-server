@@ -6,7 +6,7 @@ const axios = require('axios').default;
 const jsonfile = require('jsonfile')
 const path = require('path')
 
-const serverListFile = path.join(__dirname, 'jsonFiles/serverListFile.json')
+const serverListFile = path.join(__dirname, 'serverListFile.json')
 
 
 
