@@ -4,7 +4,7 @@ const ServerConfig = require('./class/serverconfig')
 const publicIp = require('public-ip');
 const axios = require('axios').default;
 const jsonfile = require('jsonfile')
-const path = require('path');
+const path = require('path')
 
 const serverListFile = path.join(__dirname, 'files/serverListFile.json')
 
@@ -14,7 +14,7 @@ const serverListFile = path.join(__dirname, 'files/serverListFile.json')
 
 const express = require('express')
 
-const path = require('path')
+
 const app = express()
 const web = require('http').Server(app)
 const PORT = process.env.PORT || 8080
