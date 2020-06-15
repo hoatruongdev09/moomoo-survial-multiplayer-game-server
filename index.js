@@ -7,6 +7,7 @@ const jsonfile = require('jsonfile')
 const path = require('path')
 
 const serverListFile = path.join(__dirname, 'serverListFile.json')
+const db = require("./models/index")
 
 
 
@@ -53,14 +54,18 @@ jsonfile.readFile(serverListFile)
 
 function updateServer(req, res) {
     console.log(`req.query.password == updateServerPasssword ${req.query.password == updateServerPasssword}`);
-    if (req.query.serverId != null && req.query.password == updateServerPasssword) {
-        serverList[req.query.serverId] = req.query.serverAddress + ":8080";
+    const serverId = req.query.serverId
+    if (serverId != null && req.query.password == updateServerPasssword) {
+        serverList[serverId] = req.query.serverAddress + ":8080";
         console.log(`updated ${serverList[req.query.serverId]}`);
-        jsonfile.writeFile(serverListFile, serverList)
-            .then(res => {
-                console.log('Write complete')
+        db.Name.findOrCreate({
+                where: {
+                    name: serverId
+                }
             })
-            .catch(error => console.error(error))
+            .then(([urlObj, created]) => {
+                res.send("done")
+            });
     }
     res.status(200);
 }
