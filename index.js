@@ -4,6 +4,8 @@ const ServerConfig = require('./class/serverconfig')
 const publicIp = require('public-ip');
 const axios = require('axios').default;
 const jsonfile = require('jsonfile')
+const path = require('path');
+
 const serverListFile = path.join(__dirname, 'files/serverListFile.json')
 
 
