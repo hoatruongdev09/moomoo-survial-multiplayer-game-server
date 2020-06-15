@@ -56,10 +56,11 @@ function updateServer(req, res) {
     if (req.query.serverId != null && req.query.password == updateServerPasssword) {
         serverList[req.query.serverId] = req.query.serverAddress + ":8080";
         console.log(`updated ${serverList[req.query.serverId]}`);
-        jsonfile.writeFile(serverListFile, serverList, function (err) {
-            if (err)
-                console.error(err);
-        });
+        jsonfile.writeFile(file, obj)
+            .then(res => {
+                console.log('Write complete')
+            })
+            .catch(error => console.error(error))
     }
     res.status(200);
 }
