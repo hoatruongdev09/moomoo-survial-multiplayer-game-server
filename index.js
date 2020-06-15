@@ -24,7 +24,7 @@ const updateServerPasssword = "Dg;=8&gPZ%^e5q%"
 
 var serverList = {
     local: "localhost:8080",
-    asia: "",
+    asia: "54.169.71.33:8080",
     us: "moomoo-server.herokuapp.com",
 }
 
