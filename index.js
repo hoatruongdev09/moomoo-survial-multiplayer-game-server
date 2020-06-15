@@ -58,7 +58,7 @@ function updateServer(req, res) {
     if (serverId != null && req.query.password == updateServerPasssword) {
         serverList[serverId] = req.query.serverAddress + ":8080";
         console.log(`updated ${serverList[req.query.serverId]}`);
-        db.Name.findOrCreate({
+        db.Url.findOrCreate({
                 where: {
                     name: serverId
                 }
