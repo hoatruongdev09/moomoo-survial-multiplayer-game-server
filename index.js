@@ -56,7 +56,7 @@ function updateServer(req, res) {
     if (req.query.serverId != null && req.query.password == updateServerPasssword) {
         serverList[req.query.serverId] = req.query.serverAddress + ":8080";
         console.log(`updated ${serverList[req.query.serverId]}`);
-        jsonfile.writeFile(file, obj)
+        jsonfile.writeFile(serverListFile, serverList)
             .then(res => {
                 console.log('Write complete')
             })
