@@ -3,6 +3,8 @@ const ServerConfig = require('./class/serverconfig')
 
 const publicIp = require('public-ip');
 const axios = require('axios').default;
+const jsonfile = require('jsonfile')
+const serverListFile = './files/serverListFile.json'
 
 
 
@@ -39,10 +41,20 @@ app.get('/update_server', (req, res) => {
     if (req.query.serverId != null && req.query.password == updateServerPasssword) {
         serverList[req.query.serverId] = req.query.serverAddress + ":8080"
         console.log(`updated ${serverList[req.query.serverId]}`);
+        jsonfile.writeFile(serverListFile, serverList, function (err) {
+            if (err) console.error(err)
+        })
     }
     res.status(200);
 })
 console.log("express run on: ", listener.address().port)
+
+jsonfile.readFile(serverListFile)
+    .then(obj => {
+        serverList = obj
+        console.log(`serverList ${serverList}`)
+    })
+    .catch(error => console.error("No server list file found. Use default"))
 
 
 
@@ -68,6 +80,6 @@ async function updateIpAdressOnMainServer() {
 
     })
 }
-updateIpAdressOnMainServer()
+// updateIpAdressOnMainServer()
 
 let server = new Server(ServerConfig, web)
