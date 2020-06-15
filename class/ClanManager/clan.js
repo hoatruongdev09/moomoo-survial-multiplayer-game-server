@@ -12,6 +12,9 @@ class Clan {
         this.member = []
         this.requestJoin = []
     }
+    update(deltaTime) {
+
+    }
     checkExistedMember(id) {
         let trueMember = this.getAllMember()
         for (let i = 0; i < trueMember.length; i++) {

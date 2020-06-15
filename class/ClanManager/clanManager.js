@@ -1,6 +1,7 @@
-const GameCode = require('../../transmitcode').GameCode
-const ClanCode = require('../../transmitcode').ClanCode
-const ServerCode = require('../../transmitcode').ServerCode
+const TransmitCode = require('../../transmitcode')
+const GameCode = TransmitCode.GameCode
+const ClanCode = TransmitCode.ClanCode
+const ServerCode = TransmitCode.ServerCode
 
 const Clan = require('./clan')
 class ClanManager {
@@ -8,6 +9,11 @@ class ClanManager {
         this.game = game
         this.clans = []
         this.clansCount = 0
+    }
+    update(deltaTime) {
+        this.clans.forEach(clan => {
+            clan.update(deltaTime)
+        })
     }
     generateClanId() {
         return this.clansCount++
@@ -45,6 +51,7 @@ class ClanManager {
         }
         let id = this.generateClanId()
         let clan = new Clan(id, name, master)
+        console.log(`create clan: ${id} | ${master.clanId}`)
         this.clans.push(clan)
         this.broadcast(ClanCode.createClan, {
             id: clan.id,

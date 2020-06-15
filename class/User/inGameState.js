@@ -595,11 +595,11 @@ class GameState extends BaseState {
     /* #endregion */
     /* #region  CLAN JOBS */
     createClan(data) {
-        this.game.createClan(data.name, this);
+        this.game.createClan(data.name, this.user);
     }
     kickMember(data) {
+        console.log("clanid: ", this.user.clanId)
         if (this.user.clanId == null) {
-            console.log("wtfsadf")
             return;
         }
         if (this.game.checkIsMasterOfClan(this.user.idGame, this.user.clanId)) {
@@ -611,7 +611,9 @@ class GameState extends BaseState {
                 this.game.kickMember(data.id, this.user.clanId);
             }
         } else {
+            console.log("not master")
             if (data.id == this.user.idGame) {
+                console.log("kick member")
                 this.game.kickMember(data.id, this.user.clanId);
             }
         }

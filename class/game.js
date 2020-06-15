@@ -56,6 +56,7 @@ class Game {
         this.new_updateNPC(deltaTime);
         this.broadcastNpcPosition();
         this.updatePositionProjectile(deltaTime);
+        this.clanManager.update(deltaTime)
     }
     /* #region  CLAN MANAGER */
 
