@@ -43,14 +43,19 @@ app.get('/update_server', (req, res) => {
 })
 console.log("express run on: ", listener.address().port)
 
-jsonfile.readFile(serverListFile)
-    .then(obj => {
-        serverList = obj
-        console.log(`serverList ${serverList}`)
-    })
-    .catch(error => console.error("No server list file found. Use default"))
+function getServerList() {
+    for (var key in serverList) {
+        db.Url.findAll({
+            where: {
+                name: key
+            }
+        }).then(model => {
+            console.dir(model)
+        })
+    }
+}
 
-
+getServerList()
 
 function updateServer(req, res) {
     console.log(`req.query.password == updateServerPasssword ${req.query.password == updateServerPasssword}`);
@@ -58,7 +63,8 @@ function updateServer(req, res) {
     if (serverId != null && req.query.password == updateServerPasssword) {
         serverList[serverId] = req.query.serverAddress + ":8080";
         console.log(`updated ${serverList[req.query.serverId]}`);
-        db.Url.findOrCreate({
+        db.Url.upsert({
+                address: req.query.serverAddress,
                 where: {
                     name: serverId
                 }
