@@ -10,18 +10,19 @@ const HuntState = require('./NpcState/huntState')
 const PreyState = require('./NpcState/preyState')
 
 class NPC {
-    constructor(id, skinId, isHostile, maxHp, position, game, size) {
+    constructor(id, skinId, isHostile, maxHp, position, game, size, tag) {
         this.id = id
         this.skinId = skinId
         this.isHostile = isHostile
         this.maxHp = maxHp
         this.game = game
+        this.tag = tag
 
         this.healthPoint = maxHp
 
         this.baseSpeed = 6
         this.baseRotateSpeed = 1.2
-        this.inviromentSpeedModifier = 1
+        this.environmentSpeedModifier = 1
 
         this.speed = this.baseSpeed
         this.rotateSpeed = this.baseRotateSpeed
@@ -73,7 +74,7 @@ class NPC {
         this.moveDirect.x = Mathf.lerp(this.moveDirect.x, direct.unitVector.x, this.rotateSpeed * deltaTime)
         this.moveDirect.y = Mathf.lerp(this.moveDirect.y, direct.unitVector.y, this.rotateSpeed * deltaTime)
 
-        this.position.add(this.moveDirect.unitVector.scale(this.speed * this.inviromentSpeedModifier * deltaTime))
+        this.position.add(this.moveDirect.unitVector.scale(this.speed * this.environmentSpeedModifier * deltaTime))
 
         this.lookAngle = Math.atan2(this.moveDirect.y, this.moveDirect.x)
 
@@ -124,7 +125,7 @@ class NPC {
         if (this.isTrapped) {
             return
         }
-        this.position.add(direct.unitVector.scale(this.speed * this.inviromentSpeedModifier * deltaTime))
+        this.position.add(direct.unitVector.scale(this.speed * this.environmentSpeedModifier * deltaTime))
         this.updateCollider()
 
     }

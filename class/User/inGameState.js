@@ -52,6 +52,7 @@ class GameState extends BaseState {
         this.removeEvents()
         this.clearAutoAttackInterval()
         this.resetPlayerAttributes()
+        this.user.resetEffects()
     }
     registerEvents() {
         this.socket.on(GameCode.syncLookDirect, (data) => this.syncLookDirect(data))
@@ -114,7 +115,6 @@ class GameState extends BaseState {
         if (this.user.intervalAutoAttack != null) {
             clearInterval(this.user.intervalAutoAttack)
         }
-
         this.user.structures.reset();
         this.initBodyCollider(data.bodyRadius)
 
@@ -145,7 +145,7 @@ class GameState extends BaseState {
         );
 
         this.user.position.add(this.user.moveDirect.clone().scale(this.user.moveSpeed * (this.user.movementEffect() * deltaTime)))
-        // console.log("modifier: ", (this.platformStanding == false ? this.speedModifier * this.inviromentSpeedModifier : 1))
+        // console.log("modifier: ", (this.platformStanding == false ? this.speedModifier * this.environmentSpeedModifier : 1))
 
         this.updateBodyCollider()
 
@@ -362,9 +362,14 @@ class GameState extends BaseState {
         })
     }
     removeResource(cost) {
+        console.log("current item: ", this.user.currentItem)
+        let costModifier = 1
+        if (this.user.currentItem.toString() == "Ranged") {
+            costModifier = this.user.projectileCostModifier
+        }
         let keys = Object.keys(cost)
         keys.forEach(k => {
-            this.user.basicResources[k] -= cost[k]
+            this.user.basicResources[k] -= cost[k] * costModifier
         })
         this.updateStatus()
     }
@@ -428,26 +433,33 @@ class GameState extends BaseState {
         this.game.playerAttackResource(this.user, objectInfo.id, this.user.currentItem);
     }
     onHitStructure(response, object, objectInfo) {
+        let damage = this.user.currentItem.info.structureDamage * (this.user.structureDamageModifier + 1)
+        let gatherRate = this.user.currentItem.info.gatherRate
+        let goldGatherRate = this.user.currentItem.info.goldGatherRate + this.user.farmGoldBonus
         this.game.playerAttackStructure(
             this.user.idGame,
-            objectInfo.id,
-            this.user.currentItem
-        );
+            objectInfo.id, damage,
+            gatherRate,
+            goldGatherRate
+        )
+
     }
     onHitNpc(response, object, objectInfo) {
+        let damage = this.user.currentItem.info.damage * (1 + this.user.damageModifier)
         this.game.playerHitNpc(
             this.user.idGame,
             objectInfo.id,
-            this.user.currentItem.info.damage
+            damage
         );
     }
     onHitPlayer(response, object, objectInfo) {
         if (objectInfo.id != this.user.idGame) {
             console.log("hit player: ", objectInfo.id);
+            let damage = this.user.currentItem.info.damage * (1 + this.user.damageModifier)
             this.game.playerHitPlayer(
                 this.user.idGame,
                 objectInfo.id,
-                this.user.currentItem.info.damage
+                damage
             );
         }
     }
@@ -513,10 +525,15 @@ class GameState extends BaseState {
             // if owned this item
             if (this.user.equippedHat != null && this.user.equippedHat.id == data.id) {
                 // if equiped then unequip
+                this.user.equippedHat.remove(this.user)
                 this.user.equippedHat = null;
             } else {
                 // if not equiped then equip
+                if (this.user.equipedHat != null) {
+                    this.user.equippedHat.remove(this.user)
+                }
                 this.user.equippedHat = this.getOwnedItemById(data.id);
+                this.user.equippedHat.effect(this.user)
             }
         } else {
             // if not owned this item
@@ -559,11 +576,16 @@ class GameState extends BaseState {
             if (this.user.equippedAccessory != null && this.user.equippedAccessory.id == data.id) {
                 // if equiped then unequip
                 // console.log("unequip accessory");
+                this.user.equippedAccessory.remove(this.user)
                 this.user.equippedAccessory = null;
             } else {
                 // if not equiped then equip
                 // console.log("equip accessory");
+                if (this.user.equippedAccessory != null) {
+                    this.user.equippedAccessory.remove(this.user)
+                }
                 this.user.equippedAccessory = this.getOwnedItemById(data.id);
+                this.user.equippedAccessory.effect(this.user)
             }
         } else {
             // if not owned this item

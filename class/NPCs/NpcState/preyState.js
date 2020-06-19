@@ -23,7 +23,10 @@ class PreyState extends NpcState {
     findTarget() {
         let playerInView = this.npc.getPlayersInView()
         if (playerInView.length != 0) {
-            let target = playerInView[Mathf.RandomeRange(0, playerInView.length)]
+            let target = playerInView[Mathf.RandomRange(0, playerInView.length)]
+            if (this.npc.game.getPlayerInfo(target.idGame).bullIgnored && this.npc.tag == "bully") {
+                return
+            }
             this.npc.huntState.target = target
             this.stateManager.changeState(this.npc.huntState)
         }
@@ -35,7 +38,7 @@ class PreyState extends NpcState {
         }, refreshTime)
     }
     stopPreying() {
-        let preyTime = Mathf.RandomeRange(5, 10) * 1000
+        let preyTime = Mathf.RandomRange(5, 10) * 1000
         this.preyTimeOut = setTimeout(() => {
             this.stateManager.changeState(this.npc.walkState)
         }, preyTime)
