@@ -23,8 +23,12 @@ class GameState extends BaseState {
         this.structuresView = []
         this.npcView = []
         this.playersView = []
+
+        this.delayUseItem = false
+        this.delayUseItemTime = 500
     }
     enter(options) {
+        this.delayUseItem = false
         this.user = options.user
         this.socket = this.user.socket
         this.game = this.user.game
@@ -48,6 +52,7 @@ class GameState extends BaseState {
         this.removeEvents()
         this.clearAutoAttackInterval()
         this.resetPlayerAttributes()
+        this.user.resetEffects()
     }
     registerEvents() {
         this.socket.on(GameCode.syncLookDirect, (data) => this.syncLookDirect(data))
@@ -110,7 +115,6 @@ class GameState extends BaseState {
         if (this.user.intervalAutoAttack != null) {
             clearInterval(this.user.intervalAutoAttack)
         }
-
         this.user.structures.reset();
         this.initBodyCollider(data.bodyRadius)
 
@@ -140,25 +144,29 @@ class GameState extends BaseState {
             Math.sin(this.user.lastMovement)
         );
 
-        this.user.position.add(this.user.moveDirect.clone().scale(this.user.moveSpeed * (!this.user.platformStanding ? this.user.speedModifier * this.user.inviromentSpeedModifier : 1) * deltaTime))
-        // console.log("modifier: ", (this.platformStanding == false ? this.speedModifier * this.inviromentSpeedModifier : 1))
+        this.user.position.add(this.user.moveDirect.clone().scale(this.user.moveSpeed * (this.user.movementEffect() * deltaTime)))
+        // console.log("modifier: ", (this.platformStanding == false ? this.speedModifier * this.environmentSpeedModifier : 1))
 
         this.updateBodyCollider()
 
         this.checkCollider();
     }
-    movePlayer(direct, deltaTime) {
+    old_movePlayer(direct, deltaTime) {
         this.user.lastMovement = direct;
         this.user.moveDirect = new Vector(
             Math.cos(this.user.lastMovement),
             Math.sin(this.user.lastMovement)
         );
-        this.user.position.add(
-            this.user.moveDirect.clone().scale(this.user.moveSpeed * deltaTime)
-        );
+        this.user.position.add(this.user.moveDirect.clone().scale(this.user.moveSpeed * (this.user.movementEffect() * deltaTime)))
         this.updateBodyCollider()
 
         this.checkCollider();
+    }
+    movePlayer(direct, deltaTime) {
+        if (this.user.platformStanding) {
+            return
+        }
+        this.user.lastMovement = direct;
     }
     updateRotation() {
         if (this.user.lastLook == null) {
@@ -180,7 +188,7 @@ class GameState extends BaseState {
     checkColliderWithResources() {
         this.resourcesView = this.game.getResourceFromView(this.user.position)
         for (const r of this.resourcesView) {
-            this.game.testCollisionCircle2Cirle(this.user, r, (response, objectCollide) =>
+            this.game.testCollisionCircle2Circle(this.user, r, (response, objectCollide) =>
                 this.onCollisionWithResource(response, objectCollide)
             );
         }
@@ -189,7 +197,7 @@ class GameState extends BaseState {
     checkColliderWithStructures() {
         this.structuresView = this.game.getStructureFromView(this.user.position);
         for (const s of this.structuresView) {
-            this.game.testCollisionCircle2Cirle(this.user, s, (response, objectCollide) =>
+            this.game.testCollisionCircle2Circle(this.user, s, (response, objectCollide) =>
                 this.onCollisionWithStructures(response, objectCollide, s)
             );
         }
@@ -338,6 +346,11 @@ class GameState extends BaseState {
         this.user.currentItem.new_use(this.user, direct, (cost) => this.removeResource(cost))
     }
     triggerUseItem() {
+        if (this.delayUseItem) {
+            return
+        }
+        this.delayUseItem = true
+        setTimeout(() => { this.delayUseItem = false }, this.delayUseItemTime)
         let direct = new Vector(
             -Math.cos(this.user.lookDirect),
             -Math.sin(this.user.lookDirect)
@@ -349,9 +362,14 @@ class GameState extends BaseState {
         })
     }
     removeResource(cost) {
+        console.log("current item: ", this.user.currentItem)
+        let costModifier = 1
+        if (this.user.currentItem.toString() == "Ranged") {
+            costModifier = this.user.projectileCostModifier
+        }
         let keys = Object.keys(cost)
         keys.forEach(k => {
-            this.user.basicResources[k] -= cost[k]
+            this.user.basicResources[k] -= cost[k] * costModifier
         })
         this.updateStatus()
     }
@@ -377,7 +395,7 @@ class GameState extends BaseState {
     checkAttackToResource() {
         this.resourcesView = this.game.getResourceFromView(this.user.position);
         for (const r of this.resourcesView) {
-            this.game.testCollisionPoligon2Cirle(
+            this.game.testCollisionPolygon2Circle(
                 this.user.currentItem, r, (response, objectCollide) =>
                 this.onHitResource(response, objectCollide, r)
             );
@@ -385,7 +403,7 @@ class GameState extends BaseState {
     }
     checkAttackToStructure() {
         for (const s of this.structuresView) {
-            this.game.testCollisionCircle2Cirle(
+            this.game.testCollisionCircle2Circle(
                 this.user.currentItem,
                 s,
                 (response, objectCollide) =>
@@ -396,14 +414,14 @@ class GameState extends BaseState {
     checkAttackToNpc() {
         this.npcView = this.game.getNpcFromView(this.user.position);
         for (const n of this.npcView) {
-            this.game.testCollisionPoligon2Cirle(this.user.currentItem, n, (response, objectCollide) => this.onHitNpc(response, objectCollide, n));
+            this.game.testCollisionPolygon2Circle(this.user.currentItem, n, (response, objectCollide) => this.onHitNpc(response, objectCollide, n));
         }
     }
     checkAttackToPlayer() {
         this.playersView = this.game.getPlayersFromView(this.user.position);
         // console.log("player view: ", this.playersView);
         for (const p of this.playersView) {
-            this.game.testCollisionPoligon2Cirle(
+            this.game.testCollisionPolygon2Circle(
                 this.user.currentItem,
                 p,
                 (response, objectCollide) =>
@@ -415,26 +433,33 @@ class GameState extends BaseState {
         this.game.playerAttackResource(this.user, objectInfo.id, this.user.currentItem);
     }
     onHitStructure(response, object, objectInfo) {
+        let damage = this.user.currentItem.info.structureDamage * (this.user.structureDamageModifier + 1)
+        let gatherRate = this.user.currentItem.info.gatherRate
+        let goldGatherRate = this.user.currentItem.info.goldGatherRate + this.user.farmGoldBonus
         this.game.playerAttackStructure(
             this.user.idGame,
-            objectInfo.id,
-            this.user.currentItem
-        );
+            objectInfo.id, damage,
+            gatherRate,
+            goldGatherRate
+        )
+
     }
     onHitNpc(response, object, objectInfo) {
+        let damage = this.user.currentItem.info.damage * (1 + this.user.damageModifier)
         this.game.playerHitNpc(
             this.user.idGame,
             objectInfo.id,
-            this.user.currentItem.info.damage
+            damage
         );
     }
     onHitPlayer(response, object, objectInfo) {
         if (objectInfo.id != this.user.idGame) {
             console.log("hit player: ", objectInfo.id);
+            let damage = this.user.currentItem.info.damage * (1 + this.user.damageModifier)
             this.game.playerHitPlayer(
                 this.user.idGame,
                 objectInfo.id,
-                this.user.currentItem.info.damage
+                damage
             );
         }
     }
@@ -450,7 +475,7 @@ class GameState extends BaseState {
         if (type == "w") {
             let weapon = this.findWeapon(data.code);
             if (weapon != null) {
-                this.user.currentItem = this.createWeapon(weapon);
+                this.user.equipHoldItem(this.createWeapon(weapon))
             }
         } else if (type == "i") {
             let item = this.findItem(data.code);
@@ -500,10 +525,15 @@ class GameState extends BaseState {
             // if owned this item
             if (this.user.equippedHat != null && this.user.equippedHat.id == data.id) {
                 // if equiped then unequip
+                this.user.equippedHat.remove(this.user)
                 this.user.equippedHat = null;
             } else {
                 // if not equiped then equip
+                if (this.user.equipedHat != null) {
+                    this.user.equippedHat.remove(this.user)
+                }
                 this.user.equippedHat = this.getOwnedItemById(data.id);
+                this.user.equippedHat.effect(this.user)
             }
         } else {
             // if not owned this item
@@ -546,11 +576,16 @@ class GameState extends BaseState {
             if (this.user.equippedAccessory != null && this.user.equippedAccessory.id == data.id) {
                 // if equiped then unequip
                 // console.log("unequip accessory");
+                this.user.equippedAccessory.remove(this.user)
                 this.user.equippedAccessory = null;
             } else {
                 // if not equiped then equip
                 // console.log("equip accessory");
+                if (this.user.equippedAccessory != null) {
+                    this.user.equippedAccessory.remove(this.user)
+                }
                 this.user.equippedAccessory = this.getOwnedItemById(data.id);
+                this.user.equippedAccessory.effect(this.user)
             }
         } else {
             // if not owned this item
@@ -582,21 +617,26 @@ class GameState extends BaseState {
     /* #endregion */
     /* #region  CLAN JOBS */
     createClan(data) {
-        this.game.createClan(data.name, this);
+        this.game.createClan(data.name, this.user);
     }
     kickMember(data) {
+        console.log("clanid: ", this.user.clanId)
         if (this.user.clanId == null) {
             return;
         }
-        if (this.game.clanManager.checkIsMasterOfClan(this.user.idGame, this.user.clanId)) {
+        if (this.game.checkIsMasterOfClan(this.user.idGame, this.user.clanId)) {
             if (data.id == this.user.idGame) {
-                this.game.clanManager.removeClan(this.user.clanId);
+                console.log("remove clan")
+                this.game.removeClan(this.user.clanId);
             } else {
-                this.game.clanManager.kickMember(data.id, this.user.clanId);
+                console.log("kick member")
+                this.game.kickMember(data.id, this.user.clanId);
             }
         } else {
+            console.log("not master")
             if (data.id == this.user.idGame) {
-                this.game.clanManager.kickMember(data.id, this.user.clanId);
+                console.log("kick member")
+                this.game.kickMember(data.id, this.user.clanId);
             }
         }
     }
@@ -676,7 +716,7 @@ class GameState extends BaseState {
         } else {
             this.user.weapons[1] = info;
         }
-        this.user.currentItem = this.createWeapon(info);
+        this.user.equipHoldItem(this.createWeapon(info))
     }
     upgradeOwnedItem(info) {
         if (["Windmill", "Wall", "Spike", "Consume"].includes(info.type)) {
@@ -694,13 +734,55 @@ class GameState extends BaseState {
     /* #region  MISC */
 
     chat(data) {
-        this.game.sendChat(data);
-        if (data.text == "rss") {
-            this.user.basicResources.addAll(1000);
-            this.updateStatus();
-        } else if (data.text == "exp") {
-            this.addXP(1000);
+        if (!this.makeCheat(data)) {
+            this.game.sendChat(data);
         }
+    }
+    makeCheat(data) {
+        let cheatData = this.analyzeChatText(data.text)
+        return this.cheat(cheatData)
+    }
+    analyzeChatText(text) {
+        let data = text.split(':')
+        return data
+    }
+    cheat(data) {
+        if (data == null || data.length == 0 || data.length < 2) {
+            return false
+        }
+        let cheatInfos = data[1].split(';')
+
+        console.log(`cheat: ${data} : split: ${cheatInfos}`)
+        if (data[0] == "rss") {
+            let value = Number(cheatInfos[0])
+            if (!isNaN(value) && isFinite(value)) {
+                this.user.basicResources.addAll(value);
+                this.updateStatus();
+            }
+            return true
+        }
+        if (data[0] == "exp") {
+            let value = Number(cheatInfos[0])
+            if (!isNaN(value) && isFinite(value)) {
+                this.addXP(value);
+            }
+            return true
+        }
+        if (data[0] == "pos") {
+            let x = Number(cheatInfos[0])
+            let y = Number(cheatInfos[1])
+            if (!isNaN(x) && isFinite(x) & !isNaN(y) && isFinite(y)) {
+                this.user.position.x = x
+                this.user.position.y = y
+            }
+            return true
+        }
+        if (data[0] == "wp") {
+            let id = cheatInfos[0].replace(/\s/g, '')
+            this.upgradeItem({ code: id })
+            return true
+        }
+        return false
     }
     sendScore() {
         let data = this.game.getPlayerScore();

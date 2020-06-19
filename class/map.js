@@ -17,8 +17,8 @@ class Map {
     }
 
     randomPosition() {
-        let X = Mathf.RandomeRange(0, this.size.x)
-        let Y = Mathf.RandomeRange(0, this.size.y)
+        let X = Mathf.RandomRange(0, this.size.x)
+        let Y = Mathf.RandomRange(0, this.size.y)
         return {
             x: X,
             y: Y

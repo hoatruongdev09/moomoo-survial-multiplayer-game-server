@@ -12,34 +12,19 @@ class Ranged {
         let bullet = this.createBullet(player.game.getProjectileId(), player, player.position, direct)
         player.game.addProjectTile(bullet, Math.atan2(direct.y, direct.x))
         callback(this.info.cost)
-        this.coolDown()
+        this.coolDown(player.attackSpeedModifier)
     }
     createBullet(id, player, shootPosition, direct) {
+        let projectileSpeed = this.info.bulletSpeed * (player.projectileSpeedModifier + 1)
         let position = shootPosition.clone().add(direct.clone().scale(2))
-        return new Bullet(id, 0, player, direct, position, 0.2, this.info.bulletSpeed, this.info.range, this.info.damage)
+        return new Bullet(id, 0, player, direct, position, 0.2, projectileSpeed, this.info.range, this.info.damage)
     }
-    coolDown() {
+    coolDown(bonus) {
         this.canUse = false
+        let attackSpeed = this.info.attackSpeed * (1 - bonus)
         setTimeout(() => {
             this.canUse = true
-        }, this.info.attackSpeed)
-    }
-    use(player, direct) {
-        if (!this.canUse) {
-            return
-        }
-        if (!this.checkPlayerCanUseItem(player)) {
-            return
-        }
-        let position = player.position.clone().add(direct.clone().scale(2))
-        let idProjectile = player.game.getProjectileId()
-        let bullet = new Bullet(idProjectile, 0, player, direct, position, 0.2, this.info.bulletSpeed, this.info.range, this.info.damage)
-        player.game.addProjectTile(bullet, Math.atan2(direct.y, direct.x))
-        this.useItem(player)
-        this.canUse = false
-        setTimeout(() => {
-            this.canUse = true
-        }, this.info.attackSpeed)
+        }, attackSpeed)
     }
     checkPlayerCanUseItem(player) {
         let keys = Object.keys(this.info.cost)
