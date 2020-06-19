@@ -227,14 +227,14 @@ class NPC {
     checkColliderWithResources() {
         this.resourcesView = this.game.getResourceFromView(this.position)
         for (const r of this.resourcesView) {
-            this.game.testCollisionCircle2Cirle(this, r, (res, obj) => this.onCollisionWithResource(res, obj))
+            this.game.testCollisionCircle2Circle(this, r, (res, obj) => this.onCollisionWithResource(res, obj))
         }
     }
     checkColliderWithStrucures() {
         this.structureView = this.game.getStructureFromView(this.position)
         // console.log("structure: ", this.structureView)
         for (const r of this.structureView) {
-            this.game.testCollisionCircle2Cirle(this, r, (res, obj) => this.onCollisionWithStructure(res, obj, r))
+            this.game.testCollisionCircle2Circle(this, r, (res, obj) => this.onCollisionWithStructure(res, obj, r))
         }
     }
     onCollisionWithStructure(response, object, objInfo) {

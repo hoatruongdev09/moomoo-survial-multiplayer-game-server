@@ -1,6 +1,22 @@
 const SAT = require('sat')
 const ResourceType = require('../resource').ResourceType
-class GameMineStone {
+const BaseStructure = require('./baseStructure')
+class GameMineStone extends BaseStructure {
+    constructor(id, position, direct, owner, info) {
+        super(id, position, direct, owner, info)
+        this.idType = ResourceType.Stone
+    }
+    toString() {
+        return "MineStone"
+    }
+    takeDamage(damage) {
+
+    }
+    hitInteract(player, callback) {
+        callback(this.idType)
+    }
+}
+class old_GameMineStone {
     constructor(id, userId, position, info) {
         this.id = id
         this.position = position
@@ -21,7 +37,10 @@ class GameMineStone {
     toString() {
         return "MineStone"
     }
-    takeDamge(damage) {
+    takeDamage(damage) {
+
+    }
+    hitInteract(player, callback) {
 
     }
     get rotation() {

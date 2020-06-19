@@ -1,6 +1,56 @@
 const SAT = require('sat')
+const BaseStructure = require('./baseStructure')
 
-class GameTeleporter {
+class GameTeleporter extends BaseStructure {
+    constructor(id, position, direct, owner, info) {
+        super(id, position, direct, owner, info)
+        this.game = owner.game
+        this.teleQueue = []
+    }
+    toString() {
+        return ("Teleporter")
+    }
+    interact(player, callback) {
+        this.addWaitToTeleport(player)
+    }
+    addWaitToTeleport(player) {
+        if (this.checkInQueue(player.idGame)) {
+            return
+        }
+        this.teleQueue.push(player)
+        setTimeout(() => {
+            if (player != null) {
+                if (this.game.testCollisionCircle2Circle(this, player, (res, obj) => { })) {
+                    player.position = this.game.getRandomPosition()
+                }
+                // this.game.syncPlayerPosition(player)
+                this.removePlayerQueue(player)
+            }
+        }, 3000)
+    }
+    checkInQueue(id) {
+        let result = false
+        this.teleQueue.forEach(p => {
+            if (p != null && p.idGame == id) {
+                result = true
+            }
+        })
+        return result
+    }
+    removePlayerQueue(player) {
+        for (let i = 0; i < this.teleQueue.length; i++) {
+            if (this.teleQueue[i].idGame == player.idGame) {
+                this.teleQueue.splice(i, 1)
+                return
+            }
+        }
+    }
+    destroy() {
+        this.teleQueue.length = 0
+    }
+}
+
+class old_GameTeleporter {
     constructor(id, userId, position, info, game) {
         this.id = id
         this.userId = userId
@@ -18,17 +68,20 @@ class GameTeleporter {
     initCollider() {
         this.bodyCollider = new SAT.Circle(new SAT.Vector(this.position.x, this.position.y), this.size)
     }
-    addWaitToTeleporter(player) {
+    interact(player, callback) {
+        this.addWaitToTeleport(player)
+    }
+    addWaitToTeleport(player) {
         if (this.checkInQueue(player.idGame)) {
             return
         }
         this.teleQueue.push(player)
         setTimeout(() => {
             if (player != null) {
-                if (this.game.testCollisionCircle2Cirle(this, player, (res, obj) => {})) {
+                if (this.game.testCollisionCircle2Circle(this, player, (res, obj) => { })) {
                     player.position = this.game.getRandomPosition()
                 }
-                this.game.syncPlayerPosition(player)
+                // this.game.syncPlayerPosition(player)
                 this.removePlayerQueue(player)
             }
         }, 3000)
@@ -58,11 +111,15 @@ class GameTeleporter {
             this.teleQueue.splice(i, 1)
         }
     }
-    takeDamge(damage) {
+    takeDamage(damage, callback) {
         this.hp -= damage
         if (this.hp <= 0) {
             this.destroy()
+            callback()
         }
+    }
+    hitInteract(player, callback) {
+
     }
     get rotation() {
         return 0

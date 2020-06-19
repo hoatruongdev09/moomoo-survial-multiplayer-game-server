@@ -173,7 +173,7 @@ class Player {
     checkColliderWithResources() {
         this.resourcesView = this.game.getResourceFromView(this.position);
         for (const r of this.resourcesView) {
-            this.game.testCollisionCircle2Cirle(this, r, (response, objectCollide) =>
+            this.game.testCollisionCircle2Circle(this, r, (response, objectCollide) =>
                 this.onCollisionWithResource(response, objectCollide)
             );
         }
@@ -182,7 +182,7 @@ class Player {
     checkColliderWithStructures() {
         this.structuresView = this.game.getStructureFromView(this.position);
         for (const s of this.structuresView) {
-            this.game.testCollisionCircle2Cirle(this, s, (response, objectCollide) =>
+            this.game.testCollisionCircle2Circle(this, s, (response, objectCollide) =>
                 this.onCollisionWithStructures(response, objectCollide, s)
             );
         }
@@ -190,7 +190,7 @@ class Player {
     checkAttackToResource() {
         this.resourcesView = this.game.getResourceFromView(this.position);
         for (const r of this.resourcesView) {
-            this.game.testCollisionPoligon2Cirle(
+            this.game.testCollisionPolygon2Circle(
                 this.currentItem,
                 r,
                 (response, objectCollide) =>
@@ -200,7 +200,7 @@ class Player {
     }
     checkAttackToStructure() {
         for (const s of this.structuresView) {
-            this.game.testCollisionCircle2Cirle(
+            this.game.testCollisionCircle2Circle(
                 this.currentItem,
                 s,
                 (response, objectCollide) =>
@@ -223,7 +223,7 @@ class Player {
         this.playersView = this.game.getPlayersFromView(this.position);
         // console.log("player view: ", this.playersView);
         for (const p of this.playersView) {
-            this.game.testCollisionPoligon2Cirle(
+            this.game.testCollisionPolygon2Circle(
                 this.currentItem,
                 p,
                 (response, objectCollide) =>
@@ -234,7 +234,7 @@ class Player {
     checkAttackToNpc() {
         this.npcView = this.game.getNpcFromView(this.position);
         for (const n of this.npcView) {
-            this.game.testCollisionPoligon2Cirle(this.currentItem, n, (response, objectCollide) => this.onHitNpc(response, objectCollide, n));
+            this.game.testCollisionPolygon2Circle(this.currentItem, n, (response, objectCollide) => this.onHitNpc(response, objectCollide, n));
         }
     }
     onHitNpc(response, object, objectInfo) {

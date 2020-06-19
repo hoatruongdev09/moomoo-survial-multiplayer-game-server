@@ -58,6 +58,7 @@ class User {
         this.speedModifier = 1;
         this.inviromentSpeedModifier = 1;
         this.platformStanding = false;
+        this.isTrapped = false
         // STRUCTURES
         this.spawnPad = null
         this.structures = new StructureManager()
@@ -83,6 +84,9 @@ class User {
     }
     enterGame(data) {
         this.stateManager.changeState(this.gameState, { gameData: data, user: this })
+    }
+    movementEffect() {
+        return this.speedModifier * (this.platformStanding ? 1 : this.inviromentSpeedModifier) * (this.isTrapped ? 0 : 1)
     }
     takeDamage(damage, dieCallback) {
         this.healthPoint -= damage
@@ -137,6 +141,10 @@ class User {
         this.addGold(data.gold)
         this.addXP(data.xp)
         this.stateManager.currentState.updateStatus()
+    }
+    equipHoldItem(item) {
+        this.currentItem = item
+        this.speedModifier = item.info.movement
     }
     registerEvent() {
         this.socket.on("disconnect", () => this.onDisconnect());

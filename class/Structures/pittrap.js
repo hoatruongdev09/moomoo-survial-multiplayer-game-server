@@ -1,6 +1,73 @@
 const SAT = require('sat')
+const BaseStructure = require('./baseStructure')
+class GamePitTrap extends BaseStructure {
+    constructor(id, position, direct, owner, info) {
+        super(id, position, direct, owner, info)
 
-class GamePitTrap {
+        this.trappedPlayer = []
+        this.trappedNpc = []
+    }
+    toString() {
+        return "PitTrap"
+    }
+    checkPlayerTrapped(id) {
+        let result = false
+        this.trappedPlayer.forEach(p => {
+            if (p != null && p.idGame == id) {
+                result = true
+            }
+        })
+        return result
+    }
+    checkNpcTrapped(id) {
+        let result = false
+        this.trappedNpc.forEach(n => {
+            if (n != null && n.id == id) {
+                result = true
+            }
+        })
+        return result
+    }
+    interact(player, callback) {
+        if (player.idGame != this.userId) {
+            this.trapPlayer(player)
+            callback(true)
+        }
+    }
+    trapPlayer(player) {
+        if (this.checkPlayerTrapped(player.idGame)) {
+            return
+        }
+        this.trappedPlayer.push(player)
+        player.isTrapped = true
+    }
+    trapNpc(npc) {
+        if (this.checkNpcTrapped(npc.id)) {
+            return
+        }
+        this.trappedNpc.push(npc)
+        npc.isTrapped = true
+    }
+    unTrapPlayer(player) {
+        player.isTrapped = false
+    }
+    unTrapNpc(npc) {
+        npc.isTrapped = false
+    }
+    destroy() {
+        this.trappedPlayer.forEach(p => {
+            if (p != null) {
+                p.isTrapped = false
+            }
+        })
+        this.trappedNpc.forEach(n => {
+            if (n != null) {
+                n.isTrapped = false
+            }
+        })
+    }
+}
+class old_GamePitTrap {
     constructor(id, userId, position, info) {
         this.id = id
         this.userId = userId
@@ -33,13 +100,19 @@ class GamePitTrap {
         })
         return result
     }
+    interact(player, callback) {
+        if (player.idGame != this.userId) {
+            this.trapPlayer(player)
+            callback(true)
+        }
+    }
     trapPlayer(player) {
         if (this.checkPlayerTrapped(player.idGame)) {
             return
         }
         this.trappedPlayer.push(player)
         // console.log("trapped player: ", this.trappedPlayer)
-        player.speedModifier = 0
+        player.isTrapped = true
     }
     trapNpc(npc) {
         if (this.checkNpcTrapped(npc.id)) {
@@ -50,7 +123,7 @@ class GamePitTrap {
         npc.isTrapped = true
     }
     unTrapPlayer(player) {
-        player.speedModifier = 1
+        player.isTrapped = false
     }
     unTrapNpc(npc) {
         npc.isTrapped = false
@@ -61,7 +134,7 @@ class GamePitTrap {
     destroy() {
         this.trappedPlayer.forEach(p => {
             if (p != null) {
-                p.speedModifier = 1
+                p.isTrapped = false
             }
         })
         this.trappedNpc.forEach(n => {
@@ -73,11 +146,15 @@ class GamePitTrap {
     toString() {
         return "PitTrap"
     }
-    takeDamge(damage) {
+    takeDamage(damage, callback) {
         this.hp -= damage
         if (this.hp <= 0) {
             this.destroy()
+            callback()
         }
+    }
+    hitInteract(player, callback) {
+
     }
     get rotation() {
         return 0

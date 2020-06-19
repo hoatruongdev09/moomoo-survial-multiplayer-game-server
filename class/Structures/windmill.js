@@ -1,7 +1,45 @@
 const SAT = require('sat')
+const BaseStructure = require('./baseStructure')
+class GameWindmill extends BaseStructure {
+    constructor(id, position, direct, owner, info) {
+        super(id, position, direct, owner, info)
+        this.gold = info.gold
+        this.xp = info.xp
+        this.update = setInterval(() => {
+            this.addGold(this.gold)
+            this.owner.addXP(this.xp)
+        }, 1000)
+    }
+    updateLogic() {
+        return {
+            isRunning: false,
+            idInterval: null,
+            run(callback) {
+                this.idInterval = setInterval(callback, 1000)
+                this.isRunning = true
+            },
+            stop() {
+                clearInterval(this.idInterval)
+                this.isRunning = false
+            }
+        }
+    }
+    addGold(value) {
+        if (this.owner != null) {
+            this.owner.basicResources.Gold += value
+            this.owner.scores += value
+        }
+    }
+    destroy() {
+        clearInterval(this.update)
 
+    }
+    toString() {
+        return "Windmill"
+    }
+}
 
-class GameWindmill {
+class old_GameWindmill {
     constructor(id, user, position, info) {
         this.id = id
         this.userId = user.idGame
@@ -36,11 +74,15 @@ class GameWindmill {
     toString() {
         return "Windmill"
     }
-    takeDamge(damage) {
+    takeDamage(damage, callback) {
         this.hp -= damage
         if (this.hp <= 0) {
             this.destroy()
+            callback()
         }
+    }
+    hitInteract(player, callback) {
+
     }
     get rotation() {
         return 0

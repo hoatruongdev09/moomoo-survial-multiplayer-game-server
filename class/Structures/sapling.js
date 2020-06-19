@@ -1,6 +1,24 @@
 const SAT = require('sat')
 const ResourceType = require('../resource').ResourceType
-class GameSapling {
+const BaseStructure = require('./baseStructure')
+
+class GameSapling extends BaseStructure {
+    constructor(id, position, direct, owner, info) {
+        super(id, position, direct, owner, info)
+        this.idType = ResourceType.Wood
+    }
+    toString() {
+        return "Sapling"
+    }
+    takeDamage(damage) {
+
+    }
+    hitInteract(player, callback) {
+        callback(this.idType)
+    }
+}
+
+class old_GameSapling {
     constructor(id, userId, position, info) {
         this.id = id
         this.position = position
@@ -21,8 +39,11 @@ class GameSapling {
     toString() {
         return "Sapling"
     }
-    takeDamge(damage) {
+    takeDamage(damage) {
 
+    }
+    hitInteract(player, callback) {
+        callback(this.idType)
     }
     get rotation() {
         return 0

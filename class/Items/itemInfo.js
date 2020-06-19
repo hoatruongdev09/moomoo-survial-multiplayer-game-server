@@ -163,7 +163,7 @@ const itemInfo = {
         },
         health: 300,
         limit: 12,
-        size: 10, // radius
+        size: 4, // radius
         range: 3,
     },
     {

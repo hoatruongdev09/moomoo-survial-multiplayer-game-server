@@ -30,10 +30,8 @@ class HuntState extends NpcState {
     }
     update(deltaTime) {
         this.followTarget()
-        if (!this.npc.isTrapped) {
-            this.npc.translate(this.moveDirect, deltaTime)
-            this.checkRangeToAttack()
-        }
+        this.npc.translate(this.moveDirect, deltaTime)
+        this.checkRangeToAttack()
     }
     exit() {
         this.npc.speed = this.npc.baseSpeed

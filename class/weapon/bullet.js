@@ -36,13 +36,13 @@ class Bullet {
     checkColliderWithNpc() {
         this.npcView = this.user.game.getNpcFromView(this.position)
         for (const n of this.npcView) {
-            this.user.game.testCollisionCircle2Cirle(this, n, (response, objectCollider) => this.onHitNpc(response, objectCollider, n))
+            this.user.game.testCollisionCircle2Circle(this, n, (response, objectCollider) => this.onHitNpc(response, objectCollider, n))
         }
     }
     checkColliderWithResources() {
         this.resourcesView = this.user.game.getResourceFromView(this.position)
         for (const r of this.resourcesView) {
-            this.user.game.testCollisionCircle2Cirle(this, r, (response, objectCollider) => {
+            this.user.game.testCollisionCircle2Circle(this, r, (response, objectCollider) => {
                 this.isDestroy = true
             })
         }
@@ -50,7 +50,7 @@ class Bullet {
     checkColliderWithStructure() {
         this.structureView = this.user.game.getStructureFromView(this.position)
         for (const s of this.structureView) {
-            this.user.game.testCollisionCircle2Cirle(this, s, (response, objectCollider) => {
+            this.user.game.testCollisionCircle2Circle(this, s, (response, objectCollider) => {
                 this.isDestroy = true
             })
         }
@@ -58,7 +58,7 @@ class Bullet {
     checkColliderWithPlayer() {
         this.playerView = this.user.game.getPlayersFromView(this.position)
         for (const p of this.playerView) {
-            this.user.game.testCollisionCircle2Cirle(this, p, (response, objectCollider) => this.onHitPlayer(response, objectCollider, p))
+            this.user.game.testCollisionCircle2Circle(this, p, (response, objectCollider) => this.onHitPlayer(response, objectCollider, p))
         }
     }
     onHitNpc(response, object, objectInfo) {
