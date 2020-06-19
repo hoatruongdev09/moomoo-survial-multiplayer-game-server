@@ -224,11 +224,11 @@ const accessoryInfos = {
         price: 15000,
         description: "Increases movement speed",
         effect(player) {
-            player.speedModifier += 0.15
+            player.speedModifier += 0.35
         },
         remove(player) {
             console.log("removed item")
-            player.speedModifier -= 0.15
+            player.speedModifier -= 0.35
         }
     },
     {
@@ -237,11 +237,11 @@ const accessoryInfos = {
         price: 20000,
         description: "Restores health when you deal damage	",
         effect(player) {
-            player.lifeSteal += 0.2
+            player.lifeSteal += 0.3
         },
         remove(player) {
             console.log("removed item")
-            player.lifeSteal -= 0.2
+            player.lifeSteal -= 0.3
         }
     },
     {
