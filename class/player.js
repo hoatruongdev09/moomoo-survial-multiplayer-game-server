@@ -194,7 +194,7 @@ class Player {
                 this.currentItem,
                 r,
                 (response, objectCollide) =>
-                    this.onHitResource(response, objectCollide, r)
+                this.onHitResource(response, objectCollide, r)
             );
         }
     }
@@ -204,7 +204,7 @@ class Player {
                 this.currentItem,
                 s,
                 (response, objectCollide) =>
-                    this.onHitStructure(response, objectCollide, s)
+                this.onHitStructure(response, objectCollide, s)
             );
         }
     }
@@ -227,7 +227,7 @@ class Player {
                 this.currentItem,
                 p,
                 (response, objectCollide) =>
-                    this.onHitPlayer(response, objectCollide, p)
+                this.onHitPlayer(response, objectCollide, p)
             );
         }
     }
@@ -514,8 +514,7 @@ class Player {
                 return i.id;
             }),
             equipedHat: this.equipedHat == null ? "" : this.equipedHat.id,
-            equipedAccessory:
-                this.equipedAccessory == null ? "" : this.equipedAccessory.id,
+            equipedAccessory: this.equipedAccessory == null ? "" : this.equipedAccessory.id,
         });
     }
     chooseItem(data) {
@@ -729,8 +728,7 @@ class Player {
             scores: this.scores,
             kills: this.kills,
             level: this.levelInfo.level,
-            xp:
-                this.levelInfo.xp /
+            xp: this.levelInfo.xp /
                 levelDescription[this.levelInfo.level].nextLevelUpXp,
             wood: this.basicResources.Wood,
             food: this.basicResources.Food,

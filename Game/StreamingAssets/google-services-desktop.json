@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "1034028879170",
+    "firebase_url": "https://moumouio.firebaseio.com",
+    "project_id": "moumouio",
+    "storage_bucket": "moumouio.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1034028879170:android:0daf56f91f0b389af44cdb",
+        "android_client_info": {
+          "package_name": "com.stdiohue.moumou"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1034028879170-2tv37htu68lkdcho8123dn1aafbg8fn6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAlybjMp_Kodn_2_stpxzy1AUO3xcns_TU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1034028879170-2tv37htu68lkdcho8123dn1aafbg8fn6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

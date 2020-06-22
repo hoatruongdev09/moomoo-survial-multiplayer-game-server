@@ -15,6 +15,8 @@ const ResourceManager = require('../Player/resourcesManager')
 const StructueManager = require('../Player/structureManager')
 const LevelManager = require('../Player/levelManager')
 
+const Mathf = require('mathf')
+
 class GameState extends BaseState {
     constructor(user, stateManager) {
         super(user, stateManager)
@@ -529,7 +531,7 @@ class GameState extends BaseState {
                 this.user.equippedHat = null;
             } else {
                 // if not equiped then equip
-                if (this.user.equipedHat != null) {
+                if (this.user.equippedHat != null) {
                     this.user.equippedHat.remove(this.user)
                 }
                 this.user.equippedHat = this.getOwnedItemById(data.id);
@@ -620,22 +622,17 @@ class GameState extends BaseState {
         this.game.createClan(data.name, this.user);
     }
     kickMember(data) {
-        console.log("clanid: ", this.user.clanId)
         if (this.user.clanId == null) {
             return;
         }
         if (this.game.checkIsMasterOfClan(this.user.idGame, this.user.clanId)) {
             if (data.id == this.user.idGame) {
-                console.log("remove clan")
                 this.game.removeClan(this.user.clanId);
             } else {
-                console.log("kick member")
                 this.game.kickMember(data.id, this.user.clanId);
             }
         } else {
-            console.log("not master")
             if (data.id == this.user.idGame) {
-                console.log("kick member")
                 this.game.kickMember(data.id, this.user.clanId);
             }
         }
@@ -761,10 +758,25 @@ class GameState extends BaseState {
             }
             return true
         }
+        if (data[0] == "hp") {
+            let value = Number(cheatInfos[0])
+            if (!isNaN(value) && isFinite(value)) {
+                this.user.healthPoint = Mathf.clamp(value, 1, 100)
+                this.game.onPlayerGetHit({
+                    id: this.user.idGame,
+                    hp: this.user.healthPoint
+                })
+            } else {
+                return false
+            }
+            return true;
+        }
         if (data[0] == "exp") {
             let value = Number(cheatInfos[0])
             if (!isNaN(value) && isFinite(value)) {
                 this.addXP(value);
+            } else {
+                return false
             }
             return true
         }
@@ -774,6 +786,8 @@ class GameState extends BaseState {
             if (!isNaN(x) && isFinite(x) & !isNaN(y) && isFinite(y)) {
                 this.user.position.x = x
                 this.user.position.y = y
+            } else {
+                return false
             }
             return true
         }
@@ -781,6 +795,8 @@ class GameState extends BaseState {
             let id = cheatInfos[0].replace(/\s/g, '')
             this.upgradeItem({ code: id })
             return true
+        } else {
+            return false
         }
         return false
     }

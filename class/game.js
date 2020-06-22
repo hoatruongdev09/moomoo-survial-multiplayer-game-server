@@ -70,7 +70,7 @@ class Game {
         this.clanManager.kickMember(memberId, clanId)
     }
     checkIsMasterOfClan(memberId, clanId) {
-        this.clanManager.checkIsMasterOfClan(memberId, clanId)
+        return this.clanManager.checkIsMasterOfClan(memberId, clanId)
     }
     /* #endregion */
     /* #region  INITIALIZE  */
@@ -682,6 +682,9 @@ class Game {
     playerDieCallback(idFrom, idTarget) {
         this.bonusKillForPlayer(idFrom, idTarget)
     }
+    playerDieDueToNpcCallback(idNpc, idPlayer) {
+
+    }
     playerReflectAttack(idFrom, idTarget, damageReflect, forceReflect) {
         this.players[idTarget].takeDamage(damageReflect,
             (id) => this.playerDieCallback(idFrom, id),
@@ -689,6 +692,14 @@ class Game {
         let targetPosition = this.players[idTarget].position.clone()
         let originPosition = this.players[idFrom].position.clone()
         this.pushPlayerBack(this.players[idTarget], targetPosition.sub(originPosition), forceReflect)
+    }
+    playerReflectAttackToNpc(idFrom, idTarget, damageReflect, forceReflect) {
+        this.npcs[idTarget].onBeingHit(this.players[idFrom], damageReflect);
+        this.pushNpcBack(
+            this.npcs[idTarget],
+            this.npcs[idTarget].position.clone().sub(this.players[idFrom].position.clone()),
+            forceReflect
+        );
     }
     bonusKillForPlayer(idPlayer, idTarget) {
         let bonusModifier = this.players[idPlayer].killBonusGold
@@ -705,9 +716,9 @@ class Game {
         if (this.players[idTarget] == null || !this.players[idTarget].isJoinedGame) {
             return
         }
-        this.players[idTarget].takeDamage(damage, (id) => {
-
-        })
+        this.players[idTarget].takeDamage(damage,
+            (id) => this.playerDieDueToNpcCallback(idFrom, id),
+            (damageReflect, forceReflect) => this.playerReflectAttackToNpc(idTarget, idFrom, damageReflect, forceReflect))
     }
     respawnNpc(npc) {
         setTimeout(() => {
@@ -727,10 +738,12 @@ class Game {
         }, 30 * 1000);
     }
     playerHitNpc(idFrom, idTarget, damage) {
-        this.playerStructureHitNpc(idFrom, idTarget, damage);
+        this.npcs[idTarget].onBeingHit(this.players[idFrom], damage, (fromTarget, npc) => this.onNpcDie(fromTarget, npc));
+        this.players[idFrom].lifeStealing(damage)
+        this.players[idFrom].selfTakeDamage(damage, (id) => this.playerDieCallback(idFrom, id), (damageReflect, forceReflect) => { })
     }
     playerStructureHitNpc(idFrom, idTarget, damage) {
-        this.npcs[idTarget].onBeingHit(this.players[idFrom], damage);
+        this.npcs[idTarget].onBeingHit(this.players[idFrom], damage, (fromTarget, npc) => this.onNpcDie(fromTarget, npc));
     }
     syncNpcHP(data) {
         this.broadcast(gamecode.syncNpcHP, {
@@ -738,7 +751,12 @@ class Game {
         });
     }
     playerStructureHitPlayer(idFrom, idTarget, damage) {
-        this.playerHitPlayer(idFrom, idTarget, damage)
+        if (this.checkBothPlayerAreInClan(this.players[idFrom], this.players[idTarget])) {
+            return
+        }
+        this.players[idTarget].takeDamage(damage,
+            (id) => this.playerDieCallback(idFrom, id),
+            (damageReflect, forceReflect) => { })
     }
     syncPlayerHP(data) {
         this.broadcast(gamecode.playerHit, {

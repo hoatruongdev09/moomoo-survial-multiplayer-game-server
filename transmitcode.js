@@ -5,6 +5,7 @@ const servercode = {
     OnPing: "s3",
     Error: "s4",
     ClientStatus: "s5",
+    ServerList: "s6",
 }
 const gamecode = {
     gameData: "g0",

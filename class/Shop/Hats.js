@@ -454,10 +454,10 @@ const Hats = {
         price: 10000,
         description: "Deal damage to players that damage you",
         effect(player) {
-
-        },
-        remove(player) {
+            player.damageReflect += 0.15
+        }, remove(player) {
             console.log("removed item")
+            player.damageReflect -= 0.15
         }
     }, {
         id: "h37",
@@ -500,11 +500,11 @@ const Hats = {
         price: 15000,
         description: "Earn double points for each kill",
         effect(player) {
-            player.killBonusGold += 2
+            player.killBonusGold += 1
         },
         remove(player) {
             console.log("removed item")
-            player.killBonusGold -= 2
+            player.killBonusGold -= 1
         }
     }, {
         id: "h41",

@@ -201,10 +201,10 @@ const accessoryInfos = {
         price: 12000,
         description: "Deal damage to players that damage you",
         effect(player) {
-            player.damageReflect += 0.1
+            player.damageReflect += 0.3
         }, remove(player) {
             console.log("removed item")
-            player.damageReflect -= 0.1
+            player.damageReflect -= 0.3
         }
     },
     {

@@ -9,8 +9,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "axios": "^0.19.2",
     "express": "^4.17.1",
+    "ip": "^1.1.5",
+    "jsonfile": "^6.0.1",
     "mathf": "0.0.3",
+    "public-ip": "^4.0.1",
     "sat": "^0.8.0",
     "socket.io": "^2.3.0",
     "victor": "^1.1.0",

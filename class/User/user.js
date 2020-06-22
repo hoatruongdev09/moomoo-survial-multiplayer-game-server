@@ -66,7 +66,7 @@ class User {
         /* #region  ATTACK EFFECT */
         this.projectileSpeedModifier = 0
         this.projectileCostModifier = 1
-        this.attackSpeedModifier = 1
+        this.attackSpeedModifier = 0
         this.damageTakenModifier = 0
         this.selfDamage = 0
         this.poisonResistant = false
@@ -113,7 +113,7 @@ class User {
     resetAttackEffects() {
         this.projectileSpeedModifier = 0
         this.projectileCostModifier = 1
-        this.attackSpeedModifier = 1
+        this.attackSpeedModifier = 0
         this.damageTakenModifier = 0
         this.selfDamage = 0
         this.poisonResistant = false
@@ -154,6 +154,7 @@ class User {
         return this.speedModifier * this.environmentSpeedModifier
     }
     takeDamage(damage, dieCallback, reflect) {
+        console.log("take damage")
         let damageTaking = damage * (1 - this.damageTakenModifier)
         this.healthPoint -= damageTaking
         reflect(damageTaking * this.damageReflect, this.forceReflect)
