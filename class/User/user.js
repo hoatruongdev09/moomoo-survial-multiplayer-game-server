@@ -9,7 +9,8 @@ const StateManager = require('./userStateManager')
 const InitState = require('./userInitState')
 const MenuState = require('./mainMenuState')
 const GameState = require('./inGameState')
-
+const LevelDescription = require("../levelInfo");
+const EffectManager = require('../Player/effectManager')
 
 
 class User {
@@ -63,8 +64,13 @@ class User {
         this.isSnowMoveNormal = false
         this.isTrapped = false
         /* #endregion */
+        /* #region  EFFECT OVER TIME */
+        this.effectManger = new EffectManager(this)
+        /* #endregion */
+
         /* #region  ATTACK EFFECT */
         this.projectileSpeedModifier = 0
+        this.projectileRangeModifier = 0
         this.projectileCostModifier = 1
         this.attackSpeedModifier = 0
         this.damageTakenModifier = 0
@@ -84,6 +90,7 @@ class User {
         this.killBonusGold = 0
         this.wearThiefGear = false
         this.isInvisible = false
+        this.currentInvisible = false
         /* #endregion */
         // STRUCTURES
         this.spawnPad = null
@@ -112,6 +119,7 @@ class User {
     }
     resetAttackEffects() {
         this.projectileSpeedModifier = 0
+        this.projectileRangeModifier = 0
         this.projectileCostModifier = 1
         this.attackSpeedModifier = 0
         this.damageTakenModifier = 0
@@ -133,6 +141,7 @@ class User {
         this.isInvisible = false
     }
     resetEffects() {
+        this.effectManger.reset()
         this.resetMovementEffects()
         this.resetAttackEffects()
         this.resetAnotherEffects()
@@ -152,6 +161,9 @@ class User {
         }
         this.environmentSpeedModifier = (this.platformStanding || this.isSnowMoveNormal) ? 1 : this.environmentSpeedModifier
         return this.speedModifier * this.environmentSpeedModifier
+    }
+    takePoisonDamage() {
+
     }
     takeDamage(damage, dieCallback, reflect) {
         console.log("take damage")
@@ -216,6 +228,7 @@ class User {
     receiveResource(amount, type) {
         this.basicResources[type] += amount
     }
+
     addXP(value) {
         this.stateManager.currentState.addXP(value)
     }
@@ -223,6 +236,41 @@ class User {
         this.basicResources.Gold += value
         this.scores += value
     }
+    loseResource(resource) {
+        let woodRs = (this.basicResources.Wood - resource.Wood > 0) ? resource.Wood : this.basicResources.Wood
+        let foodRs = (this.basicResources.Food - resource.Food > 0) ? resource.Food : this.basicResources.Food
+        let stoneRs = (this.basicResources.Stone - resource.Stone > 0) ? resource.Stone : this.basicResources.Stone
+        let goldRs = (this.basicResources.Gold - resource.Gold > 0) ? resource.Gold : this.basicResources.Gold
+        this.basicResources.decreaseResource({
+            Wood: woodRs,
+            Food: foodRs,
+            Stone: stoneRs,
+            Gold: goldRs
+        })
+        this.updateStatus()
+        return {
+            Wood: woodRs,
+            Food: foodRs,
+            Stone: stoneRs,
+            Gold: goldRs
+        }
+    }
+    takeResource(resource) {
+        this.basicResources.increaseResource(resource)
+        this.updateStatus()
+    }
+    takeHP(value) {
+        if (this.healthPoint >= 100) {
+            this.healthPoint = 100
+            return
+        }
+        this.healthPoint += value
+        this.game.onPlayerGetHit({
+            id: this.idGame,
+            hp: this.healthPoint
+        })
+    }
+
     takeBonus(data) {
         this.kills += data.kills
         this.addGold(data.gold)
@@ -235,6 +283,20 @@ class User {
     equipHoldItem(item) {
         this.currentItem = item
         this.speedModifier = item.info.movement
+    }
+    updateStatus() {
+        this.send(TransmitCode.GameCode.playerStatus, {
+            scores: this.scores,
+            kills: this.kills,
+            level: this.levelInfo.level,
+            xp:
+                this.levelInfo.xp /
+                LevelDescription[this.levelInfo.level].nextLevelUpXp,
+            wood: this.basicResources.Wood,
+            food: this.basicResources.Food,
+            stone: this.basicResources.Stone,
+            gold: this.basicResources.Gold,
+        });
     }
     registerEvent() {
         this.socket.on("disconnect", () => this.onDisconnect())
@@ -252,6 +314,9 @@ class User {
     }
     onPing() {
         this.send(TransmitCode.ServerCode.OnPing, null)
+    }
+    get isVisible() {
+        return (this.isInvisible && this.currentInvisible)
     }
 }
 

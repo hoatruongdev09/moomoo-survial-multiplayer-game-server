@@ -99,8 +99,17 @@ const accessoryInfos = {
         price: 3000,
         description: "Heals 1 HP per second	",
         effect(player) {
-
+            let healInterval = setInterval(() => {
+                player.takeHP(1)
+            }, 1000)
+            player.effectManger.addEffect({ id: this.id, effect: healInterval })
         }, remove(player) {
+            let effect = player.effectManger.getEffect(this.id)
+            console.log("effect: ", effect != null)
+            if (effect != null) {
+                clearInterval(effect.effect)
+            }
+            player.effectManger.removeEffect(this.id)
             console.log("removed item")
         }
     }, {
@@ -213,8 +222,18 @@ const accessoryInfos = {
         price: 15000,
         description: "Slowly regenerates health over time",
         effect(player) {
-
+            console.log("equip ", this.id)
+            let healInterval = setInterval(() => {
+                player.takeHP(15)
+            }, 2000)
+            player.effectManger.addEffect({ id: this.id, effect: healInterval })
         }, remove(player) {
+            let effect = player.effectManger.getEffect(this.id)
+
+            if (effect != null) {
+                clearInterval(effect.effect)
+            }
+            player.effectManger.removeEffect(this.id)
             console.log("removed item")
         }
     },

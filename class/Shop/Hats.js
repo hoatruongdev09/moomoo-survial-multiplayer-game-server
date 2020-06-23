@@ -272,11 +272,13 @@ const Hats = {
         price: 3000,
         description: "Increases arrow speed and range",
         effect(player) {
-            player.this.projectileSpeedModifier += 0.3
+            player.projectileSpeedModifier += 0.3
+            player.projectileRangeModifier += 0.5
         },
         remove(player) {
             console.log("removed item")
-            player.this.projectileSpeedModifier -= 0.3
+            player.projectileSpeedModifier -= 0.3
+            player.projectileRangeModifier -= 0.5
         }
     },
     {
@@ -332,9 +334,16 @@ const Hats = {
         price: 5000,
         description: "You slowly regenerate health	",
         effect(player) {
-
-        },
-        remove(player) {
+            let healInterval = setInterval(() => {
+                player.takeHP(5)
+            }, 800)
+            player.effectManger.addEffect({ id: this.id, effect: healInterval })
+        }, remove(player) {
+            let effect = player.effectManger.getEffect(this.id)
+            if (effect != null) {
+                clearInterval(effect.effect)
+            }
+            player.effectManger.removeEffect(this.id)
             console.log("removed item")
         }
     },
@@ -443,9 +452,17 @@ const Hats = {
         price: 10000,
         description: "Generates points while worn	",
         effect(player) {
-
+            let effect = setInterval(() => {
+                player.addGold(5)
+            }, 1000)
+            player.effectManger.addEffect({ id: this.id, effect: effect })
         },
         remove(player) {
+            let effect = player.effectManger.getEffect(this.id)
+            if (effect != null) {
+                clearInterval(effect.effect)
+            }
+            player.effectManger.removeEffect(this.id)
             console.log("removed item")
         }
     }, {

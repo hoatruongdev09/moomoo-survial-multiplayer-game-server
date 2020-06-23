@@ -28,6 +28,7 @@ class GameState extends BaseState {
 
         this.delayUseItem = false
         this.delayUseItemTime = 500
+        this.invisibleTimeoutID = null
     }
     enter(options) {
         this.delayUseItem = false
@@ -67,10 +68,10 @@ class GameState extends BaseState {
         this.socket.on(GameCode.scoreBoard, () => this.sendScore())
         this.socket.on(GameCode.shopSelectItem, (data) => this.chooseItem(data))
 
-        this.socket.on(ClanCode.createClan, (data) => this.createClan(data))
-        this.socket.on(ClanCode.kickMember, (data) => this.kickMember(data))
-        this.socket.on(ClanCode.joinClan, (data) => this.requestJoinClan(data))
-        this.socket.on(ClanCode.requestJoin, (data) => this.respondRequestJoinClan(data))
+        // this.socket.on(ClanCode.createClan, (data) => this.createClan(data))
+        // this.socket.on(ClanCode.kickMember, (data) => this.kickMember(data))
+        // this.socket.on(ClanCode.joinClan, (data) => this.requestJoinClan(data))
+        // this.socket.on(ClanCode.requestJoin, (data) => this.respondRequestJoinClan(data))
     }
     removeEvents() {
         this.socket.off(GameCode.syncLookDirect, (data) => this.syncLookDirect(data))
@@ -337,20 +338,35 @@ class GameState extends BaseState {
             if (data.isbtn) this.triggerUseItem();
         }
     }
+    delayVisible() {
+        if (!this.user.isInvisible) {
+            return
+        }
+        if (this.invisibleTimeoutID != null) {
+            clearTimeout(this.invisibleTimeoutID)
+        }
+        this.user.currentInvisible = false
+        this.invisibleTimeoutID = setTimeout(() => {
+            this.user.currentInvisible = this.user.isInvisible
+            console.log("current invisible: ", this.user.currentInvisible)
+        }, 500)
+    }
     triggerRangedAttack() {
         if (!this.user.currentItem.canUse) {
             return;
         }
+        this.delayVisible()
         let direct = new Vector(
             -Math.cos(this.user.lookDirect),
             -Math.sin(this.user.lookDirect)
         );
-        this.user.currentItem.new_use(this.user, direct, (cost) => this.removeResource(cost))
+        this.user.currentItem.use(this.user, direct, (cost) => this.removeResource(cost))
     }
     triggerUseItem() {
         if (this.delayUseItem) {
             return
         }
+        this.delayVisible()
         this.delayUseItem = true
         setTimeout(() => { this.delayUseItem = false }, this.delayUseItemTime)
         let direct = new Vector(
@@ -379,6 +395,7 @@ class GameState extends BaseState {
         if (!this.user.currentItem.canUse) {
             return;
         }
+        this.delayVisible()
         let direct = new Vector(
             -Math.cos(this.user.lookDirect),
             -Math.sin(this.user.lookDirect)
@@ -448,21 +465,13 @@ class GameState extends BaseState {
     }
     onHitNpc(response, object, objectInfo) {
         let damage = this.user.currentItem.info.damage * (1 + this.user.damageModifier)
-        this.game.playerHitNpc(
-            this.user.idGame,
-            objectInfo.id,
-            damage
-        );
+        this.game.playerHitNpc(this.user.idGame, objectInfo.id, damage);
     }
     onHitPlayer(response, object, objectInfo) {
         if (objectInfo.id != this.user.idGame) {
-            console.log("hit player: ", objectInfo.id);
             let damage = this.user.currentItem.info.damage * (1 + this.user.damageModifier)
-            this.game.playerHitPlayer(
-                this.user.idGame,
-                objectInfo.id,
-                damage
-            );
+            this.game.playerHitPlayer(this.user.idGame, objectInfo.id, damage);
+            this.user.currentItem.stealResourceEffect((resource) => { })
         }
     }
 
@@ -519,6 +528,7 @@ class GameState extends BaseState {
         } else {
             this.chooseAccessory(data)
         }
+        this.delayVisible()
         this.syncEquipItem();
         this.syncItemShop();
     }

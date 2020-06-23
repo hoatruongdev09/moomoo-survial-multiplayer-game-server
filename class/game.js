@@ -283,7 +283,7 @@ class Game {
                 let positionData = []
                 let lookData = []
                 other.forEach(player => {
-                    if (player.lastMovement == null && player.isInvisible) {
+                    if (player.lastMovement == null && player.isVisible) {
 
                     } else {
                         positionData.push({
@@ -678,6 +678,12 @@ class Game {
             (damageReflect, forceReflect) => this.playerReflectAttack(idTarget, idFrom, damageReflect, forceReflect))
         this.players[idFrom].lifeStealing(damage)
         this.players[idFrom].selfTakeDamage(damage, (id) => this.playerDieCallback(idFrom, id), (damageReflect, forceReflect) => { })
+    }
+    playerStealResourcePlayer(idFrom, idTarget, resource) {
+        let playerFrom = this.getPlayerInfo(idFrom)
+        let playerTarget = this.getPlayerInfo(idTarget)
+        let stoleResource = playerTarget.loseResource(resource)
+        playerFrom.takeResource(stoleResource)
     }
     playerDieCallback(idFrom, idTarget) {
         this.bonusKillForPlayer(idFrom, idTarget)

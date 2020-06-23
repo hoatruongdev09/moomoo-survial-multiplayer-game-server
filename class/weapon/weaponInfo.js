@@ -263,6 +263,12 @@ const weaponInfo = {
         type: "Melee",
         name: "Mc Grabby",
         description: "Steal resources from enemies",
+        stealCost: {
+            Wood: 100,
+            Stone: 100,
+            Food: 100,
+            Gold: 100
+        },
         cost: {},
         size: {
             x: 4,
