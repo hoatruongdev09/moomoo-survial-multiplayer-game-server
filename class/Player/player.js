@@ -75,7 +75,7 @@ class Player {
 
         /* #region  EFFECTS */
         this.speedModifier = 1
-        this.inviromentSpeedModifier = 1
+        this.environmentSpeedModifier = 1
         this.platformStanding = false
         /* #endregion */
 

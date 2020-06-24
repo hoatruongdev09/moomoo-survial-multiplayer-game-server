@@ -82,7 +82,7 @@ class Player {
         this.basicResources = new ResourceManager()
         // EFFECT
         this.speedModifier = 1;
-        this.inviromentSpeedModifier = 1;
+        this.environmentSpeedModifier = 1;
         this.platformStanding = false;
         // STRUCTURES
         this.spawnPad = null
@@ -369,8 +369,8 @@ class Player {
             Math.sin(this.lastMovement)
         );
 
-        this.position.add(this.moveDirect.clone().scale(this.moveSpeed * (!this.platformStanding ? this.speedModifier * this.inviromentSpeedModifier : 1) * deltaTime));
-        // console.log("modifier: ", (this.platformStanding == false ? this.speedModifier * this.inviromentSpeedModifier : 1))
+        this.position.add(this.moveDirect.clone().scale(this.moveSpeed * (!this.platformStanding ? this.speedModifier * this.environmentSpeedModifier : 1) * deltaTime));
+        // console.log("modifier: ", (this.platformStanding == false ? this.speedModifier * this.environmentSpeedModifier : 1))
 
         this.bodyCollider.pos.x = this.position.x;
         this.bodyCollider.pos.y = this.position.y;

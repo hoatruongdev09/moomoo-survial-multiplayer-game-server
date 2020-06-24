@@ -70,7 +70,7 @@ class Game {
         this.clanManager.kickMember(memberId, clanId)
     }
     checkIsMasterOfClan(memberId, clanId) {
-        this.clanManager.checkIsMasterOfClan(memberId, clanId)
+        return this.clanManager.checkIsMasterOfClan(memberId, clanId)
     }
     /* #endregion */
     /* #region  INITIALIZE  */
@@ -110,35 +110,35 @@ class Game {
         let j = 0;
         for (let i = 0; i < this.gameConfig.npcDuckCount; i++, j++) {
             // DUCK
-            this.npcs[j] = new NPC(j, 4, false, 250, this.getRandomPosition(), this, 2);
+            this.npcs[j] = new NPC(j, 4, false, 250, this.getRandomPosition(), this, 2, "duck");
         }
         for (let i = 0; i < this.gameConfig.npcChickenCount; i++, j++) {
             // CHICKEN
-            this.npcs[j] = new NPC(j, 3, false, 250, this.getRandomPosition(), this, 2);
+            this.npcs[j] = new NPC(j, 3, false, 250, this.getRandomPosition(), this, 2, "chicken");
         }
         for (let i = 0; i < this.gameConfig.npcCowCount; i++, j++) {
             // COW
-            this.npcs[j] = new NPC(j, 0, false, 500, this.getRandomPosition(), this, 2.4);
+            this.npcs[j] = new NPC(j, 0, false, 500, this.getRandomPosition(), this, 2.4, "cow");
         }
         for (let i = 0; i < this.gameConfig.npcBullCount; i++, j++) {
             // BULL
-            this.npcs[j] = new NPC(j, 5, false, 700, this.getRandomPosition(), this, 2.4);
+            this.npcs[j] = new NPC(j, 5, false, 700, this.getRandomPosition(), this, 2.4, "bull");
         }
         for (let i = 0; i < this.gameConfig.npcSheepCount; i++, j++) {
             // SHEEP
-            this.npcs[j] = new NPC(j, 2, false, 600, this.getRandomPosition(), this, 2.4);
+            this.npcs[j] = new NPC(j, 2, false, 600, this.getRandomPosition(), this, 2.4, "sheep");
         }
         for (let i = 0; i < this.gameConfig.npcPigCount; i++, j++) {
             // PIG
-            this.npcs[j] = new NPC(j, 1, false, 550, this.getRandomPosition(), this, 2.4);
+            this.npcs[j] = new NPC(j, 1, false, 550, this.getRandomPosition(), this, 2.4, "pig");
         }
         for (let i = 0; i < this.gameConfig.npcBullyCount; i++, j++) {
             // BULLY
-            this.npcs[j] = new NPC(j, 6, true, 800, this.getRandomPosition(), this, 2.4);
+            this.npcs[j] = new NPC(j, 6, true, 800, this.getRandomPosition(), this, 2.4, "bully");
         }
         for (let i = 0; i < this.gameConfig.npcWolfCount; i++, j++) {
             // WOLF
-            this.npcs[j] = new NPC(j, 7, true, 700, this.getRandomPosition(), this, 2.4);
+            this.npcs[j] = new NPC(j, 7, true, 700, this.getRandomPosition(), this, 2.4, "wolf");
         }
     }
     /* #endregion */
@@ -283,17 +283,21 @@ class Game {
                 let positionData = []
                 let lookData = []
                 other.forEach(player => {
-                    positionData.push({
-                        id: player.idGame,
-                        pos: {
-                            x: player.position.x,
-                            y: player.position.y,
-                        },
-                    })
-                    lookData.push({
-                        id: player.idGame,
-                        angle: player.lookDirect,
-                    })
+                    if (player.lastMovement == null && player.isVisible) {
+
+                    } else {
+                        positionData.push({
+                            id: player.idGame,
+                            pos: {
+                                x: player.position.x,
+                                y: player.position.y,
+                            },
+                        })
+                        lookData.push({
+                            id: player.idGame,
+                            angle: player.lookDirect,
+                        })
+                    }
                 })
                 p.send(gamecode.syncTransform, {
                     pos: positionData,
@@ -360,24 +364,24 @@ class Game {
     new_syncSingleNpcPosition(npc, deltaTime) {
         if (npc != null && npc.isJoined) {
             if (this.map.checkIfIsInRiver(npc.position)) {
-                npc.inviromentSpeedModifier = this.gameConfig.riverSpeedModifier;
+                npc.environmentSpeedModifier = this.gameConfig.riverSpeedModifier;
                 npc.moveNpc(new Vector(1, 0), deltaTime);
             } else if (this.map.checkIfIsInSnow(npc.position)) {
-                npc.inviromentSpeedModifier = this.gameConfig.snowSpeedModifier;
+                npc.environmentSpeedModifier = this.gameConfig.snowSpeedModifier;
             } else {
-                npc.inviromentSpeedModifier = 1;
+                npc.environmentSpeedModifier = 1;
             }
             npc.position = this.map.clampPositionToMap(npc.position);
         }
     }
     new_syncSinglePlayerPosition(player, deltaTime) {
-        if (this.map.checkIfIsInRiver(player.position) && !player.platformStanding) {
-            player.inviromentSpeedModifier = this.gameConfig.riverSpeedModifier;
+        if (this.map.checkIfIsInRiver(player.position) && !player.platformStanding && !player.isWaterMoveNormal) {
+            player.environmentSpeedModifier = this.gameConfig.riverSpeedModifier;
             player.movePlayer(0, deltaTime);
-        } else if (this.map.checkIfIsInSnow(player.position)) {
-            player.inviromentSpeedModifier = this.gameConfig.snowSpeedModifier;
+        } else if (this.map.checkIfIsInSnow(player.position) && !player.isSnowMoveNormal) {
+            player.environmentSpeedModifier = this.gameConfig.snowSpeedModifier;
         } else {
-            player.inviromentSpeedModifier = 1;
+            player.environmentSpeedModifier = 1;
         }
         player.position = this.map.clampPositionToMap(player.position);
     }
@@ -659,33 +663,68 @@ class Game {
     /* #endregion */
     /* #region   COLLISION CHECK*/
     checkBothPlayerAreInClan(player1, player2) {
-        if (player1 == null || player2 == null) { return }
-        if (!player1.isJoinedGame || !player2.isJoinedGame) { return }
-        if (player1.clanId == null || player2.clanId == null) { return }
+        if (player1 == null || player2 == null) { return false }
+        if (!player1.isJoinedGame || !player2.isJoinedGame) { return false }
+        if (player1.clanId == null || player2.clanId == null) { return false }
+        if (player1.idGame == player2.idGame) { return true }
         return player1.clanId == player2.clanId
     }
     playerHitPlayer(idFrom, idTarget, damage) {
         if (this.checkBothPlayerAreInClan(this.players[idFrom], this.players[idTarget])) {
             return
         }
-        this.players[idTarget].takeDamage(damage, (id) => {
-            this.bonusKillForPlayer(idFrom)
-        })
+        this.players[idTarget].takeDamage(damage,
+            (id) => this.playerDieCallback(idFrom, id),
+            (damageReflect, forceReflect) => this.playerReflectAttack(idTarget, idFrom, damageReflect, forceReflect))
+        this.players[idFrom].lifeStealing(damage)
+        this.players[idFrom].selfTakeDamage(damage, (id) => this.playerDieCallback(idFrom, id), (damageReflect, forceReflect) => { })
+    }
+    playerStealResourcePlayer(idFrom, idTarget, resource) {
+        let playerFrom = this.getPlayerInfo(idFrom)
+        let playerTarget = this.getPlayerInfo(idTarget)
+        let stoleResource = playerTarget.loseResource(resource)
+        playerFrom.takeResource(stoleResource)
+    }
+    playerDieCallback(idFrom, idTarget) {
+        this.bonusKillForPlayer(idFrom, idTarget)
+    }
+    playerDieDueToNpcCallback(idNpc, idPlayer) {
 
     }
-    bonusKillForPlayer(idPlayer) {
+    playerReflectAttack(idFrom, idTarget, damageReflect, forceReflect) {
+        this.players[idTarget].takeDamage(damageReflect,
+            (id) => this.playerDieCallback(idFrom, id),
+            (damageReflect, forceReflect) => { })
+        let targetPosition = this.players[idTarget].position.clone()
+        let originPosition = this.players[idFrom].position.clone()
+        this.pushPlayerBack(this.players[idTarget], targetPosition.sub(originPosition), forceReflect)
+    }
+    playerReflectAttackToNpc(idFrom, idTarget, damageReflect, forceReflect) {
+        this.npcs[idTarget].onBeingHit(this.players[idFrom], damageReflect);
+        this.pushNpcBack(
+            this.npcs[idTarget],
+            this.npcs[idTarget].position.clone().sub(this.players[idFrom].position.clone()),
+            forceReflect
+        );
+    }
+    bonusKillForPlayer(idPlayer, idTarget) {
+        let bonusModifier = this.players[idPlayer].killBonusGold
+        let bonusGold = 0
+        if (this.players[idPlayer].wearThiefGear) {
+            bonusGold = this.players[idTarget].getCurrentGoldAmount() / 2
+        }
         if (this.players[idPlayer] == null || !this.players[idPlayer].isJoinedGame) {
             return
         }
-        this.players[idPlayer].getBonus({ kill: 1, gold: 250, xp: 100 })
+        this.players[idPlayer].takeBonus({ kill: 1, gold: (250 + bonusGold) * (1 + bonusModifier), xp: 100 })
     }
     npcHitPlayer(idFrom, idTarget, damage) {
         if (this.players[idTarget] == null || !this.players[idTarget].isJoinedGame) {
             return
         }
-        this.players[idTarget].takeDamage(damage, (id) => {
-
-        })
+        this.players[idTarget].takeDamage(damage,
+            (id) => this.playerDieDueToNpcCallback(idFrom, id),
+            (damageReflect, forceReflect) => this.playerReflectAttackToNpc(idTarget, idFrom, damageReflect, forceReflect))
     }
     respawnNpc(npc) {
         setTimeout(() => {
@@ -705,10 +744,12 @@ class Game {
         }, 30 * 1000);
     }
     playerHitNpc(idFrom, idTarget, damage) {
-        this.playerStructureHitNpc(idFrom, idTarget, damage);
+        this.npcs[idTarget].onBeingHit(this.players[idFrom], damage, (fromTarget, npc) => this.onNpcDie(fromTarget, npc));
+        this.players[idFrom].lifeStealing(damage)
+        this.players[idFrom].selfTakeDamage(damage, (id) => this.playerDieCallback(idFrom, id), (damageReflect, forceReflect) => { })
     }
     playerStructureHitNpc(idFrom, idTarget, damage) {
-        this.npcs[idTarget].onBeingHit(this.players[idFrom], damage);
+        this.npcs[idTarget].onBeingHit(this.players[idFrom], damage, (fromTarget, npc) => this.onNpcDie(fromTarget, npc));
     }
     syncNpcHP(data) {
         this.broadcast(gamecode.syncNpcHP, {
@@ -716,7 +757,12 @@ class Game {
         });
     }
     playerStructureHitPlayer(idFrom, idTarget, damage) {
-        this.playerHitPlayer(idFrom, idTarget, damage)
+        if (this.checkBothPlayerAreInClan(this.players[idFrom], this.players[idTarget])) {
+            return
+        }
+        this.players[idTarget].takeDamage(damage,
+            (id) => this.playerDieCallback(idFrom, id),
+            (damageReflect, forceReflect) => { })
     }
     syncPlayerHP(data) {
         this.broadcast(gamecode.playerHit, {
@@ -764,7 +810,24 @@ class Game {
             return;
         }
     }
-    playerAttackStructure(idPlayer, idStructure, weapon) {
+    playerAttackStructure(idPlayer, idStructure, damage, gatherRate, goldGatherRate) {
+        let structure = this.findStructureWithId(idStructure)
+        if (structure == null) {
+            return
+        }
+        structure.hitInteract(this.players[idPlayer], (idType) => {
+            let key = this.getKeyByValue(ResourceType, idType)
+            this.players[idPlayer].receiveResource(weapon.info.gatherRate, key)
+            this.players[idPlayer].addXP(weapon.info.goldGatherRate)
+        })
+        if (this.checkBothPlayerAreInClan(this.players[idPlayer], this.players[structure.userId])) {
+            return
+        }
+        structure.takeDamage(damage, () => {
+            this.removeStructure(structure.id)
+        })
+    }
+    old_playerAttackStructure(idPlayer, idStructure, weapon) {
         let damage = weapon.info.structureDamage;
         let structure = this.findStructureWithId(idStructure);
         // console.log("structure: ", structure)

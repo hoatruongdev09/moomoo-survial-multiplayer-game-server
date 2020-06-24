@@ -26,10 +26,10 @@ class NpcStandState extends NpcState {
     }
 
     rest() {
-        let restTime = Mathf.RandomeRange(5, 10) * 1000
+        let restTime = Mathf.RandomRange(5, 10) * 1000
         this.restTimeOut = setTimeout(() => {
             if (this.npc.isHostile) {
-                if (Mathf.RandomeRange(0, 4) < 1) {
+                if (Mathf.RandomRange(0, 4) < 1) {
                     this.stateManager.changeState(this.npc.preyState)
                     return
                 }

@@ -15,6 +15,8 @@ const ResourceManager = require('../Player/resourcesManager')
 const StructueManager = require('../Player/structureManager')
 const LevelManager = require('../Player/levelManager')
 
+const Mathf = require('mathf')
+
 class GameState extends BaseState {
     constructor(user, stateManager) {
         super(user, stateManager)
@@ -26,6 +28,7 @@ class GameState extends BaseState {
 
         this.delayUseItem = false
         this.delayUseItemTime = 500
+        this.invisibleTimeoutID = null
     }
     enter(options) {
         this.delayUseItem = false
@@ -52,6 +55,7 @@ class GameState extends BaseState {
         this.removeEvents()
         this.clearAutoAttackInterval()
         this.resetPlayerAttributes()
+        this.user.resetEffects()
     }
     registerEvents() {
         this.socket.on(GameCode.syncLookDirect, (data) => this.syncLookDirect(data))
@@ -64,10 +68,10 @@ class GameState extends BaseState {
         this.socket.on(GameCode.scoreBoard, () => this.sendScore())
         this.socket.on(GameCode.shopSelectItem, (data) => this.chooseItem(data))
 
-        this.socket.on(ClanCode.createClan, (data) => this.createClan(data))
-        this.socket.on(ClanCode.kickMember, (data) => this.kickMember(data))
-        this.socket.on(ClanCode.joinClan, (data) => this.requestJoinClan(data))
-        this.socket.on(ClanCode.requestJoin, (data) => this.respondRequestJoinClan(data))
+        // this.socket.on(ClanCode.createClan, (data) => this.createClan(data))
+        // this.socket.on(ClanCode.kickMember, (data) => this.kickMember(data))
+        // this.socket.on(ClanCode.joinClan, (data) => this.requestJoinClan(data))
+        // this.socket.on(ClanCode.requestJoin, (data) => this.respondRequestJoinClan(data))
     }
     removeEvents() {
         this.socket.off(GameCode.syncLookDirect, (data) => this.syncLookDirect(data))
@@ -114,7 +118,6 @@ class GameState extends BaseState {
         if (this.user.intervalAutoAttack != null) {
             clearInterval(this.user.intervalAutoAttack)
         }
-
         this.user.structures.reset();
         this.initBodyCollider(data.bodyRadius)
 
@@ -145,7 +148,7 @@ class GameState extends BaseState {
         );
 
         this.user.position.add(this.user.moveDirect.clone().scale(this.user.moveSpeed * (this.user.movementEffect() * deltaTime)))
-        // console.log("modifier: ", (this.platformStanding == false ? this.speedModifier * this.inviromentSpeedModifier : 1))
+        // console.log("modifier: ", (this.platformStanding == false ? this.speedModifier * this.environmentSpeedModifier : 1))
 
         this.updateBodyCollider()
 
@@ -335,20 +338,35 @@ class GameState extends BaseState {
             if (data.isbtn) this.triggerUseItem();
         }
     }
+    delayVisible() {
+        if (!this.user.isInvisible) {
+            return
+        }
+        if (this.invisibleTimeoutID != null) {
+            clearTimeout(this.invisibleTimeoutID)
+        }
+        this.user.currentInvisible = false
+        this.invisibleTimeoutID = setTimeout(() => {
+            this.user.currentInvisible = this.user.isInvisible
+            console.log("current invisible: ", this.user.currentInvisible)
+        }, 500)
+    }
     triggerRangedAttack() {
         if (!this.user.currentItem.canUse) {
             return;
         }
+        this.delayVisible()
         let direct = new Vector(
             -Math.cos(this.user.lookDirect),
             -Math.sin(this.user.lookDirect)
         );
-        this.user.currentItem.new_use(this.user, direct, (cost) => this.removeResource(cost))
+        this.user.currentItem.use(this.user, direct, (cost) => this.removeResource(cost))
     }
     triggerUseItem() {
         if (this.delayUseItem) {
             return
         }
+        this.delayVisible()
         this.delayUseItem = true
         setTimeout(() => { this.delayUseItem = false }, this.delayUseItemTime)
         let direct = new Vector(
@@ -362,9 +380,14 @@ class GameState extends BaseState {
         })
     }
     removeResource(cost) {
+        console.log("current item: ", this.user.currentItem)
+        let costModifier = 1
+        if (this.user.currentItem.toString() == "Ranged") {
+            costModifier = this.user.projectileCostModifier
+        }
         let keys = Object.keys(cost)
         keys.forEach(k => {
-            this.user.basicResources[k] -= cost[k]
+            this.user.basicResources[k] -= cost[k] * costModifier
         })
         this.updateStatus()
     }
@@ -372,6 +395,7 @@ class GameState extends BaseState {
         if (!this.user.currentItem.canUse) {
             return;
         }
+        this.delayVisible()
         let direct = new Vector(
             -Math.cos(this.user.lookDirect),
             -Math.sin(this.user.lookDirect)
@@ -428,27 +452,26 @@ class GameState extends BaseState {
         this.game.playerAttackResource(this.user, objectInfo.id, this.user.currentItem);
     }
     onHitStructure(response, object, objectInfo) {
+        let damage = this.user.currentItem.info.structureDamage * (this.user.structureDamageModifier + 1)
+        let gatherRate = this.user.currentItem.info.gatherRate
+        let goldGatherRate = this.user.currentItem.info.goldGatherRate + this.user.farmGoldBonus
         this.game.playerAttackStructure(
             this.user.idGame,
-            objectInfo.id,
-            this.user.currentItem
-        );
+            objectInfo.id, damage,
+            gatherRate,
+            goldGatherRate
+        )
+
     }
     onHitNpc(response, object, objectInfo) {
-        this.game.playerHitNpc(
-            this.user.idGame,
-            objectInfo.id,
-            this.user.currentItem.info.damage
-        );
+        let damage = this.user.currentItem.info.damage * (1 + this.user.damageModifier)
+        this.game.playerHitNpc(this.user.idGame, objectInfo.id, damage);
     }
     onHitPlayer(response, object, objectInfo) {
         if (objectInfo.id != this.user.idGame) {
-            console.log("hit player: ", objectInfo.id);
-            this.game.playerHitPlayer(
-                this.user.idGame,
-                objectInfo.id,
-                this.user.currentItem.info.damage
-            );
+            let damage = this.user.currentItem.info.damage * (1 + this.user.damageModifier)
+            this.game.playerHitPlayer(this.user.idGame, objectInfo.id, damage);
+            this.user.currentItem.stealResourceEffect((resource) => { })
         }
     }
 
@@ -505,6 +528,7 @@ class GameState extends BaseState {
         } else {
             this.chooseAccessory(data)
         }
+        this.delayVisible()
         this.syncEquipItem();
         this.syncItemShop();
     }
@@ -513,10 +537,15 @@ class GameState extends BaseState {
             // if owned this item
             if (this.user.equippedHat != null && this.user.equippedHat.id == data.id) {
                 // if equiped then unequip
+                this.user.equippedHat.remove(this.user)
                 this.user.equippedHat = null;
             } else {
                 // if not equiped then equip
+                if (this.user.equippedHat != null) {
+                    this.user.equippedHat.remove(this.user)
+                }
                 this.user.equippedHat = this.getOwnedItemById(data.id);
+                this.user.equippedHat.effect(this.user)
             }
         } else {
             // if not owned this item
@@ -559,11 +588,16 @@ class GameState extends BaseState {
             if (this.user.equippedAccessory != null && this.user.equippedAccessory.id == data.id) {
                 // if equiped then unequip
                 // console.log("unequip accessory");
+                this.user.equippedAccessory.remove(this.user)
                 this.user.equippedAccessory = null;
             } else {
                 // if not equiped then equip
                 // console.log("equip accessory");
+                if (this.user.equippedAccessory != null) {
+                    this.user.equippedAccessory.remove(this.user)
+                }
                 this.user.equippedAccessory = this.getOwnedItemById(data.id);
+                this.user.equippedAccessory.effect(this.user)
             }
         } else {
             // if not owned this item
@@ -598,22 +632,17 @@ class GameState extends BaseState {
         this.game.createClan(data.name, this.user);
     }
     kickMember(data) {
-        console.log("clanid: ", this.user.clanId)
         if (this.user.clanId == null) {
             return;
         }
         if (this.game.checkIsMasterOfClan(this.user.idGame, this.user.clanId)) {
             if (data.id == this.user.idGame) {
-                console.log("remove clan")
                 this.game.removeClan(this.user.clanId);
             } else {
-                console.log("kick member")
                 this.game.kickMember(data.id, this.user.clanId);
             }
         } else {
-            console.log("not master")
             if (data.id == this.user.idGame) {
-                console.log("kick member")
                 this.game.kickMember(data.id, this.user.clanId);
             }
         }
@@ -739,10 +768,25 @@ class GameState extends BaseState {
             }
             return true
         }
+        if (data[0] == "hp") {
+            let value = Number(cheatInfos[0])
+            if (!isNaN(value) && isFinite(value)) {
+                this.user.healthPoint = Mathf.clamp(value, 1, 100)
+                this.game.onPlayerGetHit({
+                    id: this.user.idGame,
+                    hp: this.user.healthPoint
+                })
+            } else {
+                return false
+            }
+            return true;
+        }
         if (data[0] == "exp") {
             let value = Number(cheatInfos[0])
             if (!isNaN(value) && isFinite(value)) {
                 this.addXP(value);
+            } else {
+                return false
             }
             return true
         }
@@ -752,6 +796,8 @@ class GameState extends BaseState {
             if (!isNaN(x) && isFinite(x) & !isNaN(y) && isFinite(y)) {
                 this.user.position.x = x
                 this.user.position.y = y
+            } else {
+                return false
             }
             return true
         }
@@ -759,6 +805,8 @@ class GameState extends BaseState {
             let id = cheatInfos[0].replace(/\s/g, '')
             this.upgradeItem({ code: id })
             return true
+        } else {
+            return false
         }
         return false
     }

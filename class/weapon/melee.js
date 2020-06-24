@@ -9,7 +9,6 @@ class Melee {
         this.bodyCollider
         this.canUse = true
     }
-
     use(player, direct) {
         if (!this.canUse) {
             return
@@ -22,12 +21,19 @@ class Melee {
         this.bodyCollider.pos = new SAT.Vector(position.x, position.y)
         this.bodyCollider.setOffset(new SAT.Vector(-this.info.size.x / 2, -this.info.size.y / 2))
         this.bodyCollider.setAngle(angle)
-        // console.log("box collider: ", this.bodyCollider)
-        // console.log("box: ", this.bodyCollider)
+        this.coolDown(player.attackSpeedModifier)
+    }
+    coolDown(bonus) {
         this.canUse = false
+        let attackSpeed = this.info.attackSpeed * (1 - bonus)
         setTimeout(() => {
             this.canUse = true
-        }, this.info.attackSpeed)
+        }, attackSpeed)
+    }
+    stealResourceEffect(stealCallback) {
+        if (this.info.stealCost != null) {
+            stealCallback(this.info.stealCost)
+        }
     }
     toString() {
         return "Melee"

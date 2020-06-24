@@ -67,14 +67,17 @@ class GameTurret extends BaseStructure {
         this.closeEnemies = this.game.getPlayersFromViewInRange(this.position, this.range)
         this.closeEnemies.filter(enemy => { if (enemy.idGame != this.userId) return enemy })
         if (this.closeEnemies.length == 1) {
-            return this.game.getPlayerInfo(this.closeEnemies[0].idGame)
+            let playerInfo = this.game.getPlayerInfo(this.closeEnemies[0].idGame)
+            if (!playerInfo.turretIgnored && !this.game.checkBothPlayerAreInClan(playerInfo, this.game.getPlayerInfo(this.owner.idGame)))
+                return playerInfo
         }
 
         let closest = Mathf.Infinity
         let target = null
         this.closeEnemies.forEach(p => {
-            if (p.id != this.owner.idGame) {
-                let temp = this.game.getPlayerInfo(p.id).position.clone().sub(this.position).sqrMagnitude()
+            let playerInfo = this.game.getPlayerInfo(p.id)
+            if (p.id != this.owner.idGame && !this.game.checkBothPlayerAreInClan(this.game.getPlayerInfo(this.owner.idGame), playerInfo) && !playerInfo.turretIgnored) {
+                let temp = playerInfo.position.clone().sub(this.position).sqrMagnitude()
                 if (temp < closest) {
                     closest = temp
                     target = this.game.getPlayerInfo(p.id)

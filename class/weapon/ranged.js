@@ -5,41 +5,30 @@ class Ranged {
         this.info = info
         this.canUse = true
     }
-    new_use(player, direct, callback) {
+    use(player, direct, callback, effect) {
         if (!this.canUse || !this.checkPlayerCanUseItem(player)) {
             return
         }
         let bullet = this.createBullet(player.game.getProjectileId(), player, player.position, direct)
         player.game.addProjectTile(bullet, Math.atan2(direct.y, direct.x))
-        callback(this.info.cost)
-        this.coolDown()
+        if (callback != null) {
+            callback(this.info.cost)
+        }
+        this.coolDown(player.attackSpeedModifier)
     }
     createBullet(id, player, shootPosition, direct) {
+        let projectileSpeed = this.info.bulletSpeed * (player.projectileSpeedModifier + 1)
+        let projectileRange = this.info.range * (player.projectileRangeModifier + 1)
+        let projectileDamage = this.info.damage * (player.damageModifier + 1)
         let position = shootPosition.clone().add(direct.clone().scale(2))
-        return new Bullet(id, 0, player, direct, position, 0.2, this.info.bulletSpeed, this.info.range, this.info.damage)
+        return new Bullet(id, 0, player, direct, position, 0.2, projectileSpeed, projectileRange, projectileDamage)
     }
-    coolDown() {
+    coolDown(bonus) {
         this.canUse = false
+        let attackSpeed = this.info.attackSpeed * (1 - bonus)
         setTimeout(() => {
             this.canUse = true
-        }, this.info.attackSpeed)
-    }
-    use(player, direct) {
-        if (!this.canUse) {
-            return
-        }
-        if (!this.checkPlayerCanUseItem(player)) {
-            return
-        }
-        let position = player.position.clone().add(direct.clone().scale(2))
-        let idProjectile = player.game.getProjectileId()
-        let bullet = new Bullet(idProjectile, 0, player, direct, position, 0.2, this.info.bulletSpeed, this.info.range, this.info.damage)
-        player.game.addProjectTile(bullet, Math.atan2(direct.y, direct.x))
-        this.useItem(player)
-        this.canUse = false
-        setTimeout(() => {
-            this.canUse = true
-        }, this.info.attackSpeed)
+        }, attackSpeed)
     }
     checkPlayerCanUseItem(player) {
         let keys = Object.keys(this.info.cost)
@@ -51,15 +40,13 @@ class Ranged {
         })
         return result
     }
+    stealResourceEffect(stealCallback) {
+        if (this.info.stealCost != null) {
+            stealCallback(this.info.stealCost)
+        }
+    }
     new_useItem(player, callback) {
         callback(this.info.cost)
-    }
-    useItem(player) {
-        let keys = Object.keys(this.info.cost)
-        keys.forEach(k => {
-            player.basicResources[k] -= this.info.cost[k]
-        })
-        player.updateStatus()
     }
     toString() {
         return "Ranged"
