@@ -12,7 +12,9 @@ const GameState = require('./inGameState')
 const LevelDescription = require("../levelInfo");
 const EffectManager = require('../Player/effectManager')
 
-
+const GameTurret = require('../Structures/turret')
+const ItemInfo = require('../Items/itemInfo')
+const Mathf = require('mathf')
 class User {
     constructor(server, socket, serverIndex) {
         this.server = server
@@ -48,6 +50,7 @@ class User {
         this.currentItem = null
 
         // HEALTH
+        this.maxHealthPoint = 100
         this.healthPoint = null
         this.kills = null
         this.scores = null
@@ -145,6 +148,13 @@ class User {
         this.resetMovementEffects()
         this.resetAttackEffects()
         this.resetAnotherEffects()
+        this.unWearTurret()
+    }
+    resetAccessoryHat() {
+        this.ownedHat = []
+        this.ownedAccessories = []
+        this.equippedHat = null
+        this.equippedAccessory = null
     }
     update(deltaTime) {
         this.stateManager.currentState.update(deltaTime)
@@ -174,10 +184,7 @@ class User {
             dieCallback(this.idGame)
             this.onDie()
         } else {
-            this.game.onPlayerGetHit({
-                id: this.idGame,
-                hp: this.healthPoint
-            })
+            this.game.onPlayerGetHit(this.getHealthPointData())
         }
     }
     selfTakeDamage(damage, dieCallback) {
@@ -187,17 +194,11 @@ class User {
             dieCallback(this.idGame)
             this.onDie()
         } else {
-            this.game.onPlayerGetHit({
-                id: this.idGame,
-                hp: this.healthPoint
-            })
+            this.game.onPlayerGetHit(this.getHealthPointData())
         }
     }
     lifeStealing(damage) {
-        this.healthPoint += damage * this.lifeSteal
-        if (this.healthPoint >= 100) {
-            this.healthPoint = 100
-        }
+        this.takeHP(damage * this.lifeSteal)
     }
     onDie() {
         this.isJoinedGame = false
@@ -260,15 +261,13 @@ class User {
         this.updateStatus()
     }
     takeHP(value) {
-        if (this.healthPoint >= 100) {
-            this.healthPoint = 100
+        if (this.healthPoint >= this.maxHealthPoint) {
+            this.healthPoint = this.maxHealthPoint
             return
         }
         this.healthPoint += value
-        this.game.onPlayerGetHit({
-            id: this.idGame,
-            hp: this.healthPoint
-        })
+        this.healthPoint = Mathf.clamp(this.healthPoint, 0, this.maxHealthPoint)
+        this.game.onPlayerGetHit(this.getHealthPointData())
     }
 
     takeBonus(data) {
@@ -315,8 +314,27 @@ class User {
     onPing() {
         this.send(TransmitCode.ServerCode.OnPing, null)
     }
+    wearTurret() {
+        console.log("wear turret")
+    }
+    unWearTurret() {
+
+    }
+    getHealthPointData() {
+        return {
+            id: this.idGame,
+            hp: this.currentHealthPoint,
+            maxHP: this.maxHealthPoint
+        }
+    }
     get isVisible() {
         return (this.isInvisible && this.currentInvisible)
+    }
+    get currentHealthPoint() {
+        return this.healthPoint / this.maxHealthPoint
+    }
+    set currentHealthPoint(percent) {
+        this.healthPoint = percent * this.maxHealthPoint
     }
 }
 

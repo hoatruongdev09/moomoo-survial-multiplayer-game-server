@@ -482,9 +482,10 @@ const Hats = {
         price: 10000,
         description: "You become a walking turret",
         effect(player) {
-
+            player.wearTurret()
         },
         remove(player) {
+            player.unWearTurret()
             console.log("removed item")
         }
     }, {

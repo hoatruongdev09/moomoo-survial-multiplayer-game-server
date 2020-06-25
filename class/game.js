@@ -55,6 +55,7 @@ class Game {
         this.broadcastPlayerPosition();
         this.new_updateNPC(deltaTime);
         this.broadcastNpcPosition();
+        this.broadcastStructurePosition()
         this.updatePositionProjectile(deltaTime);
         this.clanManager.update(deltaTime)
     }
@@ -306,20 +307,41 @@ class Game {
             }
         })
     }
+    broadcastStructurePosition() {
+        this.players.forEach(p => {
+            if (p != null && p.isJoinedGame) {
+                let otherStructure = this.getStructureInScreenView(p.position, p.clientScreenSize)
+                if (otherStructure.length != 0) {
+                    let strData = otherStructure.map((str) => {
+                        return {
+                            id: str.id,
+                            pos: {
+                                x: str.position.x,
+                                y: str.position.y
+                            },
+                            rot: str.rotation
+                        }
+                    })
+                    p.send(gamecode.syncStructure, {
+                        structures: strData
+                    })
+                }
+            }
+        })
+    }
     broadcastNpcPosition() {
         this.players.forEach(p => {
             if (p != null && p.isJoinedGame) {
                 let otherNPC = this.getNpcInPlayerView(p)
-                let positionData = []
-                otherNPC.forEach(npc => {
-                    positionData.push({
+                let positionData = otherNPC.map((npc) => {
+                    return {
                         id: npc.id,
                         pos: {
                             x: npc.position.x,
                             y: npc.position.y,
                         },
                         rot: npc.lookAngle,
-                    })
+                    }
                 })
                 if (positionData.length != 0) {
                     p.send(gamecode.syncNpcTransform, {
@@ -495,48 +517,47 @@ class Game {
         return gameData;
     }
     getPlayersInfo() {
-        let data = [];
-        this.players.forEach((p) => {
-            if (p != null && p.isJoinedGame) {
-                data.push({
-                    id: p.idGame,
-                    name: p.name,
-                    skinId: p.skinId,
-                    itemId: p.currentItem.info.id,
-                    hat: p.equippedHat == null ? "" : p.equippedHat.id,
-                    acc: p.equippedAccessory == null ? "" : p.equippedAccessory.id,
-                    hp: p.healthPoint,
-                    pos: {
-                        x: p.position.x,
-                        y: p.position.y,
-                    },
-                });
+        let playingPlayer = this.players.filter(p => {
+            if (p != null && p.isJoinedGame) { return p }
+        })
+        let data = playingPlayer.map(p => {
+            return {
+                id: p.idGame,
+                name: p.name,
+                skinId: p.skinId,
+                itemId: p.currentItem.info.id,
+                hat: p.equippedHat == null ? "" : p.equippedHat.id,
+                acc: p.equippedAccessory == null ? "" : p.equippedAccessory.id,
+                hp: p.getHealthPointData(),
+                pos: {
+                    x: p.position.x,
+                    y: p.position.y,
+                },
             }
-        });
+        })
         return data;
     }
     getNpcInfo() {
-        let data = [];
-        this.npcs.forEach((n) => {
-            if (n != null && n.isJoined) {
-                data.push({
-                    id: n.id,
-                    skinId: n.skinId,
-                    hp: n.getHpPercent(),
-                    pos: {
-                        x: n.position.x,
-                        y: n.position.y,
-                    },
-                    rot: n.lookAngle,
-                });
+        let joinedNpc = this.npcs.filter(n => {
+            if (n != null && n.isJoined) { return n }
+        })
+        let data = joinedNpc.map(n => {
+            return {
+                id: n.id,
+                skinId: n.skinId,
+                hp: n.getHpPercent(),
+                pos: {
+                    x: n.position.x,
+                    y: n.position.y,
+                },
+                rot: n.lookAngle,
             }
-        });
+        })
         return data;
     }
     getStructuresInfo() {
-        let data = [];
-        this.structures.forEach((item) => {
-            data.push({
+        let data = this.structures.map(item => {
+            return {
                 id: item.id,
                 itemId: item.itemId,
                 pos: {
@@ -544,19 +565,18 @@ class Game {
                     y: item.position.y,
                 },
                 rot: item.rotation,
-            });
-        });
+            }
+        })
         return data;
     }
     getResourceInfo() {
-        let data = [];
-        this.resources.forEach((r) => {
-            data.push({
+        let data = this.resources.map(r => {
+            return {
                 id: r.id,
                 type: r.idType,
                 pos: r.position,
-            });
-        });
+            }
+        })
         return data;
     }
     /* #endregion */
@@ -625,6 +645,14 @@ class Game {
         });
         return viewObjects;
     }
+    getStructureInScreenView(center, screenSize) {
+        let viewObjects = this.structures.filter(s => {
+            if (this.checkIfPositionIsInScreenView(s.position, center, screenSize))
+                return s
+        })
+        return viewObjects
+
+    }
     getStructureFromView(position) {
         let viewObjects = [];
         let temp = new Vector(0, 0);
@@ -692,12 +720,16 @@ class Game {
 
     }
     playerReflectAttack(idFrom, idTarget, damageReflect, forceReflect) {
-        this.players[idTarget].takeDamage(damageReflect,
-            (id) => this.playerDieCallback(idFrom, id),
-            (damageReflect, forceReflect) => { })
-        let targetPosition = this.players[idTarget].position.clone()
-        let originPosition = this.players[idFrom].position.clone()
-        this.pushPlayerBack(this.players[idTarget], targetPosition.sub(originPosition), forceReflect)
+        if (damageReflect != 0) {
+            this.players[idTarget].takeDamage(damageReflect,
+                (id) => this.playerDieCallback(idFrom, id),
+                (damageReflect, forceReflect) => { })
+        }
+        if (forceReflect != 0) {
+            let targetPosition = this.players[idTarget].position.clone()
+            let originPosition = this.players[idFrom].position.clone()
+            this.pushPlayerBack(this.players[idTarget], targetPosition.sub(originPosition), forceReflect)
+        }
     }
     playerReflectAttackToNpc(idFrom, idTarget, damageReflect, forceReflect) {
         this.npcs[idTarget].onBeingHit(this.players[idFrom], damageReflect);
@@ -1030,10 +1062,12 @@ class Game {
             id: player.idGame,
             name: player.name,
             skinId: player.skinId,
+            hp: player.getHealthPointData(),
             pos: {
                 x: player.position.x,
                 y: player.position.y,
             },
+            rot: player.lookDirect
         });
     }
     onPlayerQuit(data) {

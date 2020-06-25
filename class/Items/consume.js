@@ -4,20 +4,10 @@ class Consume {
         this.info = info
     }
     use(player, direct) {
-        if (player.healthPoint >= 100) {
+        if (player.currentHealthPoint >= 1) {
             return false
         }
-        player.healthPoint += this.info.restore
-        if (player.healthPoint > 100) {
-            player.healthPoint = 100
-        }
-
-        player.game.broadcast(gamecode.playerHit, {
-            data: [{
-                id: player.idGame,
-                hp: player.healthPoint
-            }]
-        })
+        player.takeHP(this.info.restore)
         return true
     }
 }

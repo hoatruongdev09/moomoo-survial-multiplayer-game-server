@@ -15,7 +15,8 @@ const ResourceManager = require('../Player/resourcesManager')
 const StructueManager = require('../Player/structureManager')
 const LevelManager = require('../Player/levelManager')
 
-const Mathf = require('mathf')
+const Mathf = require('mathf');
+const { response } = require('express');
 
 class GameState extends BaseState {
     constructor(user, stateManager) {
@@ -56,6 +57,8 @@ class GameState extends BaseState {
         this.clearAutoAttackInterval()
         this.resetPlayerAttributes()
         this.user.resetEffects()
+        this.user.resetAccessoryHat()
+        this.user.basicResources.reset()
     }
     registerEvents() {
         this.socket.on(GameCode.syncLookDirect, (data) => this.syncLookDirect(data))
@@ -101,7 +104,7 @@ class GameState extends BaseState {
         this.user.position = data.position
         this.user.lookDirect = data.lookDirect
 
-        this.user.healthPoint = 100
+        this.user.healthPoint = this.user.maxHealthPoint
         this.user.kills = 0
         this.user.scores = 0
         this.user.levelInfo.reset()
@@ -128,7 +131,7 @@ class GameState extends BaseState {
     resetPlayerAttributes() {
         this.user.moveSpeed = null
         this.user.lookDirect = null
-
+        this.user.maxHealthPoint = 100
         this.playersView = []
         this.npcView = []
         this.resourcesView = []
@@ -151,7 +154,9 @@ class GameState extends BaseState {
         // console.log("modifier: ", (this.platformStanding == false ? this.speedModifier * this.environmentSpeedModifier : 1))
 
         this.updateBodyCollider()
-
+        // if (this.user.turretHat != null) {
+        //     this.user.turretHat.pos
+        // }
         this.checkCollider();
     }
     old_movePlayer(direct, deltaTime) {
@@ -244,13 +249,14 @@ class GameState extends BaseState {
 
 
     updateStatus() {
+        let currentLevel = this.user.levelInfo.level >= LevelDescription.length ? LevelDescription.length - 1 : this.user.levelInfo.level
         this.user.send(TransmitCode.GameCode.playerStatus, {
             scores: this.user.scores,
             kills: this.user.kills,
             level: this.user.levelInfo.level,
             xp:
                 this.user.levelInfo.xp /
-                LevelDescription[this.user.levelInfo.level].nextLevelUpXp,
+                LevelDescription[currentLevel].nextLevelUpXp,
             wood: this.user.basicResources.Wood,
             food: this.user.basicResources.Food,
             stone: this.user.basicResources.Stone,
@@ -380,7 +386,7 @@ class GameState extends BaseState {
         })
     }
     removeResource(cost) {
-        console.log("current item: ", this.user.currentItem)
+        // console.log("current item: ", this.user.currentItem)
         let costModifier = 1
         if (this.user.currentItem.toString() == "Ranged") {
             costModifier = this.user.projectileCostModifier
@@ -671,10 +677,10 @@ class GameState extends BaseState {
     /* #region  LEVEL UP & UPGRADE */
     addXP(value) {
         this.user.levelInfo.xp += value;
+        console.log("level info: ", this.user.levelInfo)
         let currentLv = this.user.levelInfo.level;
-        if (this.user.levelInfo.level + 1 >= LevelDescription.length) {
-            currentLv = LevelDescription.length;
-            return;
+        if (currentLv >= LevelDescription.length) {
+            currentLv = LevelDescription.length - 1;
         }
         if (this.user.levelInfo.xp >= LevelDescription[currentLv].nextLevelUpXp) {
             this.user.levelInfo.level++;
@@ -696,6 +702,8 @@ class GameState extends BaseState {
                 lvUpItem.push(i.id);
             }
         });
+        this.user.maxHealthPoint *= 1.2
+        this.user.healthPoint *= 1.2
         this.user.send(GameCode.upgradeItem, {
             items: lvUpItem,
         });
@@ -771,11 +779,8 @@ class GameState extends BaseState {
         if (data[0] == "hp") {
             let value = Number(cheatInfos[0])
             if (!isNaN(value) && isFinite(value)) {
-                this.user.healthPoint = Mathf.clamp(value, 1, 100)
-                this.game.onPlayerGetHit({
-                    id: this.user.idGame,
-                    hp: this.user.healthPoint
-                })
+                this.user.healthPoint = Mathf.clamp(value, 1, this.user.maxHealthPoint)
+                this.game.onPlayerGetHit(this.user.getHealthPointData())
             } else {
                 return false
             }
