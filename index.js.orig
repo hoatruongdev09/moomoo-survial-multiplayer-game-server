@@ -1,0 +1,86 @@
+const Server = require('./class/server')
+const ServerConfig = require('./class/serverconfig')
+
+const path = require('path')
+
+const serverList = require('./class/serverList')
+
+
+
+
+
+const express = require('express')
+
+
+const app = express()
+const web = require('http').Server(app)
+const PORT = process.env.PORT || 8080
+
+<<<<<<< HEAD
+=======
+const updateServerPasssword = "Dg;=8&gPZ%^e5q%"
+
+var serverList = {
+    local: `${getLocalhostIP()}:8080`,
+    asia: "",
+    us: "moomoo-server.herokuapp.com",
+}
+>>>>>>> aws
+
+app.use(express.static(path.join(__dirname, 'Game')));
+
+let listener = web.listen(PORT)
+
+app.get('/', (req, res) => {
+    res.status(200).send("OK")
+})
+app.get('/server_list', (req, res) => {
+    res.status(200).send(serverList.serverList)
+})
+app.get('/update_server', (req, res) => {
+    serverList.updateServer(req, res);
+})
+console.log("express run on: ", listener.address().port)
+
+<<<<<<< HEAD
+serverList.getServerList();
+=======
+jsonfile.readFile(serverListFile)
+    .then(obj => {
+        serverList = obj
+        console.log(`serverList ${serverList}`)
+    })
+    .catch(error => console.error("No server list file found. Use default"))
+
+
+function getLocalhostIP() {
+    let ip = require('ip')
+    return ip.address()
+}
+async function updateIpAdressOnMainServer() {
+    console.log(`pulic ip: ${await publicIp.v4()}`)
+    let ip = await publicIp.v4()
+    let query = {
+        serverId: 'asia',
+        serverAddress: ip
+    }
+    console.log(query);
+
+    axios.get('http://moomoo-server.herokuapp.com/update_server', {
+        params: {
+            serverId: 'asia',
+            serverAddress: ip,
+            password: "Dg;=8&gPZ%^e5q%"
+        }
+    }).then(() => {
+
+    }).catch((error) => {
+        // console.log("error send update server ", error.response);
+
+    })
+}
+
+updateIpAdressOnMainServer()
+>>>>>>> aws
+
+let server = new Server(ServerConfig, web)
