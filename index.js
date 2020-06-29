@@ -4,10 +4,7 @@ const ServerConfig = require('./class/serverconfig')
 const path = require('path')
 
 const serverList = require('./class/serverList')
-
-
-
-
+const clientInfo = require('./class/clientInfo');
 
 const express = require('express')
 
@@ -29,6 +26,9 @@ app.get('/server_list', (req, res) => {
 })
 app.get('/update_server', (req, res) => {
     serverList.updateServer(req, res);
+})
+app.get('/client_version', (req, res) => {
+    clientInfo.clientVersion(req, res);
 })
 console.log("express run on: ", listener.address().port)
 
