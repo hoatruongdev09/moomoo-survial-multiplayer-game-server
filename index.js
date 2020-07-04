@@ -32,6 +32,7 @@ app.get('/client_version', (req, res) => {
 })
 console.log("express run on: ", listener.address().port)
 
-serverList.getServerList();
+// serverList.getServerList(); // only get server list if on main server (heroku)
+serverList.updateIpAdressOnMainServer() // Only update current server ip on not main server
 
 let server = new Server(ServerConfig, web)
