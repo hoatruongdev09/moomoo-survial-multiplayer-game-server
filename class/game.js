@@ -16,6 +16,7 @@ const HatInfo = require("./Shop/Hats");
 const ClanManager = require("./ClanManager/clanManager");
 
 const NPC = require("./NPCs/newNPC");
+const { ClanCode } = require("../transmitcode");
 class Game {
     constructor(id, server, gameConfig, name) {
         this.name = name;
@@ -36,6 +37,7 @@ class Game {
         this.projectileCount = 0;
         this.structuresCount = 0;
 
+        this.currentFPS = 0;
         this.map = new Map(
             this.gameConfig.mapsize,
             {
@@ -58,17 +60,26 @@ class Game {
         this.broadcastStructurePosition()
         this.updatePositionProjectile(deltaTime);
         this.clanManager.update(deltaTime)
+        this.calculateFPS(deltaTime)
+    }
+    calculateFPS(deltaTime) {
+        this.currentFPS = 1.0 / deltaTime
     }
     /* #region  CLAN MANAGER */
+    onClanCreated(success) {
+        if (!success) {
+            return
+        }
 
+    }
     createClan(name, player) {
-        this.clanManager.createClan(name, player);
+        return this.clanManager.createClan(name, player);
     }
     removeClan(clanId) {
-        this.clanManager.removeClan(clanId)
+        return this.clanManager.removeClan(clanId)
     }
     kickMember(memberId, clanId) {
-        this.clanManager.kickMember(memberId, clanId)
+        return this.clanManager.kickMember(memberId, clanId)
     }
     checkIsMasterOfClan(memberId, clanId) {
         return this.clanManager.checkIsMasterOfClan(memberId, clanId)

@@ -12,7 +12,7 @@ const Item = require("./Items/item");
 const levelDescription = require("./levelInfo");
 
 const ResourceManager = require('./Player/resourcesManager')
-const StructueManager = require('./Player/structureManager')
+const StructureManager = require('./Player/structureManager')
 const LevelManager = require('./Player/levelManager')
 class Player {
     constructor(idServer, server, socket) {
@@ -86,7 +86,7 @@ class Player {
         this.platformStanding = false;
         // STRUCTURES
         this.spawnPad = null
-        this.structures = new StructueManager()
+        this.structures = new StructureManager()
         // OWNED HATS & ACCESSORIES
         this.ownedHat = [];
         this.ownedAccessories = [];
@@ -194,7 +194,7 @@ class Player {
                 this.currentItem,
                 r,
                 (response, objectCollide) =>
-                this.onHitResource(response, objectCollide, r)
+                    this.onHitResource(response, objectCollide, r)
             );
         }
     }
@@ -204,7 +204,7 @@ class Player {
                 this.currentItem,
                 s,
                 (response, objectCollide) =>
-                this.onHitStructure(response, objectCollide, s)
+                    this.onHitStructure(response, objectCollide, s)
             );
         }
     }
@@ -227,7 +227,7 @@ class Player {
                 this.currentItem,
                 p,
                 (response, objectCollide) =>
-                this.onHitPlayer(response, objectCollide, p)
+                    this.onHitPlayer(response, objectCollide, p)
             );
         }
     }

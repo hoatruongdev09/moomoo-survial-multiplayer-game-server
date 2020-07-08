@@ -1,11 +1,12 @@
+const performance = require('perf_hooks').performance
 class Time {
     constructor() {
-        this.lastRun = Date.now()
+        this.lastRun = performance.now()
         this.deltaTime = 0
         this.update()
     }
     update() {
-        let now = Date.now()
+        let now = performance.now()
         this.deltaTime = (now - this.lastRun) / 1000
         this.lastRun = now
     }
