@@ -6,59 +6,152 @@ const ServerCode = TransmitCode.ServerCode
 const Clan = require('./clan')
 class ClanManager {
     constructor(game) {
+        this.game = game
         this.clans = []
-        this.clanID = 0
+        this.clansCount = 0
     }
     update(deltaTime) {
-
+        this.clans.forEach(clan => {
+            clan.update(deltaTime)
+        })
     }
-    createClan(clanMaster, clanName, createCallback) {
-        let id = this.clanID++
-        let clan = new Clan(id, clanName, clanMaster)
+    generateClanId() {
+        return this.clansCount++
+    }
+
+    checkIsMasterOfClan(idMember, idClan) {
+        let clan = this.findClanById(idClan)
+        if (clan == null) {
+            return false
+        }
+        return clan.master.idGame == idMember
+    }
+    findClanById(id) {
+        for (let i = 0; i < this.clans.length; i++) {
+            if (this.clans[i].id == id) {
+                return this.clans[i]
+            }
+        }
+        return null
+    }
+    checkIfClanHaveSameName(name) {
+        for (let i = 0; i < this.clans.length; i++) {
+            if (this.clans[i].name == name) {
+                return true
+            }
+        }
+        return false
+    }
+    createClan(name, master) {
+        if (this.checkIfClanHaveSameName(name)) {
+            master.send(ServerCode.Error, {
+                reason: "Clan name existed"
+            })
+            return
+        }
+        let id = this.generateClanId()
+        let clan = new Clan(id, name, master)
+        console.log(`create clan: ${id} | ${master.clanId}`)
         this.clans.push(clan)
-        createCallback()
+        this.broadcast(ClanCode.createClan, {
+            id: clan.id,
+            name: clan.name
+        })
+        this.broadcast(ClanCode.joinClan, {
+            id: master.idGame,
+            idClan: id,
+            role: 1
+        })
     }
-    removeClan(clanID) {
-        let clan = this.getClanByID(clanID)
+    kickMember(id, clanId) {
+        let clan = this.findClanById(clanId)
         if (clan != null) {
-            this.clans = this.clans.filter(clan => clan.id != clanID)
-            return true
+            clan.kickMember(id)
+            this.broadcast(ClanCode.kickMember, {
+                id: [id]
+            })
         }
-        return false
     }
-    kickMember(memberID, clanID) {
-        let clan = this.getClanByID(clanID)
+    addRequestJoin(player, idClan) {
+        let clan = this.findClanById(idClan)
         if (clan != null) {
-            if (!clan.checkMemberIsMasterByID(memberID)) { return false }
-            return clan.removeMemberByID(memberID)
+            clan.addRequestJoin(player)
         }
-        return false
+    }
+    respondRequestJoin(idMember, idClan, action) {
+        let clan = this.findClanById(idClan)
+        if (clan != null) {
+            if (action) {
+                console.log("accept request");
+                let member = clan.getJoinRequest(idMember)
+                if (member != null) {
+                    console.log("member: ", member.idGame)
+                    this.addMember(member, idClan)
+                }
+            } else {
+                console.log("deny request")
+            }
+            clan.removeJoinRequest(idMember)
+        }
+    }
+    addMember(member, clanId) {
+        let clan = this.findClanById(clanId)
+        if (clan != null) {
+            clan.addMember(member)
+            this.broadcast(ClanCode.joinClan, {
+                id: member.idGame,
+                idClan: clanId,
+                role: 0
+            })
+        }
+    }
+    removeClan(clanId) {
+        for (let i = 0; i < this.clans.length; i++) {
+            if (this.clans[i].id == clanId) {
+                let kickData = []
+                this.clans[i].getAllMember().forEach(m => {
+                    kickData.push(m.id)
+                })
+                if (kickData.length != 0) {
+                    this.broadcast(ClanCode.kickMember, {
+                        id: kickData
+                    })
+                }
+                this.broadcast(ClanCode.removeClan, {
+                    id: clanId
+                })
+                this.clans[i].onRemove()
+                this.clans.splice(i, 1);
+                break
+            }
+        }
     }
 
-    checkClanExisted(ID) {
-        let clan = this.getClanByID(ID)
-        return clan != null
-    }
-    getClanByID(ID) {
-        let clan = this.clans.find(c => c.id == id)
-        return clan
-    }
-    getClansInfo() {
-        let data = this.clans.map(clan => {
-            return {
+    getClanData() {
+        let data = []
+        this.clans.forEach(clan => {
+            data.push({
                 id: clan.id,
                 name: clan.name,
-                masterName: clan.master.name
-            }
+            })
         })
         return data
     }
-    requestJoin(member, clanID) {
-        let clan = this.getClanByID(clanID)
-        if (clan == null) { return false }
-        if (!clan.canRequestJoin(member.idGame)) { return false }
-        clan.requestJoin(member)
-        return true
+    getClansMemberData() {
+        let data = []
+        this.clans.forEach(clan => {
+            clan.getAllMember().forEach(member => {
+                data.push({
+                    id: member.id,
+                    idClan: member.idClan,
+                    role: member.role
+                })
+            })
+        })
+        return data
+    }
+    broadcast(event, args) {
+        this.game.broadcast(event, args)
     }
 
 }

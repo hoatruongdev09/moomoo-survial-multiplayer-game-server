@@ -17,10 +17,10 @@ const LevelManager = require('./Player/levelManager')
 class Player {
     constructor(idServer, server, socket) {
         /* #region SERVER IDENTITIES  */
+
         this.idServer = idServer;
         this.server = server;
         this.socket = socket;
-        this.id = socket.id
         /* #endregion */
 
         /* #region  CLIENT PROPERTIES */
@@ -82,7 +82,7 @@ class Player {
         this.basicResources = new ResourceManager()
         // EFFECT
         this.speedModifier = 1;
-        this.environmentSpeedModifier = 1;
+        this.inviromentSpeedModifier = 1;
         this.platformStanding = false;
         // STRUCTURES
         this.spawnPad = null
@@ -112,11 +112,17 @@ class Player {
         this.socket.on(GameCode.scoreBoard, () => this.sendScore());
         this.socket.on(GameCode.shopSelectItem, (data) => this.chooseItem(data));
 
+<<<<<<< HEAD
+        this.socket.on(ClanCode.createClan, (data) => this.createClan(data))
+        this.socket.on(ClanCode.kickMember, (data) => this.kickMember(data))
+        this.socket.on(ClanCode.joinClan, (data) => this.requestJoinClan(data))
+        this.socket.on(ClanCode.requestJoin, (data) => this.responRequestJoinClan(data))
+=======
         this.socket.on(ClanCode.createClan, (data) => this.createClan(data));
         this.socket.on(ClanCode.kickMember, (data) => this.kickMember(data));
         this.socket.on(ClanCode.joinClan, (data) => this.requestJoinClan(data));
         this.socket.on(ClanCode.requestJoin, (data) => this.responRequestJoinClan(data));
-
+>>>>>>> 039481e08137b94f02ed72874c15cd18f22260b3
     }
 
     update(deltaTime) {
@@ -173,7 +179,7 @@ class Player {
     checkColliderWithResources() {
         this.resourcesView = this.game.getResourceFromView(this.position);
         for (const r of this.resourcesView) {
-            this.game.testCollisionCircle2Circle(this, r, (response, objectCollide) =>
+            this.game.testCollisionCircle2Cirle(this, r, (response, objectCollide) =>
                 this.onCollisionWithResource(response, objectCollide)
             );
         }
@@ -182,7 +188,7 @@ class Player {
     checkColliderWithStructures() {
         this.structuresView = this.game.getStructureFromView(this.position);
         for (const s of this.structuresView) {
-            this.game.testCollisionCircle2Circle(this, s, (response, objectCollide) =>
+            this.game.testCollisionCircle2Cirle(this, s, (response, objectCollide) =>
                 this.onCollisionWithStructures(response, objectCollide, s)
             );
         }
@@ -190,7 +196,7 @@ class Player {
     checkAttackToResource() {
         this.resourcesView = this.game.getResourceFromView(this.position);
         for (const r of this.resourcesView) {
-            this.game.testCollisionPolygon2Circle(
+            this.game.testCollisionPoligon2Cirle(
                 this.currentItem,
                 r,
                 (response, objectCollide) =>
@@ -200,7 +206,7 @@ class Player {
     }
     checkAttackToStructure() {
         for (const s of this.structuresView) {
-            this.game.testCollisionCircle2Circle(
+            this.game.testCollisionCircle2Cirle(
                 this.currentItem,
                 s,
                 (response, objectCollide) =>
@@ -223,7 +229,7 @@ class Player {
         this.playersView = this.game.getPlayersFromView(this.position);
         // console.log("player view: ", this.playersView);
         for (const p of this.playersView) {
-            this.game.testCollisionPolygon2Circle(
+            this.game.testCollisionPoligon2Cirle(
                 this.currentItem,
                 p,
                 (response, objectCollide) =>
@@ -234,7 +240,7 @@ class Player {
     checkAttackToNpc() {
         this.npcView = this.game.getNpcFromView(this.position);
         for (const n of this.npcView) {
-            this.game.testCollisionPolygon2Circle(this.currentItem, n, (response, objectCollide) => this.onHitNpc(response, objectCollide, n));
+            this.game.testCollisionPoligon2Cirle(this.currentItem, n, (response, objectCollide) => this.onHitNpc(response, objectCollide, n));
         }
     }
     onHitNpc(response, object, objectInfo) {
@@ -347,7 +353,7 @@ class Player {
 
         this.structures.reset();
         if (this.bodyCollider == null) {
-            this.bodyCollider = new SAT.Circle(new SAT.Vector(this.position.x, this.position.y), data.bodyRadius);
+            this.bodyCollider = new SAT.Circle(new SAT.Vector(this.position.x, this.position.syncLookDirect), data.bodyRadius);
         } else {
             this.bodyCollider.pos.x = this.position.x;
             this.bodyCollider.pos.y = this.position.y;
@@ -369,8 +375,8 @@ class Player {
             Math.sin(this.lastMovement)
         );
 
-        this.position.add(this.moveDirect.clone().scale(this.moveSpeed * (!this.platformStanding ? this.speedModifier * this.environmentSpeedModifier : 1) * deltaTime));
-        // console.log("modifier: ", (this.platformStanding == false ? this.speedModifier * this.environmentSpeedModifier : 1))
+        this.position.add(this.moveDirect.clone().scale(this.moveSpeed * (!this.platformStanding ? this.speedModifier * this.inviromentSpeedModifier : 1) * deltaTime));
+        // console.log("modifier: ", (this.platformStanding == false ? this.speedModifier * this.inviromentSpeedModifier : 1))
 
         this.bodyCollider.pos.x = this.position.x;
         this.bodyCollider.pos.y = this.position.y;

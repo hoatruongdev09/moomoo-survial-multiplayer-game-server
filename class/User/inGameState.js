@@ -641,14 +641,24 @@ class GameState extends BaseState {
         if (this.user.clanId == null) {
             return;
         }
-        this.game.kickMember(this.user.idGame, this.user.clanId)
+        if (this.game.checkIsMasterOfClan(this.user.idGame, this.user.clanId)) {
+            if (data.id == this.user.idGame) {
+                this.game.removeClan(this.user.clanId);
+            } else {
+                this.game.kickMember(data.id, this.user.clanId);
+            }
+        } else {
+            if (data.id == this.user.idGame) {
+                this.game.kickMember(data.id, this.user.clanId);
+            }
+        }
     }
     requestJoinClan(data) {
         console.log("request join clan: ", data, " this.clanId: ", this.clanId);
         if (this.user.clanId != null) {
             return;
         }
-        this.game.clanManager.requestJoin(this, data.id)
+        this.game.clanManager.addRequestJoin(this.user, data.id);
         // this.game.clanManager.addMember(this, data.id)
     }
     respondRequestJoinClan(data) {
@@ -667,6 +677,7 @@ class GameState extends BaseState {
     /* #region  LEVEL UP & UPGRADE */
     addXP(value) {
         this.user.levelInfo.xp += value;
+        console.log("level info: ", this.user.levelInfo)
         let currentLv = this.user.levelInfo.level;
         if (currentLv >= LevelDescription.length) {
             currentLv = LevelDescription.length - 1;

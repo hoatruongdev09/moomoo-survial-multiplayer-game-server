@@ -176,6 +176,7 @@ class User {
 
     }
     takeDamage(damage, dieCallback, reflect) {
+        console.log("take damage")
         let damageTaking = damage * (1 - this.damageTakenModifier)
         this.healthPoint -= damageTaking
         reflect(damageTaking * this.damageReflect, this.forceReflect)
@@ -311,7 +312,7 @@ class User {
         this.server.removePlayer(this)
     }
     onPing() {
-        this.send(TransmitCode.ServerCode.OnPing, { fps: this.game == null ? 0 : this.game.currentFPS })
+        this.send(TransmitCode.ServerCode.OnPing, null)
     }
     wearTurret() {
         console.log("wear turret")
