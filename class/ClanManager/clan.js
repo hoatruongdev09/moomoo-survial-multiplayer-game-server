@@ -15,6 +15,24 @@ class Clan {
     update(deltaTime) {
 
     }
+    syncClanMemberPosition() {
+        let data = this.member.map(mem => {
+            return {
+                id: mem.idGame,
+                pos: mem.position
+            }
+        })
+        data.push({
+            id: this.master.idGame,
+            pos: this.master.position
+        })
+        this.sendPositionData(data)
+    }
+    sendPositionData(data) {
+        this.broadcast(ClanCode.syncMemberPosition, {
+            pos: data
+        })
+    }
     checkExistedMember(id) {
         let trueMember = this.getAllMember()
         for (let i = 0; i < trueMember.length; i++) {
@@ -68,18 +86,17 @@ class Clan {
         this.member.push(newMember)
     }
     getAllMember() {
-        let data = []
+        let data = this.member.map(mem => {
+            return {
+                id: mem.idGame,
+                idClan: this.id,
+                role: 0
+            }
+        })
         data.push({
             id: this.master.idGame,
             idClan: this.id,
             role: 1
-        })
-        this.member.forEach(m => {
-            data.push({
-                id: m.idGame,
-                idClan: this.id,
-                role: 0
-            })
         })
         return data
     }
@@ -93,7 +110,8 @@ class Clan {
         this.master.send(event, args)
     }
     broadcast(event, args) {
-        let members = this.member
+        let members = []
+        members.push(...this.member)
         members.push(this.master)
         members.forEach(m => {
             if (m != null) {

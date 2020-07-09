@@ -51,6 +51,7 @@ const clanCode = {
     kickMember: "c4",
     member: "c5",
     listClan: "c6",
+    syncMemberPosition: "c7"
 }
 module.exports = {
     ServerCode: servercode,

@@ -44,9 +44,10 @@ class GameState extends BaseState {
 
         this.isAutoAttack = false
         this.intervalAutoAttack = null
-
+        this.user.lastMovement = null
         this.prepareEnterGame(options.gameData)
         this.registerEvents()
+        // console.log(`enter: ${this.user.lastMovement}`)
     }
     update(deltaTime) {
         this.updatePosition(deltaTime)
@@ -71,10 +72,10 @@ class GameState extends BaseState {
         this.socket.on(GameCode.scoreBoard, () => this.sendScore())
         this.socket.on(GameCode.shopSelectItem, (data) => this.chooseItem(data))
 
-        // this.socket.on(ClanCode.createClan, (data) => this.createClan(data))
-        // this.socket.on(ClanCode.kickMember, (data) => this.kickMember(data))
-        // this.socket.on(ClanCode.joinClan, (data) => this.requestJoinClan(data))
-        // this.socket.on(ClanCode.requestJoin, (data) => this.respondRequestJoinClan(data))
+        this.socket.on(ClanCode.createClan, (data) => this.createClan(data))
+        this.socket.on(ClanCode.kickMember, (data) => this.kickMember(data))
+        this.socket.on(ClanCode.joinClan, (data) => this.requestJoinClan(data))
+        this.socket.on(ClanCode.requestJoin, (data) => this.respondRequestJoinClan(data))
     }
     removeEvents() {
         this.socket.off(GameCode.syncLookDirect, (data) => this.syncLookDirect(data))
@@ -635,6 +636,7 @@ class GameState extends BaseState {
     /* #endregion */
     /* #region  CLAN JOBS */
     createClan(data) {
+        console.log("create clan: ", data)
         this.game.createClan(data.name, this.user);
     }
     kickMember(data) {

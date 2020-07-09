@@ -1057,9 +1057,11 @@ class Game {
     /* #endregion */
     /* #region  GAME EVENTS */
     onNewPlayerJoin(player) {
+        // console.log(`player join: ${player.lastMovement} ${player.lastLook}`)
         this.broadcast(gamecode.spawnPlayer, {
             clientId: player.id,
             id: player.idGame,
+            clanId: player.clanId == null ? -1 : player.clanId,
             name: player.name,
             skinId: player.skinId,
             hp: player.getHealthPointData(),

@@ -2,18 +2,24 @@ const TransmitCode = require('../../transmitcode')
 const GameCode = TransmitCode.GameCode
 const ClanCode = TransmitCode.ClanCode
 const ServerCode = TransmitCode.ServerCode
-
+const performance = require('perf_hooks').performance
 const Clan = require('./clan')
 class ClanManager {
     constructor(game) {
         this.game = game
         this.clans = []
         this.clansCount = 0
+        this.updateInterval = 0.5
+        this.currentUpdateCount = 0
     }
     update(deltaTime) {
-        this.clans.forEach(clan => {
-            clan.update(deltaTime)
-        })
+        this.currentUpdateCount += deltaTime
+        if (this.currentUpdateCount >= this.updateInterval) {
+            this.currentUpdateCount = 0
+            this.clans.forEach(clan => {
+                clan.syncClanMemberPosition()
+            })
+        }
     }
     generateClanId() {
         return this.clansCount++
