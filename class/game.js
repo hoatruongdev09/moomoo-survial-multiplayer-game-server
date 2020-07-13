@@ -740,6 +740,7 @@ class Game {
         );
     }
     bonusKillForPlayer(idPlayer, idTarget) {
+        console.log(`player: ${idPlayer}: `, this.players[idPlayer])
         let bonusModifier = this.players[idPlayer].killBonusGold
         let bonusGold = 0
         if (this.players[idPlayer].wearThiefGear) {
@@ -762,7 +763,9 @@ class Game {
         setTimeout(() => {
             npc.isJoined = true;
             npc.reset();
-            npc.position = this.getRandomPosition();
+            let randomPosition = this.getRandomPosition();
+            npc.position.x = randomPosition.x
+            npc.position.y = randomPosition.y
             this.onCreateNpc({
                 id: npc.id,
                 skinId: npc.skinId,
@@ -792,6 +795,7 @@ class Game {
         if (this.checkBothPlayerAreInClan(this.players[idFrom], this.players[idTarget])) {
             return
         }
+        console.log(`player structure take damage ${idFrom} ${idTarget}`)
         this.players[idTarget].takeDamage(damage,
             (id) => this.playerDieCallback(idFrom, id),
             (damageReflect, forceReflect) => { })
@@ -831,7 +835,7 @@ class Game {
         if (structure.toString() == "Spike") {
             structure.interact(this.players[idFrom], (action) => {
                 if (action) {
-                    this.playerStructureHitPlayer(idStructure.userId, idFrom, structure.damage);
+                    this.playerStructureHitPlayer(structure.userId, idFrom, structure.damage);
                     this.pushPlayerBack(this.players[idFrom], this.players[idFrom].position.clone().sub(structure.position), 5);
                 }
             })

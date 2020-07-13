@@ -52,7 +52,12 @@ class NPC {
         this.bodyCollider = new SAT.Circle(this.position, this.size)
     }
     reset() {
+        this.isJoined = true
+        this.isTrapped = false
         this.healthPoint = this.maxHp
+        this.bodyCollider.pos.x = this.position.x
+        this.bodyCollider.pos.y = this.position.y
+        this.stateManager.changeState(this.standState)
     }
     update(deltaTime) {
         if (this.isJoined && !this.isTrapped) {
