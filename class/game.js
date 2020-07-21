@@ -84,21 +84,18 @@ class Game {
     }
     initializeResources() {
         this.resources = new Array(this.gameConfig.resourceCount());
-        this.initializeResource(0, this.gameConfig.woodCount, ResourceType.Wood);
-        this.initializeResource(10, this.gameConfig.foodCount, ResourceType.Food);
-        this.initializeResource(20, this.gameConfig.rockCount, ResourceType.Stone);
-        this.initializeResource(30, this.gameConfig.goldCount, ResourceType.Gold);
-    }
-    initializeResource(startId, count, type) {
-        for (let i = startId; i < startId + count; i++) {
-            let rs = new Resource(
-                i,
-                type,
-                this.map.randomPosition(),
-                -1,
-                this.gameConfig.defaultResourceRadius
-            );
-            this.resources[i] = rs;
+        let index = 0
+        for (let i = 0; i < this.gameConfig.woodCount; i++, index++) {
+            this.resources[index] = new Resource(index, ResourceType.Wood, this.map.randomPosition(), -1, this.gameConfig.defaultResourceRadius)
+        }
+        for (let i = 0; i < this.gameConfig.foodCount; i++, index++) {
+            this.resources[index] = new Resource(index, ResourceType.Food, this.map.randomPosition(), -1, this.gameConfig.defaultResourceRadius)
+        }
+        for (let i = 0; i < this.gameConfig.rockCount; i++, index++) {
+            this.resources[index] = new Resource(index, ResourceType.Stone, this.map.randomPosition(), -1, this.gameConfig.defaultResourceRadius)
+        }
+        for (let i = 0; i < this.gameConfig.goldCount; i++, index++) {
+            this.resources[index] = new Resource(index, ResourceType.Gold, this.map.randomPosition(), -1, this.gameConfig.defaultResourceRadius)
         }
     }
     getNpcEvent() {
@@ -570,6 +567,7 @@ class Game {
         return data;
     }
     getResourceInfo() {
+        console.log("raw resource info: ", this.resources)
         let data = this.resources.map(r => {
             return {
                 id: r.id,
@@ -577,6 +575,7 @@ class Game {
                 pos: r.position,
             }
         })
+        console.log("maped resource info: ", data)
         return data;
     }
     /* #endregion */

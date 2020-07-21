@@ -32,7 +32,7 @@ class MenuState extends BaseState {
     }
     /* #region  EVENTS */
     onJoin(data) {
-        console.log("join game: ", data)
+        console.log("join game: ", data, ` time: ${new Date()}`)
         this.user.skinId = data.skinId
         this.user.name = data.name
         this.user.clientScreenSize.width = data.screenSizeX
