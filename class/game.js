@@ -565,7 +565,7 @@ class Game {
         return data;
     }
     getResourceInfo() {
-        console.log("raw resource info: ", this.resources)
+        // console.log("raw resource info: ", this.resources)
         let data = this.resources.map(r => {
             return {
                 id: r.id,
@@ -573,7 +573,7 @@ class Game {
                 pos: r.position,
             }
         })
-        console.log("maped resource info: ", data)
+        // console.log("maped resource info: ", data)
         return data;
     }
     /* #endregion */
