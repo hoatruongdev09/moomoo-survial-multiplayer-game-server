@@ -340,11 +340,9 @@ class Game {
                         rot: npc.lookAngle,
                     }
                 })
-                if (positionData.length != 0) {
-                    p.send(gamecode.syncNpcTransform, {
-                        pos: positionData,
-                    });
-                }
+                p.send(gamecode.syncNpcTransform, {
+                    pos: positionData,
+                });
             }
         })
     }
