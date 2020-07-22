@@ -687,6 +687,21 @@ class Game {
     }
     /* #endregion */
     /* #region   COLLISION CHECK*/
+    bulletHitNpc(idFrom, idTarget, damage) {
+        this.playerHitNpc(idFrom, idTarget, damage)
+        return true
+    }
+    bulletHitPlayer(idFrom, idTarget, damage) {
+        if (this.checkBothPlayerAreInClan(this.players[idFrom], this.players[idTarget])) {
+            return false
+        }
+        this.players[idTarget].takeDamage(damage,
+            (id) => this.playerDieCallback(idFrom, id),
+            (damageReflect, forceReflect) => this.playerReflectAttack(idTarget, idFrom, damageReflect, forceReflect))
+        this.players[idFrom].lifeStealing(damage)
+        this.players[idFrom].selfTakeDamage(damage, (id) => this.playerDieCallback(idFrom, id), (damageReflect, forceReflect) => { })
+        return true
+    }
     checkBothPlayerAreInClan(player1, player2) {
         if (player1 == null || player2 == null) { return false }
         if (!player1.isJoinedGame || !player2.isJoinedGame) { return false }
