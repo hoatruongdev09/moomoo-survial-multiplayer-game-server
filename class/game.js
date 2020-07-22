@@ -865,8 +865,8 @@ class Game {
         }
         structure.hitInteract(this.players[idPlayer], (idType) => {
             let key = this.getKeyByValue(ResourceType, idType)
-            this.players[idPlayer].receiveResource(weapon.info.gatherRate, key)
-            this.players[idPlayer].addXP(weapon.info.goldGatherRate)
+            this.players[idPlayer].receiveResource(gatherRate, key)
+            this.players[idPlayer].addXP(goldGatherRate)
         })
         if (this.checkBothPlayerAreInClan(this.players[idPlayer], this.players[structure.userId])) {
             return
