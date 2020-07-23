@@ -22,10 +22,13 @@ app.get('/', (req, res) => {
     res.status(200).send("OK")
 })
 app.get('/server_list', (req, res) => {
-    res.status(200).send(serverList.serverList)
+    // res.status(200).send(serverList.serverList)
+    res.status(200).send({
+        us: "moumou-server-test.herokuapp.com",
+    })
 })
 app.get('/update_server', (req, res) => {
-    serverList.updateServer(req, res);
+    // serverList.updateServer(req, res);
 })
 app.get('/client_version', (req, res) => {
     clientInfo.clientVersion(req, res);
