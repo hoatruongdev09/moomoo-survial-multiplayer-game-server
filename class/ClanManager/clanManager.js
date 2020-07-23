@@ -90,7 +90,7 @@ class ClanManager {
             if (action) {
                 console.log("accept request");
                 let member = clan.getJoinRequest(idMember)
-                if (member != null) {
+                if (member != null && member.clanId == null) {
                     console.log("member: ", member.idGame)
                     this.addMember(member, idClan)
                 }
