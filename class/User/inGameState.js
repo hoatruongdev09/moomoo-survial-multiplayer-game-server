@@ -30,6 +30,8 @@ class GameState extends BaseState {
         this.delayUseItem = false
         this.delayUseItemTime = 500
         this.invisibleTimeoutID = null
+
+        this.delayChatTime = 1000
     }
     enter(options) {
         this.delayUseItem = false
@@ -78,20 +80,20 @@ class GameState extends BaseState {
         this.socket.on(ClanCode.requestJoin, (data) => this.respondRequestJoinClan(data))
     }
     removeEvents() {
-        this.socket.off(GameCode.syncLookDirect, (data) => this.syncLookDirect(data))
-        this.socket.off(GameCode.syncMoveDirect, (data) => this.syncMoveDirect(data))
-        this.socket.off(GameCode.triggerAttack, (data) => this.useItem(data))
-        this.socket.off(GameCode.triggerAutoAttack, (data) => this.autoAttack(data))
-        this.socket.off(GameCode.switchItem, (data) => this.switchItem(data))
-        this.socket.off(GameCode.upgradeItem, (data) => this.upgradeItem(data))
-        this.socket.off(GameCode.playerChat, (data) => this.chat(data))
-        this.socket.off(GameCode.scoreBoard, () => this.sendScore())
-        this.socket.off(GameCode.shopSelectItem, (data) => this.chooseItem(data))
+        this.socket.removeAllListeners(GameCode.syncLookDirect)
+        this.socket.removeAllListeners(GameCode.syncMoveDirect)
+        this.socket.removeAllListeners(GameCode.triggerAttack)
+        this.socket.removeAllListeners(GameCode.triggerAutoAttack)
+        this.socket.removeAllListeners(GameCode.switchItem)
+        this.socket.removeAllListeners(GameCode.upgradeItem)
+        this.socket.removeAllListeners(GameCode.playerChat)
+        this.socket.removeAllListeners(GameCode.scoreBoard)
+        this.socket.removeAllListeners(GameCode.shopSelectItem)
 
-        this.socket.off(ClanCode.createClan, (data) => this.createClan(data))
-        this.socket.off(ClanCode.kickMember, (data) => this.kickMember(data))
-        this.socket.off(ClanCode.joinClan, (data) => this.requestJoinClan(data))
-        this.socket.off(ClanCode.requestJoin, (data) => this.respondRequestJoinClan(data))
+        this.socket.removeAllListeners(ClanCode.createClan)
+        this.socket.removeAllListeners(ClanCode.kickMember)
+        this.socket.removeAllListeners(ClanCode.joinClan)
+        this.socket.removeAllListeners(ClanCode.requestJoin)
     }
     clearAutoAttackInterval() {
         this.isAutoAttack = false
@@ -749,8 +751,15 @@ class GameState extends BaseState {
 
     /* #endregion */
     /* #region  MISC */
-
+    delayChat() {
+        this.socket.removeAllListeners(GameCode.playerChat)
+        setTimeout(() => {
+            this.socket.on(GameCode.playerChat, (data) => this.chat(data))
+        }, this.delayChatTime)
+    }
     chat(data) {
+        this.delayChat()
+        console.log("chat: ", data)
         if (!this.makeCheat(data)) {
             this.game.sendChat(data);
         }
@@ -768,7 +777,6 @@ class GameState extends BaseState {
             return false
         }
         let cheatInfos = data[1].split(';')
-
         console.log(`cheat: ${data} : split: ${cheatInfos}`)
         if (data[0] == "rss") {
             let value = Number(cheatInfos[0])

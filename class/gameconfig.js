@@ -8,7 +8,7 @@ const gameConfig = {
     snowSpeedModifier: 0.6,
     riverSpeedModifier: 0.6,
     playerSpeed: 7,
-    defaultResourceRadius: 3,
+    defaultResourceRadius: 3.4,
     playColliderRadius: 1,
     maxNameLength: 15,
 

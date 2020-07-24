@@ -51,13 +51,17 @@ class Game {
     }
 
     update(deltaTime) {
-        this.new_updatePlayer(deltaTime);
-        this.broadcastPlayerPosition();
-        this.new_updateNPC(deltaTime);
-        this.broadcastNpcPosition();
+        this.new_updatePlayer(deltaTime)
+        this.new_updateNPC(deltaTime)
+        this.updatePositionProjectile(deltaTime)
+        // this.clanManager.update(deltaTime)
+        this.lateUpdate(deltaTime)
+    }
+    lateUpdate(deltaTime) {
+        this.broadcastPlayerPosition()
         this.broadcastStructurePosition()
-        this.updatePositionProjectile(deltaTime);
-        this.clanManager.update(deltaTime)
+        this.broadcastNpcPosition()
+        this.syncMapData()
     }
     /* #region  CLAN MANAGER */
 
@@ -84,21 +88,18 @@ class Game {
     }
     initializeResources() {
         this.resources = new Array(this.gameConfig.resourceCount());
-        this.initializeResource(0, this.gameConfig.woodCount, ResourceType.Wood);
-        this.initializeResource(10, this.gameConfig.foodCount, ResourceType.Food);
-        this.initializeResource(20, this.gameConfig.rockCount, ResourceType.Stone);
-        this.initializeResource(30, this.gameConfig.goldCount, ResourceType.Gold);
-    }
-    initializeResource(startId, count, type) {
-        for (let i = startId; i < startId + count; i++) {
-            let rs = new Resource(
-                i,
-                type,
-                this.map.randomPosition(),
-                -1,
-                this.gameConfig.defaultResourceRadius
-            );
-            this.resources[i] = rs;
+        let index = 0
+        for (let i = 0; i < this.gameConfig.woodCount; i++, index++) {
+            this.resources[index] = new Resource(index, ResourceType.Wood, this.map.randomPosition(), -1, this.gameConfig.defaultResourceRadius)
+        }
+        for (let i = 0; i < this.gameConfig.foodCount; i++, index++) {
+            this.resources[index] = new Resource(index, ResourceType.Food, this.map.randomPosition(), -1, this.gameConfig.defaultResourceRadius)
+        }
+        for (let i = 0; i < this.gameConfig.rockCount; i++, index++) {
+            this.resources[index] = new Resource(index, ResourceType.Stone, this.map.randomPosition(), -1, this.gameConfig.defaultResourceRadius)
+        }
+        for (let i = 0; i < this.gameConfig.goldCount; i++, index++) {
+            this.resources[index] = new Resource(index, ResourceType.Gold, this.map.randomPosition(), -1, this.gameConfig.defaultResourceRadius)
         }
     }
     getNpcEvent() {
@@ -277,6 +278,16 @@ class Game {
             }
         });
     }
+    syncMapData() {
+        this.players.forEach(p => {
+            if (p != null && p.isJoinedGame) {
+                let miniMapInfo = p.getMiniMapPosition()
+                p.send(gamecode.miniMapData, {
+                    data: miniMapInfo
+                })
+            }
+        })
+    }
     broadcastPlayerPosition() {
         this.players.forEach(p => {
             if (p != null && p.isJoinedGame) {
@@ -343,11 +354,9 @@ class Game {
                         rot: npc.lookAngle,
                     }
                 })
-                if (positionData.length != 0) {
-                    p.send(gamecode.syncNpcTransform, {
-                        pos: positionData,
-                    });
-                }
+                p.send(gamecode.syncNpcTransform, {
+                    pos: positionData,
+                });
             }
         })
     }
@@ -570,6 +579,7 @@ class Game {
         return data;
     }
     getResourceInfo() {
+        // console.log("raw resource info: ", this.resources)
         let data = this.resources.map(r => {
             return {
                 id: r.id,
@@ -577,6 +587,7 @@ class Game {
                 pos: r.position,
             }
         })
+        // console.log("maped resource info: ", data)
         return data;
     }
     /* #endregion */
@@ -690,6 +701,21 @@ class Game {
     }
     /* #endregion */
     /* #region   COLLISION CHECK*/
+    bulletHitNpc(idFrom, idTarget, damage) {
+        this.playerHitNpc(idFrom, idTarget, damage)
+        return true
+    }
+    bulletHitPlayer(idFrom, idTarget, damage) {
+        if (this.checkBothPlayerAreInClan(this.players[idFrom], this.players[idTarget])) {
+            return false
+        }
+        this.players[idTarget].takeDamage(damage,
+            (id) => this.playerDieCallback(idFrom, id),
+            (damageReflect, forceReflect) => this.playerReflectAttack(idTarget, idFrom, damageReflect, forceReflect))
+        this.players[idFrom].lifeStealing(damage)
+        this.players[idFrom].selfTakeDamage(damage, (id) => this.playerDieCallback(idFrom, id), (damageReflect, forceReflect) => { })
+        return true
+    }
     checkBothPlayerAreInClan(player1, player2) {
         if (player1 == null || player2 == null) { return false }
         if (!player1.isJoinedGame || !player2.isJoinedGame) { return false }
@@ -853,8 +879,8 @@ class Game {
         }
         structure.hitInteract(this.players[idPlayer], (idType) => {
             let key = this.getKeyByValue(ResourceType, idType)
-            this.players[idPlayer].receiveResource(weapon.info.gatherRate, key)
-            this.players[idPlayer].addXP(weapon.info.goldGatherRate)
+            this.players[idPlayer].receiveResource(gatherRate, key)
+            this.players[idPlayer].addXP(goldGatherRate)
         })
         if (this.checkBothPlayerAreInClan(this.players[idPlayer], this.players[structure.userId])) {
             return

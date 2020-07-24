@@ -1,7 +1,6 @@
 let io = require('socket.io')
 
 const Game = require('./game')
-const Player = require('./player')
 const User = require('./User/user')
 const Time = require('../GameUtils/time')
 
@@ -46,19 +45,19 @@ class Server {
 
         })
     }
-    handleWebSocket(ws) {
-        let slot = this.findEmptyGameSlot()
-        if (slot != null) {
-            let player = new Player(slot, this, ws, true)
-            this.users[slot] = player
-            this.currentPlayerCount++;
-        } else {
-            console.log("server is null")
-            ws.emit(ServerCode.Error, {
-                reason: "Server is full"
-            })
-        }
-    }
+    // handleWebSocket(ws) {
+    //     let slot = this.findEmptyGameSlot()
+    //     if (slot != null) {
+    //         let player = new Player(slot, this, ws, true)
+    //         this.users[slot] = player
+    //         this.currentPlayerCount++;
+    //     } else {
+    //         console.log("server is null")
+    //         ws.emit(ServerCode.Error, {
+    //             reason: "Server is full"
+    //         })
+    //     }
+    // }
     new_handleSocket(socket) {
         let slot = this.findEmptyPlayersSlot()
         if (slot != null) {
@@ -73,20 +72,20 @@ class Server {
         }
     }
 
-    handleSocket(socket) {
-        let slot = this.findEmptyPlayersSlot()
-        if (slot != null) {
-            let player = new Player(slot, this, socket)
-            this.users[slot] = player
-            this.currentPlayerCount++;
-        } else {
-            console.log("server is full")
-            socket.emit(ServerCode.OnFailedToConnect, {
-                reason: "Server is full"
-            })
-        }
+    // handleSocket(socket) {
+    //     let slot = this.findEmptyPlayersSlot()
+    //     if (slot != null) {
+    //         let player = new Player(slot, this, socket)
+    //         this.users[slot] = player
+    //         this.currentPlayerCount++;
+    //     } else {
+    //         console.log("server is full")
+    //         socket.emit(ServerCode.OnFailedToConnect, {
+    //             reason: "Server is full"
+    //         })
+    //     }
 
-    }
+    // }
     handleEval(player, web) {
         console.log("handle eval")
         player.remote = web;

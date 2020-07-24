@@ -62,12 +62,12 @@ class Bullet {
         }
     }
     onHitNpc(response, object, objectInfo) {
-        this.user.game.playerHitNpc(this.user.idGame, objectInfo.id, this.damage)
-        this.isDestroy = true
+        this.isDestroy = this.user.game.bulletHitNpc(this.user.idGame, objectInfo.id, this.damage)
+        // this.isDestroy = true
     }
     onHitPlayer(response, object, objectInfo) {
-        this.user.game.playerHitPlayer(this.user.idGame, objectInfo.id, this.damage)
-        this.isDestroy = true
+        this.isDestroy = this.user.game.bulletHitPlayer(this.user.idGame, objectInfo.id, this.damage)
+        // this.isDestroy = true
     }
     destroy() {
 
