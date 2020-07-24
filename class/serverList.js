@@ -8,7 +8,7 @@ const serverList = {
 
     serverList: {
         // local: `${ip.address()}:8080`,//"localhost:8080",
-        // asia: "",
+        asia: "",
         us: "moomoo-server.herokuapp.com",
     },
 
@@ -44,11 +44,11 @@ const serverList = {
             console.log(`updated ${this.serverList[req.query.serverId]}`);
 
             this.updateOrCreate(db.Url, {
-                name: serverId
-            }, {
-                address: req.query.serverAddress,
-                name: serverId
-            })
+                    name: serverId
+                }, {
+                    address: req.query.serverAddress,
+                    name: serverId
+                })
                 .then(function (result) {
                     serverList.getServerList();
                     result.item; // the model
