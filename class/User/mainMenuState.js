@@ -27,12 +27,12 @@ class MenuState extends BaseState {
         this.socket.on(TransmitCode.GameCode.receivedData, (data) => this.onReceivedGameData(data))
     }
     removeEvent() {
-        this.socket.off(TransmitCode.ServerCode.OnRequestJoin, (data) => this.onJoin(data))
-        this.socket.off(TransmitCode.GameCode.receivedData, (data) => this.onReceivedGameData(data))
+        this.socket.removeAllListeners(TransmitCode.ServerCode.OnRequestJoin)
+        this.socket.removeAllListeners(TransmitCode.GameCode.receivedData)
     }
     /* #region  EVENTS */
     onJoin(data) {
-        console.log("join game: ", data)
+        console.log("join game: ", data, ` time: ${new Date()}`)
         this.user.skinId = data.skinId
         this.user.name = data.name
         this.user.clientScreenSize.width = data.screenSizeX
