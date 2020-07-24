@@ -51,13 +51,17 @@ class Game {
     }
 
     update(deltaTime) {
-        this.new_updatePlayer(deltaTime);
-        this.broadcastPlayerPosition();
-        this.new_updateNPC(deltaTime);
-        this.broadcastNpcPosition();
+        this.new_updatePlayer(deltaTime)
+        this.new_updateNPC(deltaTime)
+        this.updatePositionProjectile(deltaTime)
+        // this.clanManager.update(deltaTime)
+        this.lateUpdate(deltaTime)
+    }
+    lateUpdate(deltaTime) {
+        this.broadcastPlayerPosition()
         this.broadcastStructurePosition()
-        this.updatePositionProjectile(deltaTime);
-        this.clanManager.update(deltaTime)
+        this.broadcastNpcPosition()
+        this.syncMapData()
     }
     /* #region  CLAN MANAGER */
 
@@ -273,6 +277,16 @@ class Game {
                 this.new_syncSinglePlayerPosition(p, deltaTime);
             }
         });
+    }
+    syncMapData() {
+        this.players.forEach(p => {
+            if (p != null && p.isJoinedGame) {
+                let miniMapInfo = p.getMiniMapPosition()
+                p.send(gamecode.miniMapData, {
+                    data: miniMapInfo
+                })
+            }
+        })
     }
     broadcastPlayerPosition() {
         this.players.forEach(p => {

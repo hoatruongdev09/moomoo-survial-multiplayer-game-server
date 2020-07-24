@@ -41,7 +41,9 @@ const gamecode = {
     syncShop: "g26",
     shopSelectItem: "g27",
     syncEquipItem: "g28",
-    syncStructure: "g29"
+    syncStructure: "g29",
+
+    miniMapData: "g30"
 }
 const clanCode = {
     createClan: "c0",

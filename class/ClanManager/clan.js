@@ -15,6 +15,20 @@ class Clan {
     update(deltaTime) {
 
     }
+    getMemberPositionData() {
+        let data = []
+        data.push(this.master)
+        data.push(...this.member)
+        return data.map(mem => {
+            return {
+                id: mem.idGame,
+                pos: {
+                    x: mem.position.x,
+                    y: mem.position.y
+                }
+            }
+        })
+    }
     syncClanMemberPosition() {
         let data = this.member.map(mem => {
             return {
@@ -84,6 +98,12 @@ class Clan {
         }
         newMember.clanId = this.id
         this.member.push(newMember)
+    }
+    getAllMemberData() {
+        let data = []
+        data.push(this.master)
+        data.push(...this.member)
+        return data
     }
     getAllMember() {
         let data = this.member.map(mem => {

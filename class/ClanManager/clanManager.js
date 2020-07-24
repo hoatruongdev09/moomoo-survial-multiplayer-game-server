@@ -132,8 +132,11 @@ class ClanManager {
             }
         }
     }
-
     getClanData() {
+        let data = this.clans.map(clan => { return { id: clan.id, name: clan.name } })
+        return data
+    }
+    old_getClanData() {
         let data = []
         this.clans.forEach(clan => {
             data.push({
@@ -143,7 +146,20 @@ class ClanManager {
         })
         return data
     }
+    getClanMembersData(clanId) {
+        let clan = this.findClanById(clanId)
+        if (clan == null) { return [] }
+        return clan.getAllMemberData()
+    }
     getClansMemberData() {
+        let data = []
+        this.clans.forEach(clan => {
+            let memberData = clan.getAllMember()
+            data.push(...memberData)
+        })
+        return data
+    }
+    old_getClansMemberData() {
         let data = []
         this.clans.forEach(clan => {
             clan.getAllMember().forEach(member => {

@@ -326,6 +326,34 @@ class User {
             maxHP: this.maxHealthPoint
         }
     }
+    getMiniMapPosition() {
+        let data = []
+        data.push(this.getMapInfo())
+        let clanMember = this.getClanMemberMapInfO()
+        clanMember = clanMember.filter(mem => mem.id != this.idGame)
+        if (clanMember.length != 0) {
+            data.push(...clanMember)
+        }
+        return data
+    }
+    getClanMemberMapInfO() {
+        if (this.clanId == null) {
+            return []
+        }
+        let clanMemberPositionData = this.game.clanManager.getClanMembersData(this.clanId)
+        return clanMemberPositionData.map(mem => {
+            return mem.getMapInfo()
+        })
+    }
+    getMapInfo() {
+        return {
+            id: this.idGame,
+            pos: {
+                x: this.position.x,
+                y: this.position.y
+            }
+        }
+    }
     get isVisible() {
         return (this.isInvisible && this.currentInvisible)
     }
