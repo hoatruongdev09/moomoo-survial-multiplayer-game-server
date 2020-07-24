@@ -3,8 +3,8 @@ const ServerConfig = require('./class/serverconfig')
 
 const path = require('path')
 
-// const serverList = require('./class/serverList')
-// const clientInfo = require('./class/clientInfo');
+const serverList = require('./class/serverList')
+const clientInfo = require('./class/clientInfo');
 
 const express = require('express')
 
