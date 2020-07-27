@@ -44,11 +44,11 @@ const serverList = {
             console.log(`updated ${this.serverList[req.query.serverId]}`);
 
             this.updateOrCreate(db.Url, {
-                    name: serverId
-                }, {
-                    address: req.query.serverAddress,
-                    name: serverId
-                })
+                name: serverId
+            }, {
+                address: req.query.serverAddress,
+                name: serverId
+            })
                 .then(function (result) {
                     serverList.getServerList();
                     result.item; // the model
