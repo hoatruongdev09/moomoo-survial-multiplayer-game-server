@@ -40,7 +40,7 @@ const serverList = {
         console.log(`req.query.password == updateServerPasssword ${req.query.password == this.updateServerPasssword}`);
         const serverId = req.query.serverId
         if (serverId != null && req.query.password == this.updateServerPasssword) {
-            // serverList[serverId] = req.query.serverAddress + ":8080";
+            serverList[serverId] = req.query.serverAddress + ":8080";
             console.log(`updated ${this.serverList[req.query.serverId]}`);
 
             this.updateOrCreate(db.Url, {
