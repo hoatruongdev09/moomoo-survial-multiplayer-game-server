@@ -12,7 +12,7 @@ const express = require('express')
 const app = express()
 const web = require('http').Server(app)
 const PORT = process.env.PORT || 8080
-
+const ip = require('ip')
 
 app.use(express.static(path.join(__dirname, 'Game')));
 
@@ -24,6 +24,7 @@ app.get('/', (req, res) => {
 app.get('/server_list', (req, res) => {
     res.status(200).send(serverList.serverList)
     // res.status(200).send({
+    //     local: `${ip.address()}:8080`,//"localhost:8080"
     //     us: "moumou-server-test.herokuapp.com",
     // })
 })

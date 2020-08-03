@@ -54,7 +54,7 @@ class Game {
         this.new_updatePlayer(deltaTime)
         this.new_updateNPC(deltaTime)
         this.updatePositionProjectile(deltaTime)
-        // this.clanManager.update(deltaTime)
+        this.clanManager.update(deltaTime)
         this.lateUpdate(deltaTime)
     }
     lateUpdate(deltaTime) {
