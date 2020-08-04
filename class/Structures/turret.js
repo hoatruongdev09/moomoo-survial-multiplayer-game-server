@@ -68,8 +68,10 @@ class GameTurret extends BaseStructure {
         this.closeEnemies.filter(enemy => { if (enemy.idGame != this.userId) return enemy })
         if (this.closeEnemies.length == 1) {
             let playerInfo = this.game.getPlayerInfo(this.closeEnemies[0].id)
-            if (!playerInfo.turretIgnored && !this.game.checkBothPlayerAreInClan(playerInfo, this.game.getPlayerInfo(this.owner.idGame)))
+            if (!playerInfo.turretIgnored && !this.game.checkBothPlayerAreInClan(playerInfo, this.game.getPlayerInfo(this.owner.idGame))) {
+                console.log(`shoot player info 1: ${playerInfo.idGame} | ${this.owner.idGame}`)
                 return playerInfo
+            }
         }
 
         let closest = Mathf.Infinity
@@ -80,7 +82,8 @@ class GameTurret extends BaseStructure {
                 let temp = playerInfo.position.clone().sub(this.position).sqrMagnitude()
                 if (temp < closest) {
                     closest = temp
-                    target = this.game.getPlayerInfo(p.id)
+                    target = playerInfo
+                    console.log(`shoot player info: ${playerInfo.idGame} | ${this.owner.idGame}`)
                 }
             }
         })

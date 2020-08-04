@@ -3,7 +3,9 @@ class NpcState {
         this.npc = npc
         this.stateManager = stateManager
     }
+    enter(options) {
 
+    }
     enter() {
 
     }

@@ -9,42 +9,4 @@ class GameBlocker extends BaseStructure {
         return "Blocker"
     }
 }
-
-class old_GameBlocker {
-    constructor(id, userId, position, info) {
-        this.id = id
-        this.userId = userId
-        this.position = position
-
-        this.hp = info.health
-        this.size = info.size
-        this.itemId = info.id
-        this.range = info.range
-
-        this.bodyCollider
-        this.initCollider()
-    }
-    initCollider() {
-        this.bodyCollider = new SAT.Circle(new SAT.Vector(this.position.x, this.position.y), this.size)
-    }
-    destroy() {
-
-    }
-    toString() {
-        return "Blocker"
-    }
-    takeDamage(damage, callback) {
-        this.hp -= damage
-        if (this.hp <= 0) {
-            this.destroy()
-            callback()
-        }
-    }
-    hitInteract(player, callback) {
-
-    }
-    get rotation() {
-        return 0
-    }
-}
 module.exports = GameBlocker

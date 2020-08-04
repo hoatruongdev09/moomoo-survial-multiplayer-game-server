@@ -22,11 +22,11 @@ app.get('/', (req, res) => {
     res.status(200).send("OK")
 })
 app.get('/server_list', (req, res) => {
-    res.status(200).send(serverList.serverList)
-    // res.status(200).send({
-    //     local: `${ip.address()}:8080`,//"localhost:8080"
-    //     us: "moumou-server-test.herokuapp.com",
-    // })
+    // res.status(200).send(serverList.serverList)
+    res.status(200).send({
+        local: `${ip.address()}:8080`,//"localhost:8080"
+        us: "moumou-server-test.herokuapp.com",
+    })
 })
 app.get('/update_server', (req, res) => {
     serverList.updateServer(req, res);
@@ -36,7 +36,7 @@ app.get('/client_version', (req, res) => {
 })
 console.log("express run on: ", listener.address().port)
 
-serverList.getServerList(); // only get server list if on main server (heroku)
+// serverList.getServerList(); // only get server list if on main server (heroku)
 // serverList.updateIpAdressOnMainServer() // Only update current server ip on not main server
 
 let server = new Server(ServerConfig, web)

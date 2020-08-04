@@ -322,21 +322,19 @@ class Game {
         this.players.forEach(p => {
             if (p != null && p.isJoinedGame) {
                 let otherStructure = this.getStructureInScreenView(p.position, p.clientScreenSize)
-                if (otherStructure.length != 0) {
-                    let strData = otherStructure.map((str) => {
-                        return {
-                            id: str.id,
-                            pos: {
-                                x: str.position.x,
-                                y: str.position.y
-                            },
-                            rot: str.rotation
-                        }
-                    })
-                    p.send(gamecode.syncStructure, {
-                        structures: strData
-                    })
-                }
+                let strData = otherStructure.map((str) => {
+                    return {
+                        id: str.id,
+                        pos: {
+                            x: str.position.x,
+                            y: str.position.y
+                        },
+                        rot: str.rotation
+                    }
+                })
+                p.send(gamecode.syncStructure, {
+                    structures: strData
+                })
             }
         })
     }
@@ -717,10 +715,10 @@ class Game {
         return true
     }
     checkBothPlayerAreInClan(player1, player2) {
+        if (player1.idGame == player2.idGame) { return true }
         if (player1 == null || player2 == null) { return false }
         if (!player1.isJoinedGame || !player2.isJoinedGame) { return false }
         if (player1.clanId == null || player2.clanId == null) { return false }
-        if (player1.idGame == player2.idGame) { return true }
         return player1.clanId == player2.clanId
     }
     playerHitPlayer(idFrom, idTarget, damage) {
@@ -882,31 +880,11 @@ class Game {
             this.players[idPlayer].receiveResource(gatherRate, key)
             this.players[idPlayer].addXP(goldGatherRate)
         })
-        if (this.checkBothPlayerAreInClan(this.players[idPlayer], this.players[structure.userId])) {
-            return
-        }
+        // if (this.checkBothPlayerAreInClan(this.players[idPlayer], this.players[structure.userId])) {
+        //     return
+        // }
         structure.takeDamage(damage, () => {
             this.removeStructure(structure.id)
-        })
-    }
-    old_playerAttackStructure(idPlayer, idStructure, weapon) {
-        let damage = weapon.info.structureDamage;
-        let structure = this.findStructureWithId(idStructure);
-        // console.log("structure: ", structure)
-        if (structure == null) {
-            return;
-        }
-        structure.hitInteract(this.players[idPlayer], (idType) => {
-            let key = this.getKeyByValue(ResourceType, idType);
-            this.players[idPlayer].receiveResource(weapon.info.gatherRate, key);
-            this.players[idPlayer].addXP(weapon.info.goldGatherRate);
-        })
-        if (this.checkBothPlayerAreInClan(this.players[idPlayer], this.players[structure.userId])) {
-            return
-        }
-        structure.takeDamage(damage, () => {
-            console.log("remove structure: ", structure.id)
-            this.removeStructure(structure.id);
         })
     }
     playerAttackResource(player, idResource, weapon) {

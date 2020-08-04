@@ -18,6 +18,10 @@ class HuntState extends NpcState {
         this.checkTargetEscapeInterval = null
         this.huntTimeOut = null
     }
+    enter(options) {
+        this.target = options.target
+        this.enter();
+    }
     enter() {
         if (this.target == null || !this.target.isJoinedGame) {
             this.stateManager.changeState(this.npc.standState)
@@ -29,6 +33,10 @@ class HuntState extends NpcState {
         this.rest()
     }
     update(deltaTime) {
+        if (this.target == null || !this.target.isJoinedGame) {
+            this.stateManager.changeState(this.npc.standState);
+            return;
+        }
         this.followTarget()
         this.npc.translate(this.moveDirect, deltaTime)
         this.checkRangeToAttack()
@@ -49,6 +57,7 @@ class HuntState extends NpcState {
         }
         this.destinePosition = this.target.position
         this.moveDirect = this.destinePosition.clone().sub(this.npc.position)
+
     }
     checkRangeToAttack() {
         if (this.moveDirect.sqrMagnitude() < this.attackRange) {
