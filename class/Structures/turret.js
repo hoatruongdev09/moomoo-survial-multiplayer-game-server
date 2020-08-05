@@ -68,8 +68,7 @@ class GameTurret extends BaseStructure {
         this.closeEnemies.filter(enemy => { if (enemy.idGame != this.userId) return enemy })
         if (this.closeEnemies.length == 1) {
             let playerInfo = this.game.getPlayerInfo(this.closeEnemies[0].id)
-            if (!playerInfo.turretIgnored && !this.game.checkBothPlayerAreInClan(playerInfo, this.game.getPlayerInfo(this.owner.idGame))) {
-                console.log(`shoot player info 1: ${playerInfo.idGame} | ${this.owner.idGame}`)
+            if (!playerInfo.turretIgnored && playerInfo.isVisible && !this.game.checkBothPlayerAreInClan(playerInfo, this.owner)) {
                 return playerInfo
             }
         }
@@ -78,7 +77,7 @@ class GameTurret extends BaseStructure {
         let target = null
         this.closeEnemies.forEach(p => {
             let playerInfo = this.game.getPlayerInfo(p.id)
-            if (p.id != this.owner.idGame && !this.game.checkBothPlayerAreInClan(this.game.getPlayerInfo(this.owner.idGame), playerInfo) && !playerInfo.turretIgnored) {
+            if (p.id != this.owner.idGame && !playerInfo.turretIgnored && playerInfo.isVisible && !this.game.checkBothPlayerAreInClan(this.owner, playerInfo)) {
                 let temp = playerInfo.position.clone().sub(this.position).sqrMagnitude()
                 if (temp < closest) {
                     closest = temp

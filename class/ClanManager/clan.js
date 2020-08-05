@@ -71,6 +71,8 @@ class Clan {
         if (this.checkExistedMember(player.idGame)) {
             return
         }
+        var requests = this.requestJoin.filter(p => { if (p.idGame == player.idGame) return p })
+        if (requests.length != 0) { return; }
         this.requestJoin.push(player)
         this.sendToMaster(ClanCode.requestJoin, {
             id: player.idGame

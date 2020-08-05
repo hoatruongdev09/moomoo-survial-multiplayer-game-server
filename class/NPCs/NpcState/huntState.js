@@ -52,7 +52,7 @@ class HuntState extends NpcState {
         }
     }
     followTarget() {
-        if (this.target == null || !this.target.isJoinedGame) {
+        if (this.target == null || !this.target.isJoinedGame || !this.target.isVisible) {
             return
         }
         this.destinePosition = this.target.position

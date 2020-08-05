@@ -292,6 +292,27 @@ class Game {
         this.players.forEach(p => {
             if (p != null && p.isJoinedGame) {
                 let other = this.getOtherPlayersInPlayerView(p)
+                let data = other.map(player => {
+                    return {
+                        id: player.idGame,
+                        pos: {
+                            x: player.position.x,
+                            y: player.position.y,
+                        },
+                        rot: player.lookDirect,
+                        visible: player.isVisible
+                    }
+                })
+                p.send(gamecode.syncTransform, {
+                    data: data
+                })
+            }
+        })
+    }
+    old_broadcastPlayerPosition() {
+        this.players.forEach(p => {
+            if (p != null && p.isJoinedGame) {
+                let other = this.getOtherPlayersInPlayerView(p)
                 let positionData = []
                 let lookData = []
                 other.forEach(player => {
@@ -414,6 +435,15 @@ class Game {
         }
         player.position = this.map.clampPositionToMap(player.position);
     }
+    getNpcFromView(center, screenSize) {
+        let viewObjects = this.getNpcFromScreenView(center, screenSize)
+        return viewObjects.map(n => {
+            return {
+                id: n.id,
+                bodyCollider: n.bodyCollider,
+            }
+        })
+    }
     getNpcFromView(position) {
         let viewObjects = [];
         let temp = new Vector(0, 0);
@@ -457,6 +487,15 @@ class Game {
             }
         })
         return viewObjects;
+    }
+    getPlayersFromView(center, screenSize) {
+        let viewObject = this.getPlayerFromScreenView(center, screenSize)
+        return viewObject.map(p => {
+            return {
+                id: p.idGame,
+                bodyCollider: p.bodyCollider,
+            }
+        })
     }
     getPlayersFromView(position) {
         let viewObjects = [];
@@ -637,6 +676,27 @@ class Game {
     /* #endregion */
 
     /* #region  GAME EVIROMENT VIEW */
+    getResourceInScreenView(center, screenSize) {
+        let viewObjects = this.resources.filter(r => {
+            if (this.checkIfPositionIsInScreenView(r.position, center, screenSize)) {
+                return r
+            }
+        })
+        return viewObjects
+    }
+    getResourceFromView(center, screenSize) {
+        let viewObjects = this.resources.filter(r => {
+            if (this.checkIfPositionIsInScreenView(center, screenSize)) {
+                return r
+            }
+        })
+        return viewObjects.map(r => {
+            return {
+                id: r.id,
+                bodyCollider: r.bodyCollider
+            }
+        })
+    }
     getResourceFromView(position) {
         let viewObjects = [];
         let temp = new Vector(0, 0);
@@ -661,6 +721,16 @@ class Game {
         })
         return viewObjects
 
+    }
+    getStructureFromView(center, screenSize) {
+        let viewObjects = this.getStructureInScreenView(center, screenSize)
+        return viewObjects.map(s => {
+            return {
+                id: s.id,
+                type: s.toString(),
+                bodyCollider: s.bodyCollider,
+            }
+        })
     }
     getStructureFromView(position) {
         let viewObjects = [];
@@ -773,7 +843,7 @@ class Game {
         if (this.players[idPlayer] == null || !this.players[idPlayer].isJoinedGame) {
             return
         }
-        this.players[idPlayer].takeBonus({ kill: 1, gold: (250 + bonusGold) * (1 + bonusModifier), xp: 100 })
+        this.players[idPlayer].takeBonus({ kills: 1, gold: (250 + bonusGold) * (1 + bonusModifier), xp: 100 })
     }
     npcHitPlayer(idFrom, idTarget, damage) {
         if (this.players[idTarget] == null || !this.players[idTarget].isJoinedGame) {
@@ -880,9 +950,9 @@ class Game {
             this.players[idPlayer].receiveResource(gatherRate, key)
             this.players[idPlayer].addXP(goldGatherRate)
         })
-        // if (this.checkBothPlayerAreInClan(this.players[idPlayer], this.players[structure.userId])) {
-        //     return
-        // }
+        if (this.checkBothPlayerAreInClan(this.players[idPlayer], this.players[structure.userId])) {
+            return
+        }
         structure.takeDamage(damage, () => {
             this.removeStructure(structure.id)
         })
@@ -900,8 +970,7 @@ class Game {
         player.addXP(weapon.info.goldGatherRate);
     }
     addGold(player, value) {
-        player.basicResources.Gold += value;
-        player.scores += value;
+        player.takeGold(value);
     }
     /* #endregion */
 
@@ -1117,7 +1186,7 @@ class Game {
         if (this.npcs[npc.id].isJoined) {
             let data = [{
                 id: npc.id,
-                hp: this.npcs[npc.id].getHpPercent()
+                hp: this.npcs[npc.id].getHpPercent(),
             }]
             this.syncNpcHP(data)
         }
