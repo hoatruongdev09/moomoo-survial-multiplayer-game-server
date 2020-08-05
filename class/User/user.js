@@ -211,7 +211,7 @@ class User {
     }
     onDie() {
         this.isJoinedGame = false
-        // this.game.onPlayerDie(this.idGame)
+        this.game.onPlayerDie(this.idGame)
         this.enterMenu(null)
     }
     receiveGameData(data) {

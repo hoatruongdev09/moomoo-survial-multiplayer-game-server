@@ -809,6 +809,7 @@ class Game {
     }
     playerDieCallback(idFrom, idTarget) {
         this.bonusKillForPlayer(idFrom, idTarget)
+        // onPlayerDie(idTarget)
     }
     playerDieDueToNpcCallback(idNpc, idPlayer) {
 
