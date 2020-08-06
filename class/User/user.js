@@ -187,8 +187,9 @@ class User {
         }
     }
     selfTakeDamage(damage, dieCallback) {
-        let damageTaking = (damage * this.selfDamage) * (1 - this.damageTakenModifier)
+        let damageTaking = (damage * this.selfDamage) * (1 - this.damageTakenModifier) - damage * this.lifeSteal
         this.healthPoint -= damageTaking
+        this.healthPoint = Mathf.clamp(this.healthPoint, 0, this.maxHealthPoint)
         if (this.healthPoint <= 0) {
             dieCallback(this.idGame)
             this.onDie()
@@ -196,8 +197,17 @@ class User {
             this.game.onPlayerGetHit(this.getHealthPointData())
         }
     }
+    takeHP(value) {
+        if (this.healthPoint >= this.maxHealthPoint) {
+            this.healthPoint = this.maxHealthPoint
+            return
+        }
+        this.healthPoint += value
+        this.healthPoint = Mathf.clamp(this.healthPoint, 0, this.maxHealthPoint)
+        this.game.onPlayerGetHit(this.getHealthPointData())
+    }
     lifeStealing(damage) {
-        this.takeHP(damage * this.lifeSteal)
+        // this.takeHP(damage * this.lifeSteal)
     }
     onDie() {
         this.isJoinedGame = false
@@ -259,21 +269,18 @@ class User {
         this.basicResources.increaseResource(resource)
         this.updateStatus()
     }
-    takeHP(value) {
-        if (this.healthPoint >= this.maxHealthPoint) {
-            this.healthPoint = this.maxHealthPoint
-            return
-        }
-        this.healthPoint += value
-        this.healthPoint = Mathf.clamp(this.healthPoint, 0, this.maxHealthPoint)
-        this.game.onPlayerGetHit(this.getHealthPointData())
-    }
+
 
     takeBonus(data) {
         this.kills += data.kills
         this.addGold(data.gold)
         this.addXP(data.xp)
-        this.stateManager.currentState.updateStatus()
+        this.updateStatus()
+    }
+    takeGold(value) {
+        this.addGold(value)
+        this.addXP(value);
+        this.updateStatus()
     }
     getCurrentGoldAmount() {
         return this.basicResources.Gold
@@ -284,6 +291,7 @@ class User {
     }
     updateStatus() {
         this.send(TransmitCode.GameCode.playerStatus, {
+            id: this.idGame,
             scores: this.scores,
             kills: this.kills,
             level: this.levelInfo.level,
@@ -294,6 +302,8 @@ class User {
             food: this.basicResources.Food,
             stone: this.basicResources.Stone,
             gold: this.basicResources.Gold,
+            hp: this.currentHealthPoint,
+            maxHP: this.maxHealthPoint
         });
     }
     registerEvent() {
@@ -355,7 +365,7 @@ class User {
         }
     }
     get isVisible() {
-        return (this.isInvisible && this.currentInvisible)
+        return !(this.isInvisible && this.currentInvisible && this.lastMovement == null)
     }
     get currentHealthPoint() {
         return this.healthPoint / this.maxHealthPoint

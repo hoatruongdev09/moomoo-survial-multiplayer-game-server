@@ -7,7 +7,7 @@ class ResourceManager {
     }
     addAll(amount) {
         this.Wood += amount
-        this.food += amount
+        this.Food += amount
         this.Stone += amount
         this.Gold += amount
     }

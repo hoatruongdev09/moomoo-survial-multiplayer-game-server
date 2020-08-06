@@ -86,19 +86,20 @@ class ClanManager {
     }
     respondRequestJoin(idMember, idClan, action) {
         let clan = this.findClanById(idClan)
-        if (clan != null) {
-            if (action) {
-                console.log("accept request");
-                let member = clan.getJoinRequest(idMember)
-                if (member != null && member.clanId == null) {
-                    console.log("member: ", member.idGame)
-                    this.addMember(member, idClan)
-                }
-            } else {
-                console.log("deny request")
+        if (clan == null) { return; }
+
+        if (action) {
+            console.log("accept request");
+            let member = clan.getJoinRequest(idMember)
+            if (member != null && member.clanId == null) {
+                console.log("member: ", member.idGame)
+                this.addMember(member, idClan)
             }
-            clan.removeJoinRequest(idMember)
+        } else {
+            console.log("deny request")
         }
+        clan.removeJoinRequest(idMember)
+
     }
     addMember(member, clanId) {
         let clan = this.findClanById(clanId)

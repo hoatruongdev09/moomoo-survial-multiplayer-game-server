@@ -17,6 +17,7 @@ const LevelManager = require('../Player/levelManager')
 
 const Mathf = require('mathf');
 const { response } = require('express');
+// const { fn } = require('sequelize/types');
 
 class GameState extends BaseState {
     constructor(user, stateManager) {
@@ -197,7 +198,7 @@ class GameState extends BaseState {
         this.checkColliderWithStructures();
     }
     checkColliderWithResources() {
-        this.resourcesView = this.game.getResourceFromView(this.user.position)
+        this.resourcesView = this.game.getResourceFromView(this.user.position, this.user.clientScreenSize)
         for (const r of this.resourcesView) {
             this.game.testCollisionCircle2Circle(this.user, r, (response, objectCollide) =>
                 this.onCollisionWithResource(response, objectCollide)
@@ -206,7 +207,7 @@ class GameState extends BaseState {
         // console.log("resource: ", this.resourcesView)
     }
     checkColliderWithStructures() {
-        this.structuresView = this.game.getStructureFromView(this.user.position);
+        this.structuresView = this.game.getStructureFromView(this.user.position, this.user.clientScreenSize);
         for (const s of this.structuresView) {
             this.game.testCollisionCircle2Circle(this.user, s, (response, objectCollide) =>
                 this.onCollisionWithStructures(response, objectCollide, s)
@@ -252,19 +253,7 @@ class GameState extends BaseState {
 
 
     updateStatus() {
-        let currentLevel = this.user.levelInfo.level >= LevelDescription.length ? LevelDescription.length - 1 : this.user.levelInfo.level
-        this.user.send(TransmitCode.GameCode.playerStatus, {
-            scores: this.user.scores,
-            kills: this.user.kills,
-            level: this.user.levelInfo.level,
-            xp:
-                this.user.levelInfo.xp /
-                LevelDescription[currentLevel].nextLevelUpXp,
-            wood: this.user.basicResources.Wood,
-            food: this.user.basicResources.Food,
-            stone: this.user.basicResources.Stone,
-            gold: this.user.basicResources.Gold,
-        });
+        this.user.updateStatus()
     }
 
 
@@ -347,18 +336,50 @@ class GameState extends BaseState {
             if (data.isbtn) this.triggerUseItem();
         }
     }
-    delayVisible() {
+    old_delayVisible() {
         if (!this.user.isInvisible) {
             return
         }
         if (this.invisibleTimeoutID != null) {
             clearTimeout(this.invisibleTimeoutID)
+            this.invisibleTimeoutID = null
+            return
         }
         this.user.currentInvisible = false
         this.invisibleTimeoutID = setTimeout(() => {
             this.user.currentInvisible = this.user.isInvisible
             console.log("current invisible: ", this.user.currentInvisible)
-        }, 500)
+        }, 1000)
+    }
+    delayVisible() {
+        if (!this.user.isInvisible) {
+            return
+        }
+        if (this.invisibleTimeoutID != null) {
+            if (!this.invisibleTimeoutID.cleared) {
+                this.invisibleTimeoutID.clear()
+            }
+        } else {
+            this.invisibleTimeoutID = this.timeOutVisible(() => {
+                this.user.currentInvisible = this.user.isInvisible
+            }, 1000)
+        }
+        this.user.currentInvisible = false
+        this.invisibleTimeoutID.run()
+    }
+    timeOutVisible(callback, time) {
+        return {
+            id: null,
+            cleared: false,
+            run: () => {
+                this.clear = false
+                this.id = setTimeout(callback, time)
+            },
+            clear: () => {
+                this.cleared = true
+                clearTimeout(this.id)
+            }
+        }
     }
     triggerRangedAttack() {
         if (!this.user.currentItem.canUse) {
@@ -409,19 +430,22 @@ class GameState extends BaseState {
             -Math.cos(this.user.lookDirect),
             -Math.sin(this.user.lookDirect)
         );
+
         this.user.currentItem.use(this.user, direct);
+        this.game.onPlayerTriggerAttack({
+            idGame: this.user.idGame,
+            type: this.user.currentItem.idType,
+        })
+
         this.checkAttackToResource();
         this.checkAttackToStructure();
         this.checkAttackToNpc();
         this.checkAttackToPlayer();
 
-        this.game.onPlayerTriggerAttack({
-            idGame: this.user.idGame,
-            type: this.user.currentItem.idType,
-        })
+
     }
     checkAttackToResource() {
-        this.resourcesView = this.game.getResourceFromView(this.user.position);
+        this.resourcesView = this.game.getResourceFromView(this.user.position, this.user.clientScreenSize)
         for (const r of this.resourcesView) {
             this.game.testCollisionPolygon2Circle(
                 this.user.currentItem, r, (response, objectCollide) =>
@@ -440,13 +464,13 @@ class GameState extends BaseState {
         }
     }
     checkAttackToNpc() {
-        this.npcView = this.game.getNpcFromView(this.user.position);
+        this.npcView = this.game.getNpcFromView(this.user.position, this.user.clientScreenSize);
         for (const n of this.npcView) {
             this.game.testCollisionPolygon2Circle(this.user.currentItem, n, (response, objectCollide) => this.onHitNpc(response, objectCollide, n));
         }
     }
     checkAttackToPlayer() {
-        this.playersView = this.game.getPlayersFromView(this.user.position);
+        this.playersView = this.game.getPlayersFromView(this.user.position, this.user.clientScreenSize);
         // console.log("player view: ", this.playersView);
         for (const p of this.playersView) {
             this.game.testCollisionPolygon2Circle(
@@ -504,6 +528,7 @@ class GameState extends BaseState {
             }
         }
         // console.log("current Item: ", this.currentItem)
+        this.delayVisible()
         this.game.onPlayerSwitchItem({
             id: this.user.idGame,
             item: this.user.currentItem.info.id,

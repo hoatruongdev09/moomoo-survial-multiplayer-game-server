@@ -25,6 +25,7 @@ class BaseStructure {
     }
     takeDamage(damage, callback) {
         this.hp -= damage
+        console.log("hp: ", this.hp)
         if (this.hp <= 0) {
             this.destroy()
             callback()
