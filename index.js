@@ -13,6 +13,7 @@ const app = express()
 const web = require('http').Server(app)
 const PORT = process.env.PORT || 8080
 const ip = require('ip')
+const firebase = require('./firebase')
 
 app.use(express.static(path.join(__dirname, 'Game')));
 
@@ -40,3 +41,21 @@ console.log("express run on: ", listener.address().port)
 // serverList.updateIpAdressOnMainServer() // Only update current server ip on not main server
 
 let server = new Server(ServerConfig, web)
+
+process.on('uncaughtException', (err) => {
+    console.error(err)
+    firebase.uploadError({
+        type: 'uncaughtException',
+        time: new Date(),
+        detail: {
+            name: err.name,
+            message: err.message,
+            stack: err.stack,
+        },
+        host: ip.address()
+    })
+})
+process.on('exit', (code) => {
+    console.log('exitttttt')
+    firebase.uploadExit(code)
+})

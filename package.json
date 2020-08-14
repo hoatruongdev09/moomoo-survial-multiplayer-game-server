@@ -11,6 +11,7 @@
   "dependencies": {
     "axios": "^0.19.2",
     "express": "^4.17.1",
+    "firebase-admin": "^9.1.0",
     "ip": "^1.1.5",
     "jsonfile": "^6.0.1",
     "mathf": "0.0.3",
