@@ -115,7 +115,7 @@ class Player {
         this.socket.on(ClanCode.createClan, (data) => this.createClan(data));
         this.socket.on(ClanCode.kickMember, (data) => this.kickMember(data));
         this.socket.on(ClanCode.joinClan, (data) => this.requestJoinClan(data));
-        this.socket.on(ClanCode.requestJoin, (data) => this.responRequestJoinClan(data));
+        this.socket.on(ClanCode.requestJoin, (data) => this.respondRequestJoinClan(data));
 
     }
 
@@ -151,7 +151,7 @@ class Player {
         this.game.clanManager.addRequestJoin(this, data.id);
         // this.game.clanManager.addMember(this, data.id)
     }
-    responRequestJoinClan(data) {
+    respondRequestJoinClan(data) {
         if (this.clanId == null) {
             return;
         }
@@ -194,7 +194,7 @@ class Player {
                 this.currentItem,
                 r,
                 (response, objectCollide) =>
-                this.onHitResource(response, objectCollide, r)
+                    this.onHitResource(response, objectCollide, r)
             );
         }
     }
@@ -204,7 +204,7 @@ class Player {
                 this.currentItem,
                 s,
                 (response, objectCollide) =>
-                this.onHitStructure(response, objectCollide, s)
+                    this.onHitStructure(response, objectCollide, s)
             );
         }
     }
@@ -227,7 +227,7 @@ class Player {
                 this.currentItem,
                 p,
                 (response, objectCollide) =>
-                this.onHitPlayer(response, objectCollide, p)
+                    this.onHitPlayer(response, objectCollide, p)
             );
         }
     }
