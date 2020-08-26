@@ -1,4 +1,3 @@
-const SAT = require('sat')
 const BaseStructure = require('./baseStructure')
 class GameBlocker extends BaseStructure {
     constructor(id, position, direct, owner, info) {

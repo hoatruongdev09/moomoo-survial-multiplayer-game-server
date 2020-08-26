@@ -28,7 +28,10 @@ class User {
         this.skinId = null
         this.clanId = null
         this.name = ''
-        this.clientScreenSize = { width: 60, height: 30 }
+        this.clientScreenSize = {
+            width: 60,
+            height: 30
+        }
 
         // MOVEMENT PROPERTIES
         this.moveSpeed = null
@@ -37,7 +40,7 @@ class User {
         this.position = null
         this.moveDirect = null // vector
         this.lookDirect = null // angle
-        this.lastMovement = null  // angle
+        this.lastMovement = null // angle
         this.lastLook = null // angle
 
         // BODYPART
@@ -109,7 +112,9 @@ class User {
         this.menuState = new MenuState(this, this.stateManager)
         this.gameState = new GameState(this, this.stateManager)
 
-        this.stateManager.start(this.iniState, { socket: this.socket })
+        this.stateManager.start(this.iniState, {
+            socket: this.socket
+        })
         this.registerEvent()
     }
     resetMovementEffects() {
@@ -160,10 +165,17 @@ class User {
         this.stateManager.currentState.update(deltaTime)
     }
     enterMenu(data) {
-        this.stateManager.changeState(this.menuState, { socket: this.socket, user: this, options: data })
+        this.stateManager.changeState(this.menuState, {
+            socket: this.socket,
+            user: this,
+            options: data
+        })
     }
     enterGame(data) {
-        this.stateManager.changeState(this.gameState, { gameData: data, user: this })
+        this.stateManager.changeState(this.gameState, {
+            gameData: data,
+            user: this
+        })
     }
     movementEffect() {
         if (this.isTrapped) {
@@ -290,14 +302,17 @@ class User {
         this.speedModifier = item.info.movement
     }
     updateStatus() {
+        let currentLevel = this.levelInfo.level
+        if (currentLevel >= LevelDescription.length) {
+            currentLevel = LevelDescription.length - 1
+        }
         this.send(TransmitCode.GameCode.playerStatus, {
             id: this.idGame,
             scores: this.scores,
             kills: this.kills,
             level: this.levelInfo.level,
-            xp:
-                this.levelInfo.xp /
-                LevelDescription[this.levelInfo.level].nextLevelUpXp,
+            xp: this.levelInfo.xp /
+                LevelDescription[currentLevel].nextLevelUpXp,
             wood: this.basicResources.Wood,
             food: this.basicResources.Food,
             stone: this.basicResources.Stone,

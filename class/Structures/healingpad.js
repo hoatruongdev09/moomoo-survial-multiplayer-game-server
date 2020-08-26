@@ -1,6 +1,7 @@
-const SAT = require('sat')
 const BaseStructure = require('./baseStructure')
-const { response } = require('express')
+const {
+    response
+} = require('express')
 
 class GameHealingPad extends BaseStructure {
     constructor(id, position, direct, owner, info) {
@@ -45,7 +46,7 @@ class GameHealingPad extends BaseStructure {
             return
         }
         this.healingPlayers.forEach((player, index, obj) => {
-            if (this.game.testCollisionCircle2Circle(this, player, (res, obj) => { })) {
+            if (this.game.testCollisionCircle2Circle(this, player, (res, obj) => {})) {
                 this.heal(player)
             } else {
                 this.healingPlayers.splice(index, 1)

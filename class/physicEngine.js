@@ -1,7 +1,7 @@
-const SAT = require("sat");
+const SAT = require("../GameUtils/modifiedSAT").sat;
 
 class PhysicEngine {
-  constructor() { }
+  constructor() {}
   testCircle2Circle(circle1, circle2, response) {
     let res = new SAT.Response();
     let collision = SAT.testCircleCircle(circle1, circle2, res);

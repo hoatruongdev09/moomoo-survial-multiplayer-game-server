@@ -7,7 +7,7 @@ const MenuState = require('./PlayerState/menuState')
 const InGameState = require('./PlayerState/inGameState')
 
 const Vector = require("../../GameUtils/vector");
-const SAT = require("sat");
+const SAT = require('../../GameUtils/modifiedSAT').sat;
 
 const Melee = require("../weapon/melee");
 const Ranged = require("../weapon/ranged");
@@ -142,8 +142,7 @@ class Player {
             scores: this.scores,
             kills: this.kills,
             level: this.levelInfo.level,
-            xp:
-                this.levelInfo.xp /
+            xp: this.levelInfo.xp /
                 levelDescription[this.levelInfo.level].nextLevelUpXp,
             wood: this.basicResources.Wood,
             food: this.basicResources.Food,
@@ -162,8 +161,7 @@ class Player {
                 return i.id;
             }),
             equipedHat: this.equipedHat == null ? "" : this.equipedHat.id,
-            equipedAccessory:
-                this.equipedAccessory == null ? "" : this.equipedAccessory.id,
+            equipedAccessory: this.equipedAccessory == null ? "" : this.equipedAccessory.id,
         });
     }
     kickMember(data) {

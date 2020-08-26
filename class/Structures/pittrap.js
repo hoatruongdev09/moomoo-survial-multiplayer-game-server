@@ -1,4 +1,3 @@
-const SAT = require('sat')
 const BaseStructure = require('./baseStructure')
 class GamePitTrap extends BaseStructure {
     constructor(id, position, direct, owner, info) {
@@ -29,8 +28,12 @@ class GamePitTrap extends BaseStructure {
         return result
     }
     interact(player, callback) {
-        if (player.idGame == this.userId) { return }
-        if (player.clanId != null && player.clanId == this.owner.clanId) { return }
+        if (player.idGame == this.userId) {
+            return
+        }
+        if (player.clanId != null && player.clanId == this.owner.clanId) {
+            return
+        }
 
         this.trapPlayer(player)
         callback(true)
