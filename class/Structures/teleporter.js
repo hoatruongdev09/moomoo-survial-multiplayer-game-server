@@ -1,4 +1,3 @@
-const SAT = require('sat')
 const BaseStructure = require('./baseStructure')
 
 class GameTeleporter extends BaseStructure {
@@ -20,7 +19,7 @@ class GameTeleporter extends BaseStructure {
         this.teleQueue.push(player)
         setTimeout(() => {
             if (player != null) {
-                if (this.game.testCollisionCircle2Circle(this, player, (res, obj) => { })) {
+                if (this.game.testCollisionCircle2Circle(this, player, (res, obj) => {})) {
                     player.position = this.game.getRandomPosition()
                 }
                 // this.game.syncPlayerPosition(player)

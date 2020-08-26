@@ -1,4 +1,3 @@
-const SAT = require('sat')
 const BaseStructure = require('./baseStructure')
 
 class GamePlatform extends BaseStructure {
@@ -48,7 +47,7 @@ class GamePlatform extends BaseStructure {
             return
         }
         this.standingPlayer.forEach((player, index, obj) => {
-            if (this.game.testCollisionCircle2Circle(this, player, (res, objCol) => { })) {
+            if (this.game.testCollisionCircle2Circle(this, player, (res, objCol) => {})) {
                 player.platformStanding = true
             } else {
                 player.platformStanding = false

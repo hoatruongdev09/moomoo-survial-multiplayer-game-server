@@ -1,28 +1,3 @@
-// Version 0.8.0 - Copyright 2012 - 2018 -  Jim Riecken <jimr@jimr.ca>
-//
-// Released under the MIT License - https://github.com/jriecken/sat-js
-//
-// A simple library for determining intersections of circles and
-// polygons using the Separating Axis Theorem.
-/** @preserve SAT.js - Version 0.8.0 - Copyright 2012 - 2018 - Jim Riecken <jimr@jimr.ca> - released under the MIT License. https://github.com/jriecken/sat-js */
-
-/*global define: false, module: false*/
-/*jshint shadow:true, sub:true, forin:true, noarg:true, noempty:true,
-  eqeqeq:true, bitwise:true, strict:true, undef:true,
-  curly:true, browser:true */
-
-// Create a UMD wrapper for SAT. Works in:
-//
-//  - Plain browser via global SAT variable
-//  - AMD loader (like require.js)
-//  - Node.js
-//
-// The quoted properties all over the place are used so that the Closure Compiler
-// does not mangle the exposed API in advanced mode.
-/**
- * @param {*} root - The global scope
- * @param {Function} factory - Factory that creates SAT module
- */
 (function (root, factory) {
   "use strict";
   if (typeof define === 'function' && define['amd']) {
@@ -590,7 +565,7 @@
    * @type {Array<Vector>}
    */
   var T_VECTORS = [];
-  for (var i = 0; i < 10; i++) {
+  for (var i = 0; i < 50; i++) {
     T_VECTORS.push(new Vector());
   }
 
@@ -600,7 +575,7 @@
    * @type {Array<Array<number>>}
    */
   var T_ARRAYS = [];
-  for (var i = 0; i < 5; i++) {
+  for (var i = 0; i < 20; i++) {
     T_ARRAYS.push([]);
   }
 

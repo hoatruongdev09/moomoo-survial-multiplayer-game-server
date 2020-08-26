@@ -1,4 +1,3 @@
-const SAT = require('sat')
 const BaseStructure = require('./baseStructure')
 class SpawnPad extends BaseStructure {
     constructor(id, position, direct, owner, info) {

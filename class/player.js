@@ -3,7 +3,7 @@ const GameCode = require("../transmitcode").GameCode;
 const ClanCode = require("../transmitcode").ClanCode;
 
 const Vector = require("../GameUtils/vector");
-const SAT = require("sat");
+const SAT = require('../GameUtils/modifiedSAT').sat;
 
 const Melee = require("./weapon/melee");
 const Ranged = require("./weapon/ranged");
@@ -194,7 +194,7 @@ class Player {
                 this.currentItem,
                 r,
                 (response, objectCollide) =>
-                    this.onHitResource(response, objectCollide, r)
+                this.onHitResource(response, objectCollide, r)
             );
         }
     }
@@ -204,7 +204,7 @@ class Player {
                 this.currentItem,
                 s,
                 (response, objectCollide) =>
-                    this.onHitStructure(response, objectCollide, s)
+                this.onHitStructure(response, objectCollide, s)
             );
         }
     }
@@ -227,7 +227,7 @@ class Player {
                 this.currentItem,
                 p,
                 (response, objectCollide) =>
-                    this.onHitPlayer(response, objectCollide, p)
+                this.onHitPlayer(response, objectCollide, p)
             );
         }
     }

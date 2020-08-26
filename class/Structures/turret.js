@@ -1,4 +1,3 @@
-const SAT = require('sat')
 const Bullet = require('../weapon/bullet')
 const Mathf = require('mathf')
 const BaseStructure = require('./baseStructure')
@@ -65,7 +64,9 @@ class GameTurret extends BaseStructure {
     }
     findClosestEnemies() {
         this.closeEnemies = this.game.getPlayersFromViewInRange(this.position, this.range)
-        this.closeEnemies.filter(enemy => { if (enemy.idGame != this.userId) return enemy })
+        this.closeEnemies.filter(enemy => {
+            if (enemy.idGame != this.userId) return enemy
+        })
         if (this.closeEnemies.length == 1) {
             let playerInfo = this.game.getPlayerInfo(this.closeEnemies[0].id)
             if (!playerInfo.turretIgnored && playerInfo.isVisible && !this.game.checkBothPlayerAreInClan(playerInfo, this.owner)) {

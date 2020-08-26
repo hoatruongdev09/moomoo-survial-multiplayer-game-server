@@ -1,4 +1,3 @@
-const SAT = require('sat')
 const ResourceType = require('../resource').ResourceType
 const BaseStructure = require('./baseStructure')
 class GameMineStone extends BaseStructure {

@@ -9,11 +9,14 @@ admin.initializeApp({
 const db = admin.firestore()
 const errRef = db.collection('crash')
 const exitRef = db.collection('exit')
+
 function uploadError(error) {
     let docRef = errRef.doc(`error: ${new Date()}`).set(error)
 }
+
 function uploadExit(code) {
-    let docRef = exitRef.add({
+
+    let docRef = exitRef.doc(`exit: ${new Date()}`).set({
         exitCode: code,
         time: new Date()
     })
