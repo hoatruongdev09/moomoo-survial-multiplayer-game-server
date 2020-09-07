@@ -755,6 +755,12 @@ class Game {
 
     /* #region  COLLIDER TESTER */
     testCollisionCircle2Circle(object1, object2, response) {
+        if (object1 == null || typeof object1 === "undefined") {
+            return false
+        }
+        if (object2 == null || typeof object2 === "undefined") {
+            return false
+        }
         return this.physic.testCircle2Circle(
             object1.bodyCollider,
             object2.bodyCollider,
@@ -762,6 +768,12 @@ class Game {
         );
     }
     testCollisionPolygon2Circle(poliObj, circleObj, response) {
+        if (poliObj == null || typeof poliObj === "undefined") {
+            return false
+        }
+        if (circleObj == null || typeof circleObj === "undefined") {
+            return false
+        }
         return this.physic.testPolygon2Circle(
             poliObj.bodyCollider,
             circleObj.bodyCollider,
@@ -836,7 +848,7 @@ class Game {
         }
     }
     playerReflectAttackToNpc(idFrom, idTarget, damageReflect, forceReflect) {
-        this.npcs[idTarget].onBeingHit(this.players[idFrom], damageReflect);
+        this.npcs[idTarget].onBeingHit(this.players[idFrom], damageReflect, null);
         this.pushNpcBack(
             this.npcs[idTarget],
             this.npcs[idTarget].position.clone().sub(this.players[idFrom].position.clone()),

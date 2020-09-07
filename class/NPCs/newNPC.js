@@ -68,7 +68,9 @@ class NPC {
     onBeingHit(fromTarget, damage, dieCallback) {
         this.healthPoint -= damage;
         if (this.healthPoint <= 0) {
-            dieCallback(fromTarget, this);
+            if (dieCallback != null || typeof dieCallback !== "undefined") {
+                dieCallback(fromTarget, this);
+            }
         }
         this.onHit(fromTarget);
     }

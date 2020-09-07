@@ -17,6 +17,7 @@ const {
     error
 } = require("console");
 
+console.log("lolo: ", typeof myVar === "undefined")
 app.use(express.static(path.join(__dirname, "Game")));
 
 let listener = web.listen(PORT);
