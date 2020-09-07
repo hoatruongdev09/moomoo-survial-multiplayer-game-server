@@ -28,7 +28,10 @@ class User {
         this.skinId = null
         this.clanId = null
         this.name = ''
-        this.clientScreenSize = { width: 60, height: 30 }
+        this.clientScreenSize = {
+            width: 60,
+            height: 30
+        }
 
         // MOVEMENT PROPERTIES
         this.moveSpeed = null
@@ -37,7 +40,7 @@ class User {
         this.position = null
         this.moveDirect = null // vector
         this.lookDirect = null // angle
-        this.lastMovement = null  // angle
+        this.lastMovement = null // angle
         this.lastLook = null // angle
 
         // BODYPART
@@ -109,7 +112,9 @@ class User {
         this.menuState = new MenuState(this, this.stateManager)
         this.gameState = new GameState(this, this.stateManager)
 
-        this.stateManager.start(this.iniState, { socket: this.socket })
+        this.stateManager.start(this.iniState, {
+            socket: this.socket
+        })
         this.registerEvent()
     }
     resetMovementEffects() {
@@ -160,10 +165,17 @@ class User {
         this.stateManager.currentState.update(deltaTime)
     }
     enterMenu(data) {
-        this.stateManager.changeState(this.menuState, { socket: this.socket, user: this, options: data })
+        this.stateManager.changeState(this.menuState, {
+            socket: this.socket,
+            user: this,
+            options: data
+        })
     }
     enterGame(data) {
-        this.stateManager.changeState(this.gameState, { gameData: data, user: this })
+        this.stateManager.changeState(this.gameState, {
+            gameData: data,
+            user: this
+        })
     }
     movementEffect() {
         if (this.isTrapped) {
@@ -176,7 +188,6 @@ class User {
 
     }
     takeDamage(damage, dieCallback, reflect) {
-        console.log("take damage")
         let damageTaking = damage * (1 - this.damageTakenModifier)
         this.healthPoint -= damageTaking
         reflect(damageTaking * this.damageReflect, this.forceReflect)
@@ -188,8 +199,9 @@ class User {
         }
     }
     selfTakeDamage(damage, dieCallback) {
-        let damageTaking = (damage * this.selfDamage) * (1 - this.damageTakenModifier)
+        let damageTaking = (damage * this.selfDamage) * (1 - this.damageTakenModifier) - damage * this.lifeSteal
         this.healthPoint -= damageTaking
+        this.healthPoint = Mathf.clamp(this.healthPoint, 0, this.maxHealthPoint)
         if (this.healthPoint <= 0) {
             dieCallback(this.idGame)
             this.onDie()
@@ -197,8 +209,17 @@ class User {
             this.game.onPlayerGetHit(this.getHealthPointData())
         }
     }
+    takeHP(value) {
+        if (this.healthPoint >= this.maxHealthPoint) {
+            this.healthPoint = this.maxHealthPoint
+            return
+        }
+        this.healthPoint += value
+        this.healthPoint = Mathf.clamp(this.healthPoint, 0, this.maxHealthPoint)
+        this.game.onPlayerGetHit(this.getHealthPointData())
+    }
     lifeStealing(damage) {
-        this.takeHP(damage * this.lifeSteal)
+        // this.takeHP(damage * this.lifeSteal)
     }
     onDie() {
         this.isJoinedGame = false
@@ -260,21 +281,18 @@ class User {
         this.basicResources.increaseResource(resource)
         this.updateStatus()
     }
-    takeHP(value) {
-        if (this.healthPoint >= this.maxHealthPoint) {
-            this.healthPoint = this.maxHealthPoint
-            return
-        }
-        this.healthPoint += value
-        this.healthPoint = Mathf.clamp(this.healthPoint, 0, this.maxHealthPoint)
-        this.game.onPlayerGetHit(this.getHealthPointData())
-    }
+
 
     takeBonus(data) {
         this.kills += data.kills
         this.addGold(data.gold)
         this.addXP(data.xp)
-        this.stateManager.currentState.updateStatus()
+        this.updateStatus()
+    }
+    takeGold(value) {
+        this.addGold(value)
+        this.addXP(value);
+        this.updateStatus()
     }
     getCurrentGoldAmount() {
         return this.basicResources.Gold
@@ -284,17 +302,23 @@ class User {
         this.speedModifier = item.info.movement
     }
     updateStatus() {
+        let currentLevel = this.levelInfo.level
+        if (currentLevel >= LevelDescription.length) {
+            currentLevel = LevelDescription.length - 1
+        }
         this.send(TransmitCode.GameCode.playerStatus, {
+            id: this.idGame,
             scores: this.scores,
             kills: this.kills,
             level: this.levelInfo.level,
-            xp:
-                this.levelInfo.xp /
-                LevelDescription[this.levelInfo.level].nextLevelUpXp,
+            xp: this.levelInfo.xp /
+                LevelDescription[currentLevel].nextLevelUpXp,
             wood: this.basicResources.Wood,
             food: this.basicResources.Food,
             stone: this.basicResources.Stone,
             gold: this.basicResources.Gold,
+            hp: this.currentHealthPoint,
+            maxHP: this.maxHealthPoint
         });
     }
     registerEvent() {
@@ -327,8 +351,36 @@ class User {
             maxHP: this.maxHealthPoint
         }
     }
+    getMiniMapPosition() {
+        let data = []
+        data.push(this.getMapInfo())
+        let clanMember = this.getClanMemberMapInfO()
+        clanMember = clanMember.filter(mem => mem.id != this.idGame)
+        if (clanMember.length != 0) {
+            data.push(...clanMember)
+        }
+        return data
+    }
+    getClanMemberMapInfO() {
+        if (this.clanId == null) {
+            return []
+        }
+        let clanMemberPositionData = this.game.clanManager.getClanMembersData(this.clanId)
+        return clanMemberPositionData.map(mem => {
+            return mem.getMapInfo()
+        })
+    }
+    getMapInfo() {
+        return {
+            id: this.idGame,
+            pos: {
+                x: this.position.x,
+                y: this.position.y
+            }
+        }
+    }
     get isVisible() {
-        return (this.isInvisible && this.currentInvisible)
+        return !(this.isInvisible && this.currentInvisible && this.lastMovement == null)
     }
     get currentHealthPoint() {
         return this.healthPoint / this.maxHealthPoint

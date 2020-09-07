@@ -1,144 +1,156 @@
-const TransmitCode = require('../../transmitcode')
-const GameCode = TransmitCode.GameCode
-const ClanCode = TransmitCode.ClanCode
-const BaseState = require('./baseUserState')
+const TransmitCode = require("../../transmitcode");
+const GameCode = TransmitCode.GameCode;
+const ClanCode = TransmitCode.ClanCode;
+const BaseState = require("./baseUserState");
 const LevelDescription = require("../levelInfo");
 
-const Vector = require('../../GameUtils/vector')
-const SAT = require('sat')
+const Vector = require("../../GameUtils/vector");
+const SAT = require("../../GameUtils/modifiedSAT").sat;
 
 const Melee = require("../weapon/melee");
 const Ranged = require("../weapon/ranged");
 const Item = require("../Items/item");
 
-const ResourceManager = require('../Player/resourcesManager')
-const StructueManager = require('../Player/structureManager')
-const LevelManager = require('../Player/levelManager')
+const ResourceManager = require("../Player/resourcesManager");
+const StructueManager = require("../Player/structureManager");
+const LevelManager = require("../Player/levelManager");
 
-const Mathf = require('mathf');
-const { response } = require('express');
+const Mathf = require("mathf");
+const {
+    response
+} = require("express");
+// const { fn } = require('sequelize/types');
 
 class GameState extends BaseState {
     constructor(user, stateManager) {
-        super(user, stateManager)
-        this.game = null
-        this.resourcesView = []
-        this.structuresView = []
-        this.npcView = []
-        this.playersView = []
+        super(user, stateManager);
+        this.game = null;
+        this.resourcesView = [];
+        this.structuresView = [];
+        this.npcView = [];
+        this.playersView = [];
 
-        this.delayUseItem = false
-        this.delayUseItemTime = 500
-        this.invisibleTimeoutID = null
+        this.delayUseItem = false;
+        this.delayUseItemTime = 500;
+        this.invisibleTimeoutID = null;
+
+        this.delayChatTime = 1000;
     }
     enter(options) {
-        this.delayUseItem = false
-        this.user = options.user
-        this.socket = this.user.socket
-        this.game = this.user.game
+        this.delayUseItem = false;
+        this.user = options.user;
+        this.socket = this.user.socket;
+        this.game = this.user.game;
 
-        this.resourcesView = []
-        this.structuresView = []
-        this.npcView = []
-        this.playersView = []
+        this.resourcesView = [];
+        this.structuresView = [];
+        this.npcView = [];
+        this.playersView = [];
 
-        this.isAutoAttack = false
-        this.intervalAutoAttack = null
-
-        this.prepareEnterGame(options.gameData)
-        this.registerEvents()
+        this.isAutoAttack = false;
+        this.intervalAutoAttack = null;
+        this.user.lastMovement = null;
+        this.prepareEnterGame(options.gameData);
+        this.registerEvents();
+        // console.log(`enter: ${this.user.lastMovement}`)
     }
     update(deltaTime) {
-        this.updatePosition(deltaTime)
-        this.updateRotation()
+        this.updatePosition(deltaTime);
+        this.updateRotation();
     }
     exit(options) {
-        this.removeEvents()
-        this.clearAutoAttackInterval()
-        this.resetPlayerAttributes()
-        this.user.resetEffects()
-        this.user.resetAccessoryHat()
-        this.user.basicResources.reset()
+        this.removeEvents();
+        this.clearAutoAttackInterval();
+        this.resetPlayerAttributes();
+        this.user.resetEffects();
+        this.user.resetAccessoryHat();
+        this.user.basicResources.reset();
     }
     registerEvents() {
-        this.socket.on(GameCode.syncLookDirect, (data) => this.syncLookDirect(data))
-        this.socket.on(GameCode.syncMoveDirect, (data) => this.syncMoveDirect(data))
-        this.socket.on(GameCode.triggerAttack, (data) => this.useItem(data))
-        this.socket.on(GameCode.triggerAutoAttack, (data) => this.autoAttack(data))
-        this.socket.on(GameCode.switchItem, (data) => this.switchItem(data))
-        this.socket.on(GameCode.upgradeItem, (data) => this.upgradeItem(data))
-        this.socket.on(GameCode.playerChat, (data) => this.chat(data))
-        this.socket.on(GameCode.scoreBoard, () => this.sendScore())
-        this.socket.on(GameCode.shopSelectItem, (data) => this.chooseItem(data))
+        this.socket.on(GameCode.syncLookDirect, (data) =>
+            this.syncLookDirect(data)
+        );
+        this.socket.on(GameCode.syncMoveDirect, (data) =>
+            this.syncMoveDirect(data)
+        );
+        this.socket.on(GameCode.triggerAttack, (data) => this.useItem(data));
+        this.socket.on(GameCode.triggerAutoAttack, (data) => this.autoAttack(data));
+        this.socket.on(GameCode.switchItem, (data) => this.switchItem(data));
+        this.socket.on(GameCode.upgradeItem, (data) => this.upgradeItem(data));
+        this.socket.on(GameCode.playerChat, (data) => this.chat(data));
+        this.socket.on(GameCode.scoreBoard, () => this.sendScore());
+        this.socket.on(GameCode.shopSelectItem, (data) => this.chooseItem(data));
 
-        // this.socket.on(ClanCode.createClan, (data) => this.createClan(data))
-        // this.socket.on(ClanCode.kickMember, (data) => this.kickMember(data))
-        // this.socket.on(ClanCode.joinClan, (data) => this.requestJoinClan(data))
-        // this.socket.on(ClanCode.requestJoin, (data) => this.respondRequestJoinClan(data))
+        this.socket.on(ClanCode.createClan, (data) => this.createClan(data));
+        this.socket.on(ClanCode.kickMember, (data) => this.kickMember(data));
+        this.socket.on(ClanCode.joinClan, (data) => this.requestJoinClan(data));
+        this.socket.on(ClanCode.requestJoin, (data) =>
+            this.respondRequestJoinClan(data)
+        );
     }
     removeEvents() {
-        this.socket.off(GameCode.syncLookDirect, (data) => this.syncLookDirect(data))
-        this.socket.off(GameCode.syncMoveDirect, (data) => this.syncMoveDirect(data))
-        this.socket.off(GameCode.triggerAttack, (data) => this.useItem(data))
-        this.socket.off(GameCode.triggerAutoAttack, (data) => this.autoAttack(data))
-        this.socket.off(GameCode.switchItem, (data) => this.switchItem(data))
-        this.socket.off(GameCode.upgradeItem, (data) => this.upgradeItem(data))
-        this.socket.off(GameCode.playerChat, (data) => this.chat(data))
-        this.socket.off(GameCode.scoreBoard, () => this.sendScore())
-        this.socket.off(GameCode.shopSelectItem, (data) => this.chooseItem(data))
+        this.socket.removeAllListeners(GameCode.syncLookDirect);
+        this.socket.removeAllListeners(GameCode.syncMoveDirect);
+        this.socket.removeAllListeners(GameCode.triggerAttack);
+        this.socket.removeAllListeners(GameCode.triggerAutoAttack);
+        this.socket.removeAllListeners(GameCode.switchItem);
+        this.socket.removeAllListeners(GameCode.upgradeItem);
+        this.socket.removeAllListeners(GameCode.playerChat);
+        this.socket.removeAllListeners(GameCode.scoreBoard);
+        this.socket.removeAllListeners(GameCode.shopSelectItem);
 
-        this.socket.off(ClanCode.createClan, (data) => this.createClan(data))
-        this.socket.off(ClanCode.kickMember, (data) => this.kickMember(data))
-        this.socket.off(ClanCode.joinClan, (data) => this.requestJoinClan(data))
-        this.socket.off(ClanCode.requestJoin, (data) => this.respondRequestJoinClan(data))
+        this.socket.removeAllListeners(ClanCode.createClan);
+        this.socket.removeAllListeners(ClanCode.kickMember);
+        this.socket.removeAllListeners(ClanCode.joinClan);
+        this.socket.removeAllListeners(ClanCode.requestJoin);
     }
     clearAutoAttackInterval() {
-        this.isAutoAttack = false
+        this.isAutoAttack = false;
         if (this.intervalAutoAttack != null) {
-            clearInterval(this.intervalAutoAttack)
+            clearInterval(this.intervalAutoAttack);
         }
     }
     prepareEnterGame(data) {
-        this.user.isJoinedGame = true
-        this.user.moveSpeed = data.moveSpeed
-        this.user.position = data.position
-        this.user.lookDirect = data.lookDirect
+        this.user.isJoinedGame = true;
+        this.user.moveSpeed = data.moveSpeed;
+        this.user.position = data.position;
+        this.user.lookDirect = data.lookDirect;
 
-        this.user.healthPoint = this.user.maxHealthPoint
-        this.user.kills = 0
-        this.user.scores = 0
-        this.user.levelInfo.reset()
-        this.user.basicResources.reset()
+        this.user.healthPoint = this.user.maxHealthPoint;
+        this.user.kills = 0;
+        this.user.scores = 0;
+        this.user.levelInfo.reset();
+        this.user.basicResources.reset();
 
-        this.user.ownedItems = data.items.items
-        this.user.weapons = data.items.weapons
-        this.user.currentItem = this.createWeapon(this.user.weapons[0])
+        this.user.ownedItems = data.items.items;
+        this.user.weapons = data.items.weapons;
+        this.user.currentItem = this.createWeapon(this.user.weapons[0]);
 
-        this.user.ownedHat = data.shop.hats
-        this.user.ownedAccessories = data.shop.accessories
+        this.user.ownedHat = data.shop.hats;
+        this.user.ownedAccessories = data.shop.accessories;
 
-        this.user.isAutoAttack = false
+        this.user.isAutoAttack = false;
         if (this.user.intervalAutoAttack != null) {
-            clearInterval(this.user.intervalAutoAttack)
+            clearInterval(this.user.intervalAutoAttack);
         }
         this.user.structures.reset();
-        this.initBodyCollider(data.bodyRadius)
+        this.initBodyCollider(data.bodyRadius);
 
-        this.updateStatus()
-        this.syncItem()
-        this.syncItemShop()
+        this.updateStatus();
+        this.syncItem();
+        this.syncItemShop();
     }
     resetPlayerAttributes() {
-        this.user.moveSpeed = null
-        this.user.lookDirect = null
-        this.user.maxHealthPoint = 100
-        this.playersView = []
-        this.npcView = []
-        this.resourcesView = []
-        this.structuresView = []
+        this.user.moveSpeed = null;
+        this.user.lookDirect = null;
+        this.user.maxHealthPoint = 100;
+        this.playersView = [];
+        this.npcView = [];
+        this.resourcesView = [];
+        this.structuresView = [];
 
-        this.user.lastMovement = null
-        this.user.lastLook = null
+        this.user.lastMovement = null;
+        this.user.lastLook = null;
     }
     /* #region  TRANSFORM JOBS */
     updatePosition(deltaTime) {
@@ -150,10 +162,14 @@ class GameState extends BaseState {
             Math.sin(this.user.lastMovement)
         );
 
-        this.user.position.add(this.user.moveDirect.clone().scale(this.user.moveSpeed * (this.user.movementEffect() * deltaTime)))
+        this.user.position.add(
+            this.user.moveDirect
+            .clone()
+            .scale(this.user.moveSpeed * (this.user.movementEffect() * deltaTime))
+        );
         // console.log("modifier: ", (this.platformStanding == false ? this.speedModifier * this.environmentSpeedModifier : 1))
 
-        this.updateBodyCollider()
+        this.updateBodyCollider();
         // if (this.user.turretHat != null) {
         //     this.user.turretHat.pos
         // }
@@ -165,14 +181,18 @@ class GameState extends BaseState {
             Math.cos(this.user.lastMovement),
             Math.sin(this.user.lastMovement)
         );
-        this.user.position.add(this.user.moveDirect.clone().scale(this.user.moveSpeed * (this.user.movementEffect() * deltaTime)))
-        this.updateBodyCollider()
+        this.user.position.add(
+            this.user.moveDirect
+            .clone()
+            .scale(this.user.moveSpeed * (this.user.movementEffect() * deltaTime))
+        );
+        this.updateBodyCollider();
 
         this.checkCollider();
     }
     movePlayer(direct, deltaTime) {
         if (this.user.platformStanding) {
-            return
+            return;
         }
         this.user.lastMovement = direct;
     }
@@ -194,18 +214,30 @@ class GameState extends BaseState {
         this.checkColliderWithStructures();
     }
     checkColliderWithResources() {
-        this.resourcesView = this.game.getResourceFromView(this.user.position)
+        this.resourcesView = this.game.getResourceFromView(
+            this.user.position,
+            this.user.clientScreenSize
+        );
         for (const r of this.resourcesView) {
-            this.game.testCollisionCircle2Circle(this.user, r, (response, objectCollide) =>
+            this.game.testCollisionCircle2Circle(
+                this.user,
+                r,
+                (response, objectCollide) =>
                 this.onCollisionWithResource(response, objectCollide)
             );
         }
         // console.log("resource: ", this.resourcesView)
     }
     checkColliderWithStructures() {
-        this.structuresView = this.game.getStructureFromView(this.user.position);
+        this.structuresView = this.game.getStructureFromView(
+            this.user.position,
+            this.user.clientScreenSize
+        );
         for (const s of this.structuresView) {
-            this.game.testCollisionCircle2Circle(this.user, s, (response, objectCollide) =>
+            this.game.testCollisionCircle2Circle(
+                this.user,
+                s,
+                (response, objectCollide) =>
                 this.onCollisionWithStructures(response, objectCollide, s)
             );
         }
@@ -216,20 +248,25 @@ class GameState extends BaseState {
         this.user.position.y -= overlapPos.y;
     }
     onCollisionWithStructures(response, object, objectInfo) {
-        let structures = ["Wall", "Spike", "Windmill", "Turret", "MineStone", "Sapling"]
+        let structures = [
+            "Wall",
+            "Spike",
+            "Windmill",
+            "Turret",
+            "MineStone",
+            "Sapling",
+        ];
         if (structures.includes(objectInfo.type)) {
             // if (objectInfo.type == "Wall" || objectInfo.type == "Spike" || objectInfo.type == "Windmill" || objectInfo.type == "Turret" || ) {
             let overlapPos = response.overlapV;
             this.user.position.x -= overlapPos.x;
             this.user.position.y -= overlapPos.y;
         }
-        this.game.playerHitStructures(this.user.idGame, objectInfo.id)
+        this.game.playerHitStructures(this.user.idGame, objectInfo.id);
     }
     /* #endregion */
 
     /* #region  LOGIC */
-
-
 
     syncLookDirect(data) {
         this.user.lastLook = data;
@@ -240,34 +277,18 @@ class GameState extends BaseState {
 
     initBodyCollider(bodyRadius) {
         if (this.user.bodyCollider == null) {
-            this.user.bodyCollider = new SAT.Circle(new SAT.Vector(this.user.position.x, this.user.position.y), bodyRadius);
+            this.user.bodyCollider = new SAT.Circle(
+                new SAT.Vector(this.user.position.x, this.user.position.y),
+                bodyRadius
+            );
         } else {
-            this.updateBodyCollider()
+            this.updateBodyCollider();
             // this.bodyCollider = new SAT.Circle(new SAT.Vector(this.position.x, this.position.syncLookDirect), data.bodyRadius)
         }
     }
-
-
     updateStatus() {
-        let currentLevel = this.user.levelInfo.level >= LevelDescription.length ? LevelDescription.length - 1 : this.user.levelInfo.level
-        this.user.send(TransmitCode.GameCode.playerStatus, {
-            scores: this.user.scores,
-            kills: this.user.kills,
-            level: this.user.levelInfo.level,
-            xp:
-                this.user.levelInfo.xp /
-                LevelDescription[currentLevel].nextLevelUpXp,
-            wood: this.user.basicResources.Wood,
-            food: this.user.basicResources.Food,
-            stone: this.user.basicResources.Stone,
-            gold: this.user.basicResources.Gold,
-        });
+        this.user.updateStatus();
     }
-
-
-
-
-
     /* #endregion */
     /* #region  SHOP  */
     syncItem() {
@@ -281,8 +302,8 @@ class GameState extends BaseState {
                 return i.id;
             }),
             equippedHat: this.user.equippedHat == null ? "" : this.user.equippedHat.id,
-            equippedAccessory:
-                this.user.equippedAccessory == null ? "" : this.user.equippedAccessory.id,
+            equippedAccessory: this.user.equippedAccessory == null ?
+                "" : this.user.equippedAccessory.id,
         });
     }
 
@@ -344,84 +365,133 @@ class GameState extends BaseState {
             if (data.isbtn) this.triggerUseItem();
         }
     }
-    delayVisible() {
+    old_delayVisible() {
         if (!this.user.isInvisible) {
-            return
+            return;
         }
         if (this.invisibleTimeoutID != null) {
-            clearTimeout(this.invisibleTimeoutID)
+            clearTimeout(this.invisibleTimeoutID);
+            this.invisibleTimeoutID = null;
+            return;
         }
-        this.user.currentInvisible = false
+        this.user.currentInvisible = false;
         this.invisibleTimeoutID = setTimeout(() => {
-            this.user.currentInvisible = this.user.isInvisible
-            console.log("current invisible: ", this.user.currentInvisible)
-        }, 500)
+            this.user.currentInvisible = this.user.isInvisible;
+            console.log("current invisible: ", this.user.currentInvisible);
+        }, 1000);
+    }
+    delayVisible() {
+        if (!this.user.isInvisible) {
+            return;
+        }
+        if (this.invisibleTimeoutID != null) {
+            if (!this.invisibleTimeoutID.cleared) {
+                this.invisibleTimeoutID.clear();
+            }
+        } else {
+            this.invisibleTimeoutID = this.timeOutVisible(() => {
+                this.user.currentInvisible = this.user.isInvisible;
+            }, 1000);
+        }
+        this.user.currentInvisible = false;
+        this.invisibleTimeoutID.run();
+    }
+    timeOutVisible(callback, time) {
+        return {
+            id: null,
+            cleared: false,
+            run: () => {
+                this.clear = false;
+                this.id = setTimeout(callback, time);
+            },
+            clear: () => {
+                this.cleared = true;
+                clearTimeout(this.id);
+            },
+        };
     }
     triggerRangedAttack() {
         if (!this.user.currentItem.canUse) {
             return;
         }
-        this.delayVisible()
+        this.delayVisible();
         let direct = new Vector(
             -Math.cos(this.user.lookDirect),
             -Math.sin(this.user.lookDirect)
         );
-        this.user.currentItem.use(this.user, direct, (cost) => this.removeResource(cost))
+        this.user.currentItem.use(this.user, direct, (cost) =>
+            this.removeResource(cost)
+        );
     }
     triggerUseItem() {
         if (this.delayUseItem) {
-            return
+            return;
         }
-        this.delayVisible()
-        this.delayUseItem = true
-        setTimeout(() => { this.delayUseItem = false }, this.delayUseItemTime)
+        this.delayVisible();
+        this.delayUseItem = true;
+        setTimeout(() => {
+            this.delayUseItem = false;
+        }, this.delayUseItemTime);
         let direct = new Vector(
             -Math.cos(this.user.lookDirect),
             -Math.sin(this.user.lookDirect)
         );
-        this.user.currentItem.new_use(this.user, direct, (cost) => {
-            this.removeResource(cost)
-        }, () => {
-            this.switchItem({ code: this.user.weapons[0].id })
-        })
+        this.user.currentItem.new_use(
+            this.user,
+            direct,
+            (cost) => {
+                this.removeResource(cost);
+            },
+            () => {
+                this.switchItem({
+                    code: this.user.weapons[0].id,
+                });
+            }
+        );
     }
     removeResource(cost) {
         // console.log("current item: ", this.user.currentItem)
-        let costModifier = 1
+        let costModifier = 1;
         if (this.user.currentItem.toString() == "Ranged") {
-            costModifier = this.user.projectileCostModifier
+            costModifier = this.user.projectileCostModifier;
         }
-        let keys = Object.keys(cost)
-        keys.forEach(k => {
-            this.user.basicResources[k] -= cost[k] * costModifier
-        })
-        this.updateStatus()
+        let keys = Object.keys(cost);
+        keys.forEach((k) => {
+            this.user.basicResources[k] -= cost[k] * costModifier;
+        });
+        this.updateStatus();
     }
     triggerMeleeAttack() {
         if (!this.user.currentItem.canUse) {
             return;
         }
-        this.delayVisible()
+        this.delayVisible();
         let direct = new Vector(
             -Math.cos(this.user.lookDirect),
             -Math.sin(this.user.lookDirect)
         );
+
         this.user.currentItem.use(this.user, direct);
+        this.game.onPlayerTriggerAttack({
+            idGame: this.user.idGame,
+            type: this.user.currentItem.idType,
+        });
+
         this.checkAttackToResource();
         this.checkAttackToStructure();
         this.checkAttackToNpc();
         this.checkAttackToPlayer();
-
-        this.game.onPlayerTriggerAttack({
-            idGame: this.user.idGame,
-            type: this.user.currentItem.idType,
-        })
     }
     checkAttackToResource() {
-        this.resourcesView = this.game.getResourceFromView(this.user.position);
+        this.resourcesView = this.game.getResourceFromView(
+            this.user.position,
+            this.user.clientScreenSize
+        );
         for (const r of this.resourcesView) {
             this.game.testCollisionPolygon2Circle(
-                this.user.currentItem, r, (response, objectCollide) =>
+                this.user.currentItem,
+                r,
+                (response, objectCollide) =>
                 this.onHitResource(response, objectCollide, r)
             );
         }
@@ -432,53 +502,74 @@ class GameState extends BaseState {
                 this.user.currentItem,
                 s,
                 (response, objectCollide) =>
-                    this.onHitStructure(response, objectCollide, s)
+                this.onHitStructure(response, objectCollide, s)
             );
         }
     }
     checkAttackToNpc() {
-        this.npcView = this.game.getNpcFromView(this.user.position);
+        this.npcView = this.game.getNpcFromView(
+            this.user.position,
+            this.user.clientScreenSize
+        );
         for (const n of this.npcView) {
-            this.game.testCollisionPolygon2Circle(this.user.currentItem, n, (response, objectCollide) => this.onHitNpc(response, objectCollide, n));
+            this.game.testCollisionPolygon2Circle(
+                this.user.currentItem,
+                n,
+                (response, objectCollide) => this.onHitNpc(response, objectCollide, n)
+            );
         }
     }
     checkAttackToPlayer() {
-        this.playersView = this.game.getPlayersFromView(this.user.position);
+        this.playersView = this.game.getPlayersFromView(
+            this.user.position,
+            this.user.clientScreenSize
+        );
         // console.log("player view: ", this.playersView);
         for (const p of this.playersView) {
             this.game.testCollisionPolygon2Circle(
                 this.user.currentItem,
                 p,
                 (response, objectCollide) =>
-                    this.onHitPlayer(response, objectCollide, p)
+                this.onHitPlayer(response, objectCollide, p)
             );
         }
     }
     onHitResource(response, object, objectInfo) {
-        this.game.playerAttackResource(this.user, objectInfo.id, this.user.currentItem);
+        this.game.playerAttackResource(
+            this.user,
+            objectInfo.id,
+            this.user.currentItem
+        );
     }
     onHitStructure(response, object, objectInfo) {
-        let damage = this.user.currentItem.info.structureDamage * (this.user.structureDamageModifier + 1)
-        let gatherRate = this.user.currentItem.info.gatherRate
-        let goldGatherRate = this.user.currentItem.info.goldGatherRate + this.user.farmGoldBonus
+        let damage =
+            this.user.currentItem.info.structureDamage *
+            (this.user.structureDamageModifier + 1);
+        let gatherRate = this.user.currentItem.info.gatherRate;
+        let goldGatherRate =
+            this.user.currentItem.info.goldGatherRate + this.user.farmGoldBonus;
         this.game.playerAttackStructure(
             this.user.idGame,
-            objectInfo.id, damage,
+            objectInfo.id,
+            damage,
             gatherRate,
             goldGatherRate
-        )
-
+        );
     }
     onHitNpc(response, object, objectInfo) {
-        let damage = this.user.currentItem.info.damage * (1 + this.user.damageModifier)
+        let damage =
+            this.user.currentItem.info.damage * (1 + this.user.damageModifier);
         this.game.playerHitNpc(this.user.idGame, objectInfo.id, damage);
     }
     onHitPlayer(response, object, objectInfo) {
-        if (objectInfo.id != this.user.idGame) {
-            let damage = this.user.currentItem.info.damage * (1 + this.user.damageModifier)
-            this.game.playerHitPlayer(this.user.idGame, objectInfo.id, damage);
-            this.user.currentItem.stealResourceEffect((resource) => { })
+        if (this.user == null || typeof this.user === "undefined" || objectInfo.id == this.user.idGame) {
+            return;
         }
+        let damage =
+            this.user.currentItem.info.damage * (1 + this.user.damageModifier);
+        this.game.playerHitPlayer(this.user.idGame, objectInfo.id, damage);
+        this.user.currentItem.stealResourceEffect((resource) => {});
+
     }
 
     /* #endregion */
@@ -492,7 +583,7 @@ class GameState extends BaseState {
         if (type == "w") {
             let weapon = this.findWeapon(data.code);
             if (weapon != null) {
-                this.user.equipHoldItem(this.createWeapon(weapon))
+                this.user.equipHoldItem(this.createWeapon(weapon));
             }
         } else if (type == "i") {
             let item = this.findItem(data.code);
@@ -501,10 +592,11 @@ class GameState extends BaseState {
             }
         }
         // console.log("current Item: ", this.currentItem)
+        this.delayVisible();
         this.game.onPlayerSwitchItem({
             id: this.user.idGame,
             item: this.user.currentItem.info.id,
-        })
+        });
     }
     findWeapon(id) {
         let weapon = null;
@@ -530,28 +622,31 @@ class GameState extends BaseState {
     chooseItem(data) {
         console.log("choose item: ", data);
         if (data.id[0] == "h") {
-            this.chooseHat(data)
+            this.chooseHat(data);
         } else {
-            this.chooseAccessory(data)
+            this.chooseAccessory(data);
         }
-        this.delayVisible()
+        this.delayVisible();
         this.syncEquipItem();
         this.syncItemShop();
     }
     chooseHat(data) {
         if (this.checkIfOwnedHatHaveItem(data.id)) {
             // if owned this item
-            if (this.user.equippedHat != null && this.user.equippedHat.id == data.id) {
+            if (
+                this.user.equippedHat != null &&
+                this.user.equippedHat.id == data.id
+            ) {
                 // if equiped then unequip
-                this.user.equippedHat.remove(this.user)
+                this.user.equippedHat.remove(this.user);
                 this.user.equippedHat = null;
             } else {
                 // if not equiped then equip
                 if (this.user.equippedHat != null) {
-                    this.user.equippedHat.remove(this.user)
+                    this.user.equippedHat.remove(this.user);
                 }
                 this.user.equippedHat = this.getOwnedItemById(data.id);
-                this.user.equippedHat.effect(this.user)
+                this.user.equippedHat.effect(this.user);
             }
         } else {
             // if not owned this item
@@ -591,19 +686,22 @@ class GameState extends BaseState {
     chooseAccessory(data) {
         if (this.checkIfOwnedAccessoryHaveItem(data.id)) {
             // if owned this item
-            if (this.user.equippedAccessory != null && this.user.equippedAccessory.id == data.id) {
+            if (
+                this.user.equippedAccessory != null &&
+                this.user.equippedAccessory.id == data.id
+            ) {
                 // if equiped then unequip
                 // console.log("unequip accessory");
-                this.user.equippedAccessory.remove(this.user)
+                this.user.equippedAccessory.remove(this.user);
                 this.user.equippedAccessory = null;
             } else {
                 // if not equiped then equip
                 // console.log("equip accessory");
                 if (this.user.equippedAccessory != null) {
-                    this.user.equippedAccessory.remove(this.user)
+                    this.user.equippedAccessory.remove(this.user);
                 }
                 this.user.equippedAccessory = this.getOwnedItemById(data.id);
-                this.user.equippedAccessory.effect(this.user)
+                this.user.equippedAccessory.effect(this.user);
             }
         } else {
             // if not owned this item
@@ -619,8 +717,9 @@ class GameState extends BaseState {
         this.game.onPlayerEquipItem({
             id: this.user.idGame,
             hat: this.user.equippedHat == null ? "" : this.user.equippedHat.id,
-            acc: this.user.equippedAccessory == null ? "" : this.user.equippedAccessory.id,
-        })
+            acc: this.user.equippedAccessory == null ?
+                "" : this.user.equippedAccessory.id,
+        });
     }
     syncItemShop() {
         this.user.send(GameCode.syncShop, {
@@ -628,13 +727,14 @@ class GameState extends BaseState {
                 return i.id;
             }),
             equipedHat: this.user.equippedHat == null ? "" : this.user.equippedHat.id,
-            equipedAccessory:
-                this.user.equippedAccessory == null ? "" : this.user.equippedAccessory.id,
+            equipedAccessory: this.user.equippedAccessory == null ?
+                "" : this.user.equippedAccessory.id,
         });
     }
     /* #endregion */
     /* #region  CLAN JOBS */
     createClan(data) {
+        console.log("create clan: ", data);
         this.game.createClan(data.name, this.user);
     }
     kickMember(data) {
@@ -665,7 +765,12 @@ class GameState extends BaseState {
         if (this.user.clanId == null) {
             return;
         }
-        if (this.game.clanManager.checkIsMasterOfClan(this.user.idGame, this.user.clanId)) {
+        if (
+            this.game.clanManager.checkIsMasterOfClan(
+                this.user.idGame,
+                this.user.clanId
+            )
+        ) {
             this.game.clanManager.respondRequestJoin(
                 data.id,
                 this.user.clanId,
@@ -677,7 +782,7 @@ class GameState extends BaseState {
     /* #region  LEVEL UP & UPGRADE */
     addXP(value) {
         this.user.levelInfo.xp += value;
-        console.log("level info: ", this.user.levelInfo)
+        console.log("level info: ", this.user.levelInfo);
         let currentLv = this.user.levelInfo.level;
         if (currentLv >= LevelDescription.length) {
             currentLv = LevelDescription.length - 1;
@@ -702,8 +807,8 @@ class GameState extends BaseState {
                 lvUpItem.push(i.id);
             }
         });
-        this.user.maxHealthPoint *= 1.2
-        this.user.healthPoint *= 1.2
+        this.user.maxHealthPoint *= 1.2;
+        this.user.healthPoint *= 1.2;
         this.user.send(GameCode.upgradeItem, {
             items: lvUpItem,
         });
@@ -722,7 +827,7 @@ class GameState extends BaseState {
         this.game.onPlayerSwitchItem({
             id: this.user.idGame,
             item: this.user.currentItem.info.id,
-        })
+        });
         this.syncItem();
     }
     upgradeWeapon(info) {
@@ -731,7 +836,7 @@ class GameState extends BaseState {
         } else {
             this.user.weapons[1] = info;
         }
-        this.user.equipHoldItem(this.createWeapon(info))
+        this.user.equipHoldItem(this.createWeapon(info));
     }
     upgradeOwnedItem(info) {
         if (["Windmill", "Wall", "Spike", "Consume"].includes(info.type)) {
@@ -747,73 +852,81 @@ class GameState extends BaseState {
 
     /* #endregion */
     /* #region  MISC */
-
+    delayChat() {
+        this.socket.removeAllListeners(GameCode.playerChat);
+        setTimeout(() => {
+            this.socket.on(GameCode.playerChat, (data) => this.chat(data));
+        }, this.delayChatTime);
+    }
     chat(data) {
+        this.delayChat();
+        console.log("chat: ", data);
         if (!this.makeCheat(data)) {
             this.game.sendChat(data);
         }
     }
     makeCheat(data) {
-        let cheatData = this.analyzeChatText(data.text)
-        return this.cheat(cheatData)
+        let cheatData = this.analyzeChatText(data.text);
+        return this.cheat(cheatData);
     }
     analyzeChatText(text) {
-        let data = text.split(':')
-        return data
+        let data = text.split(":");
+        return data;
     }
     cheat(data) {
         if (data == null || data.length == 0 || data.length < 2) {
-            return false
+            return false;
         }
-        let cheatInfos = data[1].split(';')
-
-        console.log(`cheat: ${data} : split: ${cheatInfos}`)
+        let cheatInfos = data[1].split(";");
+        console.log(`cheat: ${data} : split: ${cheatInfos}`);
         if (data[0] == "rss") {
-            let value = Number(cheatInfos[0])
+            let value = Number(cheatInfos[0]);
             if (!isNaN(value) && isFinite(value)) {
                 this.user.basicResources.addAll(value);
                 this.updateStatus();
             }
-            return true
+            return true;
         }
         if (data[0] == "hp") {
-            let value = Number(cheatInfos[0])
+            let value = Number(cheatInfos[0]);
             if (!isNaN(value) && isFinite(value)) {
-                this.user.healthPoint = Mathf.clamp(value, 1, this.user.maxHealthPoint)
-                this.game.onPlayerGetHit(this.user.getHealthPointData())
+                this.user.healthPoint = Mathf.clamp(value, 1, this.user.maxHealthPoint);
+                this.game.onPlayerGetHit(this.user.getHealthPointData());
             } else {
-                return false
+                return false;
             }
             return true;
         }
         if (data[0] == "exp") {
-            let value = Number(cheatInfos[0])
+            let value = Number(cheatInfos[0]);
             if (!isNaN(value) && isFinite(value)) {
                 this.addXP(value);
             } else {
-                return false
+                return false;
             }
-            return true
+            return true;
         }
         if (data[0] == "pos") {
-            let x = Number(cheatInfos[0])
-            let y = Number(cheatInfos[1])
+            let x = Number(cheatInfos[0]);
+            let y = Number(cheatInfos[1]);
             if (!isNaN(x) && isFinite(x) & !isNaN(y) && isFinite(y)) {
-                this.user.position.x = x
-                this.user.position.y = y
+                this.user.position.x = x;
+                this.user.position.y = y;
             } else {
-                return false
+                return false;
             }
-            return true
+            return true;
         }
         if (data[0] == "wp") {
-            let id = cheatInfos[0].replace(/\s/g, '')
-            this.upgradeItem({ code: id })
-            return true
+            let id = cheatInfos[0].replace(/\s/g, "");
+            this.upgradeItem({
+                code: id,
+            });
+            return true;
         } else {
-            return false
+            return false;
         }
-        return false
+        return false;
     }
     sendScore() {
         let data = this.game.getPlayerScore();
@@ -823,14 +936,14 @@ class GameState extends BaseState {
     }
 
     onDisconnected() {
-        this.isAutoAttack = false
+        this.isAutoAttack = false;
         if (this.intervalAutoAttack != null) {
-            clearInterval(this.intervalAutoAttack)
+            clearInterval(this.intervalAutoAttack);
         }
         this.kickMember({
-            id: this.user.idGame
-        })
+            id: this.user.idGame,
+        });
     }
     /* #endregion */
 }
-module.exports = GameState
+module.exports = GameState;

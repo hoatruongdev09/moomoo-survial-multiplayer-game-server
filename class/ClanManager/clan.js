@@ -15,6 +15,38 @@ class Clan {
     update(deltaTime) {
 
     }
+    getMemberPositionData() {
+        let data = []
+        data.push(this.master)
+        data.push(...this.member)
+        return data.map(mem => {
+            return {
+                id: mem.idGame,
+                pos: {
+                    x: mem.position.x,
+                    y: mem.position.y
+                }
+            }
+        })
+    }
+    syncClanMemberPosition() {
+        let data = this.member.map(mem => {
+            return {
+                id: mem.idGame,
+                pos: mem.position
+            }
+        })
+        data.push({
+            id: this.master.idGame,
+            pos: this.master.position
+        })
+        this.sendPositionData(data)
+    }
+    sendPositionData(data) {
+        this.broadcast(ClanCode.syncMemberPosition, {
+            pos: data
+        })
+    }
     checkExistedMember(id) {
         let trueMember = this.getAllMember()
         for (let i = 0; i < trueMember.length; i++) {
@@ -39,6 +71,8 @@ class Clan {
         if (this.checkExistedMember(player.idGame)) {
             return
         }
+        var requests = this.requestJoin.filter(p => { if (p.idGame == player.idGame) return p })
+        if (requests.length != 0) { return; }
         this.requestJoin.push(player)
         this.sendToMaster(ClanCode.requestJoin, {
             id: player.idGame
@@ -67,19 +101,24 @@ class Clan {
         newMember.clanId = this.id
         this.member.push(newMember)
     }
-    getAllMember() {
+    getAllMemberData() {
         let data = []
+        data.push(this.master)
+        data.push(...this.member)
+        return data
+    }
+    getAllMember() {
+        let data = this.member.map(mem => {
+            return {
+                id: mem.idGame,
+                idClan: this.id,
+                role: 0
+            }
+        })
         data.push({
             id: this.master.idGame,
             idClan: this.id,
             role: 1
-        })
-        this.member.forEach(m => {
-            data.push({
-                id: m.idGame,
-                idClan: this.id,
-                role: 0
-            })
         })
         return data
     }
@@ -93,7 +132,8 @@ class Clan {
         this.master.send(event, args)
     }
     broadcast(event, args) {
-        let members = this.member
+        let members = []
+        members.push(...this.member)
         members.push(this.master)
         members.forEach(m => {
             if (m != null) {

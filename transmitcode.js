@@ -41,7 +41,9 @@ const gamecode = {
     syncShop: "g26",
     shopSelectItem: "g27",
     syncEquipItem: "g28",
-    syncStructure: "g29"
+    syncStructure: "g29",
+
+    miniMapData: "g30"
 }
 const clanCode = {
     createClan: "c0",
@@ -51,6 +53,7 @@ const clanCode = {
     kickMember: "c4",
     member: "c5",
     listClan: "c6",
+    syncMemberPosition: "c7"
 }
 module.exports = {
     ServerCode: servercode,

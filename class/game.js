@@ -37,8 +37,7 @@ class Game {
         this.structuresCount = 0;
 
         this.map = new Map(
-            this.gameConfig.mapsize,
-            {
+            this.gameConfig.mapsize, {
                 x: 2,
                 y: 2,
             },
@@ -51,13 +50,17 @@ class Game {
     }
 
     update(deltaTime) {
-        this.new_updatePlayer(deltaTime);
-        this.broadcastPlayerPosition();
-        this.new_updateNPC(deltaTime);
-        this.broadcastNpcPosition();
-        this.broadcastStructurePosition()
-        this.updatePositionProjectile(deltaTime);
+        this.new_updatePlayer(deltaTime)
+        this.new_updateNPC(deltaTime)
+        this.updatePositionProjectile(deltaTime)
         this.clanManager.update(deltaTime)
+        this.lateUpdate(deltaTime)
+    }
+    lateUpdate(deltaTime) {
+        this.broadcastPlayerPosition()
+        this.broadcastStructurePosition()
+        this.broadcastNpcPosition()
+        this.syncMapData()
     }
     /* #region  CLAN MANAGER */
 
@@ -84,21 +87,18 @@ class Game {
     }
     initializeResources() {
         this.resources = new Array(this.gameConfig.resourceCount());
-        this.initializeResource(0, this.gameConfig.woodCount, ResourceType.Wood);
-        this.initializeResource(10, this.gameConfig.foodCount, ResourceType.Food);
-        this.initializeResource(20, this.gameConfig.rockCount, ResourceType.Stone);
-        this.initializeResource(30, this.gameConfig.goldCount, ResourceType.Gold);
-    }
-    initializeResource(startId, count, type) {
-        for (let i = startId; i < startId + count; i++) {
-            let rs = new Resource(
-                i,
-                type,
-                this.map.randomPosition(),
-                -1,
-                this.gameConfig.defaultResourceRadius
-            );
-            this.resources[i] = rs;
+        let index = 0
+        for (let i = 0; i < this.gameConfig.woodCount; i++, index++) {
+            this.resources[index] = new Resource(index, ResourceType.Wood, this.map.randomPosition(), -1, this.gameConfig.defaultResourceRadius)
+        }
+        for (let i = 0; i < this.gameConfig.foodCount; i++, index++) {
+            this.resources[index] = new Resource(index, ResourceType.Food, this.map.randomPosition(), -1, this.gameConfig.defaultResourceRadius)
+        }
+        for (let i = 0; i < this.gameConfig.rockCount; i++, index++) {
+            this.resources[index] = new Resource(index, ResourceType.Stone, this.map.randomPosition(), -1, this.gameConfig.defaultResourceRadius)
+        }
+        for (let i = 0; i < this.gameConfig.goldCount; i++, index++) {
+            this.resources[index] = new Resource(index, ResourceType.Gold, this.map.randomPosition(), -1, this.gameConfig.defaultResourceRadius)
         }
     }
     getNpcEvent() {
@@ -163,7 +163,7 @@ class Game {
         return this.currentPlayerCount >= this.gameConfig.maxPlayer;
     }
     new_canJoin() {
-        if (this.currentPlayerCount >= this.gameConfig.maxPlayer) {
+        if (this.isFull()) {
             return {
                 result: false,
                 reason: "Game is full",
@@ -196,6 +196,7 @@ class Game {
         let slot = this.findEmptySlot()
         if (slot != null) {
             this.players[slot] = player
+            player.game = this
             this.currentPlayerCount++
             player.receiveGameData({
                 game: this,
@@ -277,7 +278,38 @@ class Game {
             }
         });
     }
+    syncMapData() {
+        this.players.forEach(p => {
+            if (p != null && p.isJoinedGame) {
+                let miniMapInfo = p.getMiniMapPosition()
+                p.send(gamecode.miniMapData, {
+                    data: miniMapInfo
+                })
+            }
+        })
+    }
     broadcastPlayerPosition() {
+        this.players.forEach(p => {
+            if (p != null && p.isJoinedGame) {
+                let other = this.getOtherPlayersInPlayerView(p)
+                let data = other.map(player => {
+                    return {
+                        id: player.idGame,
+                        pos: {
+                            x: player.position.x,
+                            y: player.position.y,
+                        },
+                        rot: player.lookDirect,
+                        visible: player.isVisible
+                    }
+                })
+                p.send(gamecode.syncTransform, {
+                    data: data
+                })
+            }
+        })
+    }
+    old_broadcastPlayerPosition() {
         this.players.forEach(p => {
             if (p != null && p.isJoinedGame) {
                 let other = this.getOtherPlayersInPlayerView(p)
@@ -311,21 +343,19 @@ class Game {
         this.players.forEach(p => {
             if (p != null && p.isJoinedGame) {
                 let otherStructure = this.getStructureInScreenView(p.position, p.clientScreenSize)
-                if (otherStructure.length != 0) {
-                    let strData = otherStructure.map((str) => {
-                        return {
-                            id: str.id,
-                            pos: {
-                                x: str.position.x,
-                                y: str.position.y
-                            },
-                            rot: str.rotation
-                        }
-                    })
-                    p.send(gamecode.syncStructure, {
-                        structures: strData
-                    })
-                }
+                let strData = otherStructure.map((str) => {
+                    return {
+                        id: str.id,
+                        pos: {
+                            x: str.position.x,
+                            y: str.position.y
+                        },
+                        rot: str.rotation
+                    }
+                })
+                p.send(gamecode.syncStructure, {
+                    structures: strData
+                })
             }
         })
     }
@@ -343,11 +373,9 @@ class Game {
                         rot: npc.lookAngle,
                     }
                 })
-                if (positionData.length != 0) {
-                    p.send(gamecode.syncNpcTransform, {
-                        pos: positionData,
-                    });
-                }
+                p.send(gamecode.syncNpcTransform, {
+                    pos: positionData,
+                });
             }
         })
     }
@@ -407,6 +435,15 @@ class Game {
         }
         player.position = this.map.clampPositionToMap(player.position);
     }
+    getNpcFromView(center, screenSize) {
+        let viewObjects = this.getNpcFromScreenView(center, screenSize)
+        return viewObjects.map(n => {
+            return {
+                id: n.id,
+                bodyCollider: n.bodyCollider,
+            }
+        })
+    }
     getNpcFromView(position) {
         let viewObjects = [];
         let temp = new Vector(0, 0);
@@ -450,6 +487,15 @@ class Game {
             }
         })
         return viewObjects;
+    }
+    getPlayersFromView(center, screenSize) {
+        let viewObject = this.getPlayerFromScreenView(center, screenSize)
+        return viewObject.map(p => {
+            return {
+                id: p.idGame,
+                bodyCollider: p.bodyCollider,
+            }
+        })
     }
     getPlayersFromView(position) {
         let viewObjects = [];
@@ -518,7 +564,9 @@ class Game {
     }
     getPlayersInfo() {
         let playingPlayer = this.players.filter(p => {
-            if (p != null && p.isJoinedGame) { return p }
+            if (p != null && p.isJoinedGame) {
+                return p
+            }
         })
         let data = playingPlayer.map(p => {
             return {
@@ -539,7 +587,9 @@ class Game {
     }
     getNpcInfo() {
         let joinedNpc = this.npcs.filter(n => {
-            if (n != null && n.isJoined) { return n }
+            if (n != null && n.isJoined) {
+                return n
+            }
         })
         let data = joinedNpc.map(n => {
             return {
@@ -570,6 +620,7 @@ class Game {
         return data;
     }
     getResourceInfo() {
+        // console.log("raw resource info: ", this.resources)
         let data = this.resources.map(r => {
             return {
                 id: r.id,
@@ -577,6 +628,7 @@ class Game {
                 pos: r.position,
             }
         })
+        // console.log("maped resource info: ", data)
         return data;
     }
     /* #endregion */
@@ -628,15 +680,34 @@ class Game {
     /* #endregion */
 
     /* #region  GAME EVIROMENT VIEW */
+    getResourceInScreenView(center, screenSize) {
+        let viewObjects = this.resources.filter(r => {
+            if (this.checkIfPositionIsInScreenView(r.position, center, screenSize)) {
+                return r
+            }
+        })
+        return viewObjects
+    }
+    getResourceFromView(center, screenSize) {
+        let viewObjects = this.resources.filter(r => {
+            if (this.checkIfPositionIsInScreenView(center, screenSize)) {
+                return r
+            }
+        })
+        return viewObjects.map(r => {
+            return {
+                id: r.id,
+                bodyCollider: r.bodyCollider
+            }
+        })
+    }
     getResourceFromView(position) {
         let viewObjects = [];
         let temp = new Vector(0, 0);
         this.resources.forEach((r) => {
             temp.x = position.x - r.position.x;
             temp.y = position.y - r.position.y;
-            if (
-                temp.sqrMagnitude() < Math.pow(this.gameConfig.viewResourceRadius, 2)
-            ) {
+            if (temp.sqrMagnitude() < Math.pow(this.gameConfig.viewResourceRadius, 2)) {
                 viewObjects.push({
                     id: r.id,
                     bodyCollider: r.bodyCollider,
@@ -652,6 +723,16 @@ class Game {
         })
         return viewObjects
 
+    }
+    getStructureFromView(center, screenSize) {
+        let viewObjects = this.getStructureInScreenView(center, screenSize)
+        return viewObjects.map(s => {
+            return {
+                id: s.id,
+                type: s.toString(),
+                bodyCollider: s.bodyCollider,
+            }
+        })
     }
     getStructureFromView(position) {
         let viewObjects = [];
@@ -675,6 +756,12 @@ class Game {
 
     /* #region  COLLIDER TESTER */
     testCollisionCircle2Circle(object1, object2, response) {
+        if (object1 == null || typeof object1 === "undefined") {
+            return false
+        }
+        if (object2 == null || typeof object2 === "undefined") {
+            return false
+        }
         return this.physic.testCircle2Circle(
             object1.bodyCollider,
             object2.bodyCollider,
@@ -682,6 +769,12 @@ class Game {
         );
     }
     testCollisionPolygon2Circle(poliObj, circleObj, response) {
+        if (poliObj == null || typeof poliObj === "undefined") {
+            return false
+        }
+        if (circleObj == null || typeof circleObj === "undefined") {
+            return false
+        }
         return this.physic.testPolygon2Circle(
             poliObj.bodyCollider,
             circleObj.bodyCollider,
@@ -690,11 +783,34 @@ class Game {
     }
     /* #endregion */
     /* #region   COLLISION CHECK*/
+    bulletHitNpc(idFrom, idTarget, damage) {
+        this.playerHitNpc(idFrom, idTarget, damage)
+        return true
+    }
+    bulletHitPlayer(idFrom, idTarget, damage) {
+        if (this.checkBothPlayerAreInClan(this.players[idFrom], this.players[idTarget])) {
+            return false
+        }
+        this.players[idTarget].takeDamage(damage,
+            (id) => this.playerDieCallback(idFrom, id),
+            (damageReflect, forceReflect) => this.playerReflectAttack(idTarget, idFrom, damageReflect, forceReflect))
+        this.players[idFrom].lifeStealing(damage)
+        this.players[idFrom].selfTakeDamage(damage, (id) => this.playerDieCallback(idFrom, id), (damageReflect, forceReflect) => {})
+        return true
+    }
     checkBothPlayerAreInClan(player1, player2) {
-        if (player1 == null || player2 == null) { return false }
-        if (!player1.isJoinedGame || !player2.isJoinedGame) { return false }
-        if (player1.clanId == null || player2.clanId == null) { return false }
-        if (player1.idGame == player2.idGame) { return true }
+        if (player1.idGame == player2.idGame) {
+            return true
+        }
+        if (player1 == null || player2 == null) {
+            return false
+        }
+        if (!player1.isJoinedGame || !player2.isJoinedGame) {
+            return false
+        }
+        if (player1.clanId == null || player2.clanId == null) {
+            return false
+        }
         return player1.clanId == player2.clanId
     }
     playerHitPlayer(idFrom, idTarget, damage) {
@@ -705,7 +821,7 @@ class Game {
             (id) => this.playerDieCallback(idFrom, id),
             (damageReflect, forceReflect) => this.playerReflectAttack(idTarget, idFrom, damageReflect, forceReflect))
         this.players[idFrom].lifeStealing(damage)
-        this.players[idFrom].selfTakeDamage(damage, (id) => this.playerDieCallback(idFrom, id), (damageReflect, forceReflect) => { })
+        this.players[idFrom].selfTakeDamage(damage, (id) => this.playerDieCallback(idFrom, id), (damageReflect, forceReflect) => {})
     }
     playerStealResourcePlayer(idFrom, idTarget, resource) {
         let playerFrom = this.getPlayerInfo(idFrom)
@@ -715,6 +831,7 @@ class Game {
     }
     playerDieCallback(idFrom, idTarget) {
         this.bonusKillForPlayer(idFrom, idTarget)
+        // onPlayerDie(idTarget)
     }
     playerDieDueToNpcCallback(idNpc, idPlayer) {
 
@@ -723,7 +840,7 @@ class Game {
         if (damageReflect != 0) {
             this.players[idTarget].takeDamage(damageReflect,
                 (id) => this.playerDieCallback(idFrom, id),
-                (damageReflect, forceReflect) => { })
+                (damageReflect, forceReflect) => {})
         }
         if (forceReflect != 0) {
             let targetPosition = this.players[idTarget].position.clone()
@@ -732,7 +849,7 @@ class Game {
         }
     }
     playerReflectAttackToNpc(idFrom, idTarget, damageReflect, forceReflect) {
-        this.npcs[idTarget].onBeingHit(this.players[idFrom], damageReflect);
+        this.npcs[idTarget].onBeingHit(this.players[idFrom], damageReflect, null);
         this.pushNpcBack(
             this.npcs[idTarget],
             this.npcs[idTarget].position.clone().sub(this.players[idFrom].position.clone()),
@@ -740,6 +857,7 @@ class Game {
         );
     }
     bonusKillForPlayer(idPlayer, idTarget) {
+        console.log(`player: ${idPlayer}: `, this.players[idPlayer])
         let bonusModifier = this.players[idPlayer].killBonusGold
         let bonusGold = 0
         if (this.players[idPlayer].wearThiefGear) {
@@ -748,7 +866,11 @@ class Game {
         if (this.players[idPlayer] == null || !this.players[idPlayer].isJoinedGame) {
             return
         }
-        this.players[idPlayer].takeBonus({ kill: 1, gold: (250 + bonusGold) * (1 + bonusModifier), xp: 100 })
+        this.players[idPlayer].takeBonus({
+            kills: 1,
+            gold: (250 + bonusGold) * (1 + bonusModifier),
+            xp: 100
+        })
     }
     npcHitPlayer(idFrom, idTarget, damage) {
         if (this.players[idTarget] == null || !this.players[idTarget].isJoinedGame) {
@@ -762,7 +884,9 @@ class Game {
         setTimeout(() => {
             npc.isJoined = true;
             npc.reset();
-            npc.position = this.getRandomPosition();
+            let randomPosition = this.getRandomPosition();
+            npc.position.x = randomPosition.x
+            npc.position.y = randomPosition.y
             this.onCreateNpc({
                 id: npc.id,
                 skinId: npc.skinId,
@@ -776,9 +900,13 @@ class Game {
         }, 30 * 1000);
     }
     playerHitNpc(idFrom, idTarget, damage) {
-        this.npcs[idTarget].onBeingHit(this.players[idFrom], damage, (fromTarget, npc) => this.onNpcDie(fromTarget, npc));
-        this.players[idFrom].lifeStealing(damage)
-        this.players[idFrom].selfTakeDamage(damage, (id) => this.playerDieCallback(idFrom, id), (damageReflect, forceReflect) => { })
+        if (this.npcs[idTarget] != null) {
+            this.npcs[idTarget].onBeingHit(this.players[idFrom], damage, (fromTarget, npc) => this.onNpcDie(fromTarget, npc));
+        }
+        if (this.players[idFrom] != null) {
+            this.players[idFrom].lifeStealing(damage)
+            this.players[idFrom].selfTakeDamage(damage, (id) => this.playerDieCallback(idFrom, id), (damageReflect, forceReflect) => {})
+        }
     }
     playerStructureHitNpc(idFrom, idTarget, damage) {
         this.npcs[idTarget].onBeingHit(this.players[idFrom], damage, (fromTarget, npc) => this.onNpcDie(fromTarget, npc));
@@ -792,9 +920,10 @@ class Game {
         if (this.checkBothPlayerAreInClan(this.players[idFrom], this.players[idTarget])) {
             return
         }
+        console.log(`player structure take damage ${idFrom} ${idTarget}`)
         this.players[idTarget].takeDamage(damage,
             (id) => this.playerDieCallback(idFrom, id),
-            (damageReflect, forceReflect) => { })
+            (damageReflect, forceReflect) => {})
     }
     syncPlayerHP(data) {
         this.broadcast(gamecode.playerHit, {
@@ -824,21 +953,21 @@ class Game {
         if (structure == null) {
             return;
         }
-        structure.interact(this.players[idFrom], (action) => { })
+        structure.interact(this.players[idFrom], (action) => {})
         if (this.checkBothPlayerAreInClan(this.players[idFrom], this.players[structure.userId])) {
             return
         }
         if (structure.toString() == "Spike") {
             structure.interact(this.players[idFrom], (action) => {
                 if (action) {
-                    this.playerStructureHitPlayer(idStructure.userId, idFrom, structure.damage);
+                    this.playerStructureHitPlayer(structure.userId, idFrom, structure.damage);
                     this.pushPlayerBack(this.players[idFrom], this.players[idFrom].position.clone().sub(structure.position), 5);
                 }
             })
             return;
         }
         if (structure.toString() == "PitTrap") {
-            structure.interact(this.players[idFrom], (action) => { });
+            structure.interact(this.players[idFrom], (action) => {});
             return;
         }
     }
@@ -849,34 +978,14 @@ class Game {
         }
         structure.hitInteract(this.players[idPlayer], (idType) => {
             let key = this.getKeyByValue(ResourceType, idType)
-            this.players[idPlayer].receiveResource(weapon.info.gatherRate, key)
-            this.players[idPlayer].addXP(weapon.info.goldGatherRate)
+            this.players[idPlayer].receiveResource(gatherRate, key)
+            this.players[idPlayer].addXP(goldGatherRate)
         })
         if (this.checkBothPlayerAreInClan(this.players[idPlayer], this.players[structure.userId])) {
             return
         }
         structure.takeDamage(damage, () => {
             this.removeStructure(structure.id)
-        })
-    }
-    old_playerAttackStructure(idPlayer, idStructure, weapon) {
-        let damage = weapon.info.structureDamage;
-        let structure = this.findStructureWithId(idStructure);
-        // console.log("structure: ", structure)
-        if (structure == null) {
-            return;
-        }
-        structure.hitInteract(this.players[idPlayer], (idType) => {
-            let key = this.getKeyByValue(ResourceType, idType);
-            this.players[idPlayer].receiveResource(weapon.info.gatherRate, key);
-            this.players[idPlayer].addXP(weapon.info.goldGatherRate);
-        })
-        if (this.checkBothPlayerAreInClan(this.players[idPlayer], this.players[structure.userId])) {
-            return
-        }
-        structure.takeDamage(damage, () => {
-            console.log("remove structure: ", structure.id)
-            this.removeStructure(structure.id);
         })
     }
     playerAttackResource(player, idResource, weapon) {
@@ -892,8 +1001,7 @@ class Game {
         player.addXP(weapon.info.goldGatherRate);
     }
     addGold(player, value) {
-        player.basicResources.Gold += value;
-        player.scores += value;
+        player.takeGold(value);
     }
     /* #endregion */
 
@@ -922,7 +1030,7 @@ class Game {
     checkStructureOverlapStructure(playerId, structure) {
         let structureInView = this.getStructureFromView(structure.position)
         for (let i = 0; i < structureInView.length; i++) {
-            if (this.testCollisionCircle2Circle(structure, structureInView[i], (res, obj) => { })) {
+            if (this.testCollisionCircle2Circle(structure, structureInView[i], (res, obj) => {})) {
                 return false
             }
             if (structureInView[i].toString() == "Blocker" && structureInView[i].userId != playerId) {
@@ -937,7 +1045,7 @@ class Game {
     checkStructureOverlapResource(playerId, structure) {
         let resourceInView = this.getResourceFromView(structure.position)
         for (let i = 0; i < resourceInView.length; i++) {
-            if (this.testCollisionCircle2Circle(structure, resourceInView[i], (res, obj) => { })) {
+            if (this.testCollisionCircle2Circle(structure, resourceInView[i], (res, obj) => {})) {
                 return false
             }
         }
@@ -947,7 +1055,7 @@ class Game {
         let npcInView = this.getNpcInPlayerView(this.players[playerId])
         for (let i = 0; i < npcInView.length; i++) {
             if (npcInView[i].isJoined) {
-                if (this.testCollisionCircle2Circle(structure, npcInView[i], (res, obj) => { })) {
+                if (this.testCollisionCircle2Circle(structure, npcInView[i], (res, obj) => {})) {
                     return false
                 }
             }
@@ -1057,9 +1165,11 @@ class Game {
     /* #endregion */
     /* #region  GAME EVENTS */
     onNewPlayerJoin(player) {
+        // console.log(`player join: ${player.lastMovement} ${player.lastLook}`)
         this.broadcast(gamecode.spawnPlayer, {
             clientId: player.id,
             id: player.idGame,
+            clanId: player.clanId == null ? -1 : player.clanId,
             name: player.name,
             skinId: player.skinId,
             hp: player.getHealthPointData(),
@@ -1085,7 +1195,9 @@ class Game {
     }
     onPlayerDie(idPlayer) {
         this.removePlayerStructures(idPlayer)
-        this.broadcast(gamecode.playerDie, { id: idPlayer })
+        this.broadcast(gamecode.playerDie, {
+            id: idPlayer
+        })
     }
     onPlayerSwitchItem(data) {
         this.broadcast(gamecode.switchItem, data)
@@ -1107,7 +1219,7 @@ class Game {
         if (this.npcs[npc.id].isJoined) {
             let data = [{
                 id: npc.id,
-                hp: this.npcs[npc.id].getHpPercent()
+                hp: this.npcs[npc.id].getHpPercent(),
             }]
             this.syncNpcHP(data)
         }

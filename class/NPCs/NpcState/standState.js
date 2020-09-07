@@ -18,7 +18,7 @@ class NpcStandState extends NpcState {
     onHit(fromTarget) {
         if (this.npc.isHostile) {
             this.npc.huntState.target = fromTarget
-            this.stateManager.changeState(this.npc.huntState)
+            this.stateManager.changeState(this.npc.huntState, { target: fromTarget })
         } else {
             this.npc.escapeState.target = fromTarget
             this.stateManager.changeState(this.npc.escapeState)

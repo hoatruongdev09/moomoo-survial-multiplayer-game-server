@@ -1,5 +1,7 @@
 {
     "cSpell.words": [
+        "npcs",
         "respawn"
-    ]
+    ],
+    "compile-hero.disable-compile-files-on-did-save-code": true
 }

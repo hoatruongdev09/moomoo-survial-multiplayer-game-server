@@ -7,6 +7,12 @@ class NpcStateManager {
         this.currentState = initState
         this.currentState.enter()
     }
+    changeState(nextState, enterOption) {
+        this.lastState = this.currentState
+        this.currentState.exit();
+        this.currentState = nextState
+        this.currentState.enter(enterOption)
+    }
     changeState(nextState) {
         this.lastState = this.currentState
         this.currentState.exit()

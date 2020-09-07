@@ -1,12 +1,13 @@
 const publicIp = require('public-ip');
 const axios = require('axios').default;
 const db = require("../models/index")
+const ip = require('ip')
 
 const serverList = {
     updateServerPasssword: "Dg;=8&gPZ%^e5q%",
 
     serverList: {
-        // local: "localhost:8080",
+        // local: `${ip.address()}:8080`,//"localhost:8080",
         asia: "",
         us: "moomoo-server.herokuapp.com",
     },
@@ -39,7 +40,7 @@ const serverList = {
         console.log(`req.query.password == updateServerPasssword ${req.query.password == this.updateServerPasssword}`);
         const serverId = req.query.serverId
         if (serverId != null && req.query.password == this.updateServerPasssword) {
-            // serverList[serverId] = req.query.serverAddress + ":8080";
+            serverList[serverId] = req.query.serverAddress + ":8080";
             console.log(`updated ${this.serverList[req.query.serverId]}`);
 
             this.updateOrCreate(db.Url, {

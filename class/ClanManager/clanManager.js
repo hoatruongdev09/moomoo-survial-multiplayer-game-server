@@ -2,18 +2,24 @@ const TransmitCode = require('../../transmitcode')
 const GameCode = TransmitCode.GameCode
 const ClanCode = TransmitCode.ClanCode
 const ServerCode = TransmitCode.ServerCode
-
+const performance = require('perf_hooks').performance
 const Clan = require('./clan')
 class ClanManager {
     constructor(game) {
         this.game = game
         this.clans = []
         this.clansCount = 0
+        this.updateInterval = 0.5
+        this.currentUpdateCount = 0
     }
     update(deltaTime) {
-        this.clans.forEach(clan => {
-            clan.update(deltaTime)
-        })
+        this.currentUpdateCount += deltaTime
+        if (this.currentUpdateCount >= this.updateInterval) {
+            this.currentUpdateCount = 0
+            this.clans.forEach(clan => {
+                clan.syncClanMemberPosition()
+            })
+        }
     }
     generateClanId() {
         return this.clansCount++
@@ -80,19 +86,20 @@ class ClanManager {
     }
     respondRequestJoin(idMember, idClan, action) {
         let clan = this.findClanById(idClan)
-        if (clan != null) {
-            if (action) {
-                console.log("accept request");
-                let member = clan.getJoinRequest(idMember)
-                if (member != null) {
-                    console.log("member: ", member.idGame)
-                    this.addMember(member, idClan)
-                }
-            } else {
-                console.log("deny request")
+        if (clan == null) { return; }
+
+        if (action) {
+            console.log("accept request");
+            let member = clan.getJoinRequest(idMember)
+            if (member != null && member.clanId == null) {
+                console.log("member: ", member.idGame)
+                this.addMember(member, idClan)
             }
-            clan.removeJoinRequest(idMember)
+        } else {
+            console.log("deny request")
         }
+        clan.removeJoinRequest(idMember)
+
     }
     addMember(member, clanId) {
         let clan = this.findClanById(clanId)
@@ -126,8 +133,11 @@ class ClanManager {
             }
         }
     }
-
     getClanData() {
+        let data = this.clans.map(clan => { return { id: clan.id, name: clan.name } })
+        return data
+    }
+    old_getClanData() {
         let data = []
         this.clans.forEach(clan => {
             data.push({
@@ -137,7 +147,20 @@ class ClanManager {
         })
         return data
     }
+    getClanMembersData(clanId) {
+        let clan = this.findClanById(clanId)
+        if (clan == null) { return [] }
+        return clan.getAllMemberData()
+    }
     getClansMemberData() {
+        let data = []
+        this.clans.forEach(clan => {
+            let memberData = clan.getAllMember()
+            data.push(...memberData)
+        })
+        return data
+    }
+    old_getClansMemberData() {
         let data = []
         this.clans.forEach(clan => {
             clan.getAllMember().forEach(member => {
