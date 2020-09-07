@@ -303,8 +303,7 @@ class GameState extends BaseState {
             }),
             equippedHat: this.user.equippedHat == null ? "" : this.user.equippedHat.id,
             equippedAccessory: this.user.equippedAccessory == null ?
-                "" :
-                this.user.equippedAccessory.id,
+                "" : this.user.equippedAccessory.id,
         });
     }
 
@@ -563,12 +562,14 @@ class GameState extends BaseState {
         this.game.playerHitNpc(this.user.idGame, objectInfo.id, damage);
     }
     onHitPlayer(response, object, objectInfo) {
-        if (objectInfo.id != this.user.idGame) {
-            let damage =
-                this.user.currentItem.info.damage * (1 + this.user.damageModifier);
-            this.game.playerHitPlayer(this.user.idGame, objectInfo.id, damage);
-            this.user.currentItem.stealResourceEffect((resource) => {});
+        if (this.user == null || typeof this.user === "undefined" || objectInfo.id == this.user.idGame) {
+            return;
         }
+        let damage =
+            this.user.currentItem.info.damage * (1 + this.user.damageModifier);
+        this.game.playerHitPlayer(this.user.idGame, objectInfo.id, damage);
+        this.user.currentItem.stealResourceEffect((resource) => {});
+
     }
 
     /* #endregion */
@@ -717,8 +718,7 @@ class GameState extends BaseState {
             id: this.user.idGame,
             hat: this.user.equippedHat == null ? "" : this.user.equippedHat.id,
             acc: this.user.equippedAccessory == null ?
-                "" :
-                this.user.equippedAccessory.id,
+                "" : this.user.equippedAccessory.id,
         });
     }
     syncItemShop() {
@@ -728,8 +728,7 @@ class GameState extends BaseState {
             }),
             equipedHat: this.user.equippedHat == null ? "" : this.user.equippedHat.id,
             equipedAccessory: this.user.equippedAccessory == null ?
-                "" :
-                this.user.equippedAccessory.id,
+                "" : this.user.equippedAccessory.id,
         });
     }
     /* #endregion */

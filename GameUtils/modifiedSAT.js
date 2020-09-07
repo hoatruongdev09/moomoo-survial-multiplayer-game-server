@@ -287,8 +287,7 @@ Polygon.prototype["setPoints"] = Polygon.prototype.setPoints = function (
   points
 ) {
   // Only re-allocate if this is a new polygon or the number of points has changed.
-  var lengthChanged =
-    !this["points"] || this["points"].length !== points.length;
+  var lengthChanged = !this["points"] || this["points"].length !== points.length;
   if (lengthChanged) {
     var i;
     var calcPoints = (this["calcPoints"] = []);
@@ -634,7 +633,7 @@ function isSeparatingAxis(aPos, bPos, aPoints, bPoints, axis, response) {
   var rangeA = T_ARRAYS.pop();
   var rangeB = T_ARRAYS.pop();
   // The magnitude of the offset between the two polygons
-  var offsetV = T_VECTORS.pop().copy(bPos).sub(aPos);
+  var offsetV = getVectorFromT_VECTORS().copy(bPos).sub(aPos);
   var projectedOffset = offsetV.dot(axis);
   // Project the polygons onto the axis.
   flattenPointsOn(aPoints, axis, rangeA);
@@ -750,7 +749,7 @@ var RIGHT_VORONOI_REGION = 1;
  * @return {boolean} true if the point is inside the circle, false if it is not.
  */
 function pointInCircle(p, c) {
-  var differenceV = T_VECTORS.pop().copy(p).sub(c["pos"]).sub(c["offset"]);
+  var differenceV = getVectorFromT_VECTORS().copy(p).sub(c["pos"]).sub(c["offset"]);
   var radiusSq = c["r"] * c["r"];
   var distanceSq = differenceV.len2();
   T_VECTORS.push(differenceV);
@@ -787,7 +786,7 @@ SAT["pointInPolygon"] = pointInPolygon;
 function testCircleCircle(a, b, response) {
   // Check if the distance between the centers of the two
   // circles is greater than their combined radius.
-  var temp = T_VECTORS.pop();
+  var temp = getVectorFromT_VECTORS();
   if (temp == null || temp["copy"] == typeof undefined) {
     temp = new Vector(0, 0);
   }
@@ -820,6 +819,13 @@ function testCircleCircle(a, b, response) {
 }
 SAT["testCircleCircle"] = testCircleCircle;
 
+function getVectorFromT_VECTORS() {
+  var temp = T_VECTORS.pop()
+  if (temp == null || typeof temp === "undefined") {
+    temp = new Vector(0, 0)
+  }
+  return temp
+}
 // Check if a polygon and a circle collide.
 /**
  * @param {Polygon} polygon The polygon.
@@ -830,10 +836,7 @@ SAT["testCircleCircle"] = testCircleCircle;
  */
 function testPolygonCircle(polygon, circle, response) {
   // Get the position of the circle relative to the polygon.
-  var temp = T_VECTORS.pop();
-  if (temp == null || temp["copy"] == typeof undefined) {
-    temp = new Vector(0, 0);
-  }
+  var temp = getVectorFromT_VECTORS()
   var circlePos = temp
     .copy(circle["pos"])
     .add(circle["offset"])
@@ -842,8 +845,8 @@ function testPolygonCircle(polygon, circle, response) {
   var radius2 = radius * radius;
   var points = polygon["calcPoints"];
   var len = points.length;
-  var edge = T_VECTORS.pop();
-  var point = T_VECTORS.pop();
+  var edge = getVectorFromT_VECTORS()
+  var point = getVectorFromT_VECTORS();
 
   // For each edge in the polygon:
   for (var i = 0; i < len; i++) {
@@ -871,7 +874,7 @@ function testPolygonCircle(polygon, circle, response) {
       // We need to make sure we're in the RIGHT_VORONOI_REGION of the previous edge.
       edge.copy(polygon["edges"][prev]);
       // Calculate the center of the circle relative the starting point of the previous edge
-      var point2 = T_VECTORS.pop().copy(circlePos).sub(points[prev]);
+      var point2 = getVectorFromT_VECTORS().copy(circlePos).sub(points[prev]);
       region = voronoiRegion(edge, point2);
       if (region === RIGHT_VORONOI_REGION) {
         // It's in the region we want.  Check if the circle intersects the point.
