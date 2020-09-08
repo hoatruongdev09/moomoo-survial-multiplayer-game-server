@@ -786,6 +786,12 @@ SAT["pointInPolygon"] = pointInPolygon;
 function testCircleCircle(a, b, response) {
   // Check if the distance between the centers of the two
   // circles is greater than their combined radius.
+  if (a == null || typeof a === 'undefined') {
+    return false
+  }
+  if (b == null || typeof b === 'undefined') {
+    return false
+  }
   var temp = getVectorFromT_VECTORS();
   if (temp == null || temp["copy"] == typeof undefined) {
     temp = new Vector(0, 0);
@@ -835,6 +841,12 @@ function getVectorFromT_VECTORS() {
  * @return {boolean} true if they intersect, false if they don't.
  */
 function testPolygonCircle(polygon, circle, response) {
+  if (polygon == null || typeof polygon === 'undefined') {
+    return false
+  }
+  if (circle == null || typeof circle === 'undefined') {
+    return false;
+  }
   // Get the position of the circle relative to the polygon.
   var temp = getVectorFromT_VECTORS()
   var circlePos = temp
@@ -1008,6 +1020,12 @@ SAT["testCirclePolygon"] = testCirclePolygon;
  * @return {boolean} true if they intersect, false if they don't.
  */
 function testPolygonPolygon(a, b, response) {
+  if (a == null || typeof a === 'undefined') {
+    return false
+  }
+  if (b == null || typeof b === 'undefined') {
+    return false
+  }
   var aPoints = a["calcPoints"];
   var aLen = aPoints.length;
   var bPoints = b["calcPoints"];
