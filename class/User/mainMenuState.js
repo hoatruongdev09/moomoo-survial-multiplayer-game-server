@@ -37,7 +37,6 @@ class MenuState extends BaseState {
         this.user.name = data.name
         this.user.clientScreenSize.width = data.screenSizeX
         this.user.clientScreenSize.height = data.screenSizeY
-
         this.server.new_playerJoinGame(this.user, data.gameId)
     }
     onReceivedGameData(data) {

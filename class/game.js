@@ -163,7 +163,7 @@ class Game {
         return this.currentPlayerCount >= this.gameConfig.maxPlayer;
     }
     new_canJoin() {
-        if (this.currentPlayerCount >= this.gameConfig.maxPlayer) {
+        if (this.isFull()) {
             return {
                 result: false,
                 reason: "Game is full",
@@ -196,6 +196,7 @@ class Game {
         let slot = this.findEmptySlot()
         if (slot != null) {
             this.players[slot] = player
+            player.game = this
             this.currentPlayerCount++
             player.receiveGameData({
                 game: this,
@@ -899,9 +900,13 @@ class Game {
         }, 30 * 1000);
     }
     playerHitNpc(idFrom, idTarget, damage) {
-        this.npcs[idTarget].onBeingHit(this.players[idFrom], damage, (fromTarget, npc) => this.onNpcDie(fromTarget, npc));
-        this.players[idFrom].lifeStealing(damage)
-        this.players[idFrom].selfTakeDamage(damage, (id) => this.playerDieCallback(idFrom, id), (damageReflect, forceReflect) => {})
+        if (this.npcs[idTarget] != null) {
+            this.npcs[idTarget].onBeingHit(this.players[idFrom], damage, (fromTarget, npc) => this.onNpcDie(fromTarget, npc));
+        }
+        if (this.players[idFrom] != null) {
+            this.players[idFrom].lifeStealing(damage)
+            this.players[idFrom].selfTakeDamage(damage, (id) => this.playerDieCallback(idFrom, id), (damageReflect, forceReflect) => {})
+        }
     }
     playerStructureHitNpc(idFrom, idTarget, damage) {
         this.npcs[idTarget].onBeingHit(this.players[idFrom], damage, (fromTarget, npc) => this.onNpcDie(fromTarget, npc));
