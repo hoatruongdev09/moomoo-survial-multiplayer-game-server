@@ -37,7 +37,10 @@ class Server {
         } else {
             let port = process.env.PORT || 8080
             console.log("game running on port: ", port);
-            io = io(port)
+            io = io(port, {
+                pingInterval: 120 * 1000,
+                pingTimeout: 120 * 1000
+            })
         }
         io.on("connection", socket => {
             console.log("an io connection")

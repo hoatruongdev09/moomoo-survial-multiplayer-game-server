@@ -74,7 +74,7 @@ class HuntState extends NpcState {
             this.stateManager.changeState(this.npc.standState)
             return
         }
-        if (this.moveDirect.sqrMagnitude() >= this.escapeRange) {
+        if (this.moveDirect != null && this.moveDirect.sqrMagnitude() >= this.escapeRange) {
             this.stateManager.changeState(this.npc.standState)
             return
         }

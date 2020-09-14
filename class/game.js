@@ -849,7 +849,7 @@ class Game {
         }
     }
     playerReflectAttackToNpc(idFrom, idTarget, damageReflect, forceReflect) {
-        this.npcs[idTarget].onBeingHit(this.players[idFrom], damageReflect, null);
+        this.npcs[idTarget].onBeingHit(this.players[idFrom], damageReflect, (fromTarget, npc) => this.onNpcDie(fromTarget, npc));
         this.pushNpcBack(
             this.npcs[idTarget],
             this.npcs[idTarget].position.clone().sub(this.players[idFrom].position.clone()),

@@ -149,6 +149,7 @@ class NPC {
         return this.game.getRandomPosition();
     }
     moveNpc(direct, deltaTime) {
+
         if (this.isTrapped) {
             return;
         }

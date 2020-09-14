@@ -782,7 +782,6 @@ class GameState extends BaseState {
     /* #region  LEVEL UP & UPGRADE */
     addXP(value) {
         this.user.levelInfo.xp += value;
-        console.log("level info: ", this.user.levelInfo);
         let currentLv = this.user.levelInfo.level;
         if (currentLv >= LevelDescription.length) {
             currentLv = LevelDescription.length - 1;
