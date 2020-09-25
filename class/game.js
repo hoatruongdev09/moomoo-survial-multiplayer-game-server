@@ -799,14 +799,14 @@ class Game {
         return true
     }
     checkBothPlayerAreInClan(player1, player2) {
-        if (player1.idGame == player2.idGame) {
-            return true
-        }
         if (player1 == null || player2 == null) {
             return false
         }
         if (!player1.isJoinedGame || !player2.isJoinedGame) {
             return false
+        }
+        if (player1.idGame == player2.idGame) {
+            return true
         }
         if (player1.clanId == null || player2.clanId == null) {
             return false
