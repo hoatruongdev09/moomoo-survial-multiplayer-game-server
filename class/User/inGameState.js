@@ -859,10 +859,10 @@ class GameState extends BaseState {
     }
     chat(data) {
         this.delayChat();
-        console.log("chat: ", data);
-        if (!this.makeCheat(data)) {
-            this.game.sendChat(data);
-        }
+        // console.log("chat: ", data);
+        // if (!this.makeCheat(data)) {
+        this.game.sendChat(data);
+        // }
     }
     makeCheat(data) {
         let cheatData = this.analyzeChatText(data.text);

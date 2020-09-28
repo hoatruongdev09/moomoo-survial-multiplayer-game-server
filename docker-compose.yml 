@@ -1,0 +1,9 @@
+version: "3.7"
+
+service:
+    moumou-server-game-service:
+        image: moumou-server,
+        restart: always,
+        container_name: moumou-server-game-service
+        ports:
+            - "80:5000"

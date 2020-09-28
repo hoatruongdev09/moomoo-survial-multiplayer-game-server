@@ -8,8 +8,8 @@ const serverList = {
 
     serverList: {
         // local: `${ip.address()}:8080`,//"localhost:8080",
-        asia: "",
-        us: "moomoo-server.herokuapp.com",
+        asia: ``,
+        us: `moomoo-server.herokuapp.com`,
     },
 
     getServerList: async function () {

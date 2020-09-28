@@ -3,8 +3,8 @@ const ServerConfig = require("./class/serverconfig");
 
 const path = require("path");
 
-const serverList = require("./class/serverList");
-const clientInfo = require("./class/clientInfo");
+// const serverList = require("./class/serverList");
+// const clientInfo = require("./class/clientInfo");
 
 const express = require("express");
 
@@ -36,12 +36,13 @@ app.get("/update_server", (req, res) => {
     serverList.updateServer(req, res);
 });
 app.get("/client_version", (req, res) => {
-    clientInfo.clientVersion(req, res);
+    // clientInfo.clientVersion(req, res);
+    res.status(200).send(20)
 });
 console.log("express run on: ", listener.address().port);
 
 // serverList.getServerList(); // only get server list if on main server (heroku)
-serverList.updateIpAdressOnMainServer() // Only update current server ip on not main server
+// serverList.updateIpAdressOnMainServer() // Only update current server ip on not main server
 
 let server = new Server(ServerConfig, web);
 
